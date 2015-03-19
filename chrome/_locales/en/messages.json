@@ -1,0 +1,62 @@
+{
+  "extension_name": {
+    "message": "Password Catcher",
+    "description": "This extension will catch when user's password is being phished."
+  },
+  "extension_description": {
+    "message": "Password Catcher helps protect against phishing attacks.",
+    "description": "This is used for the general description that is displayed in chrome web store."
+  },
+  "extension_detailed_description": {
+    "message": "If you enter your Gmail or Google for Work password into anywhere other than accounts.google.com, you’ll receive an alert, so you can change your password if needed.\n\nPassword Catcher also tries to detect fake Google login pages to alert you before you’ve typed in your password. To do so, Password Catcher checks the HTML of each page you visit to see if it’s impersonating a Google login page.\n\nFAQ\n-- Does Password Catcher store my password?\nNo. Password Catcher doesn’t store your password or keystrokes -- instead, it uses a secure thumbnail of your password, which it compares against your recent keystrokes within Chrome to help spot the secure thumbnail on sites that might be malicious.\n\n-- Where does Password Catcher send data?\nIf you are using Password Catcher in a Gmail account, Password Catcher does not send any data from your local computer. If your Google for Work administrator deploys Password Catcher across all managed Chrome browsers in your domain, the administrator will receive alerts when Password Catcher triggers.\n\n-- What are Password Catcher’s limits?\nPassword Catcher does not protect incognito windows, Chrome Apps, or Chrome Extensions. It also does not protect passwords for non-Google services. Password Catcher only operates inside the Chrome web browser when Javascript is enabled.\n",
+    "description": "This is used for the detailed (long) description that is displayed in chrome web store."
+  },
+  "initialization_message": {
+    "message": "For Password Catcher to take effect, please sign into your account.",
+    "description": "This is used to prompt the user to type their password to properly initialized password catcher."
+  },
+  "sign_in": {
+    "message": "Sign In",
+    "description": "This is used to prompt the user to sign into their Google account."
+  },
+  "initialization_thank_you_message": {
+    "message": "Thank you. Password Catcher is now in effect.",
+    "description": "This is used to thank the user after they have typed their password to properly initialized password catcher."
+  },
+  "password_warning_banner_header": {
+    "message": "Reset your Gmail password",
+    "description": "This is used for the warning banner to warn users that they have typed their password."
+  },
+  "password_warning_banner_body": {
+    "message": "Your Gmail password was just exposed to a non-Gmail login page. You should immediately reset your password to keep your Gmail account secure. Also, please make sure your Gmail password is not reused on other services -- otherwise, if one of your accounts is compromised, they could all be compromised.",
+    "description": "This is used for the warning banner to warn users that they have typed their password."
+  },
+  "ignore": {
+    "message": "Ignore",
+    "description": "This is used to tell the user that they can ignore the warning."
+  },
+  "reset_password": {
+    "message": "Reset Password",
+    "description": "This is used to tell the user to reset their passord."
+  },
+  "phishing_warning_banner_header": {
+    "message": "This site has been blocked.",
+    "description": "This is used for the warning banner to warn users that they are visiting a phishing website."
+  },
+  "phishing_warning_banner_body": {
+    "message": "This site appears to be using a fake version of the Google login page to steal your password, so it has been blocked. If you understand that this site may harm your computer, you may visit this site but please be careful about the information you type.",
+    "description": "This is used for the warning banner to warn users that they are visiting a phishing website."
+  },
+  "back": {
+    "message": "Back",
+    "description": "This is used to tell the user that they can navigate back to the previous webpage."
+  },
+  "contact_security": {
+    "message": "Contact Security",
+    "description": "This is used to tell the user to contact the security administrators."
+  },
+  "visit_this_site": {
+    "message": "Visit This Site",
+    "description": "This is used to tell the user that they can visit the current website."
+  }
+}

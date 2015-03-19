@@ -1,0 +1,130 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    background-color: #E5E5E5;
+    font-family:'RobotoDraft', sans-serif;
+    font-size: small;
+    color: #808080;
+}
+
+core-header-panel {
+    background-color: #F5F5F5;
+    height: 100vh;
+    left: 0%;
+    position: absolute;
+    top: 0%;
+    width: 100vw;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+core-toolbar {
+    background-color: #4072b4;
+    color: white;
+    display: block;
+    font-size: 2em;
+}
+
+/* Prevent the scroller from showing in the nav menu button when menu item is
+   bolded on hover.  Otherwise, the bolded item will run over the margin. */
+paper-dropdown /deep/ #scroller {
+    width: 200px;
+}
+
+#nav_menu_button {
+  top: 3px;
+}
+
+.nav_menu_item {
+  color: #4072b4;
+}
+
+a:link, a:visited {
+    color: #4072b4;
+}
+
+a:hover {
+  font-weight: bold;
+}
+
+#search_box {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+}
+
+action-bar {
+    border-collapse: collapse;
+    width: 80%;
+    margin-top: 3%;
+    margin-left: auto;
+    margin-right: auto;
+    clear: both;
+}
+
+paper-toast {
+    background-color: #4072b4;
+    color: white;
+}
+
+table {
+    border-collapse: collapse;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    clear: both;
+}
+
+table tr:first-child {
+    border-left: 0px;
+    border-right: 0px;
+}
+
+th {
+    text-align: left;
+    font-weight: normal;
+    padding: 15px;
+    border-bottom: 1px solid #C0C0C0;
+    background-color: #F5F5F5;
+}
+
+tr {
+    border-left: 1px solid #C0C0C0;
+    border-right: 1px solid #C0C0C0;
+    border-bottom: 1px solid #C0C0C0;
+    background-color: white;
+}
+
+td {
+    padding: 15px;
+}
+
+td.url, td.referer {
+    width: 20%;
+    word-wrap: break-word;
+    max-width:1px;
+}
+
+td.username {
+    width: 15%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width:1px;
+}
+
+td.url:hover, td.username:hover {
+    color: #3385FF;
+}
+
+td.date {
+    width: 20%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width:1px;
+}
+
+td.icons {
+    width: 5%;
+}

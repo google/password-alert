@@ -1,0 +1,44 @@
+{
+  "_comment_ policies for content script": {
+    "Value": "-----------------------------------------------------------------"
+  },
+  "corp_email_domain": {
+    "Value": "@example.com"
+  },
+  "corp_html": {
+    "Value": ["CHANGE ME Your Example Company Name"
+              "CHANGE ME Some text from your SSO Page"]
+  },
+  "corp_html_tight": {
+    "Value": ["CHANGE ME <title>uniquely for your SSO page",
+             "CHANGE ME some <b>more</b> unique HTML from your SSO page here"]
+  },
+  "security_email_address": {
+    "Value": "security@example.com"
+  },
+  "sso_form_selector": {
+    "Value": "#loginForm"
+  },
+  "sso_password_selector": {
+    "Value": "#loginForm #password"
+  },
+  "sso_url": {
+    "Value": "https://sso.example.com/"
+  },
+  "sso_username_selector": {
+    "Value": "#loginForm #username"
+  },
+  "whitelist_top_domains": {
+    "Value": ["legit-site.example.com",
+              "localhost"]
+  },
+  "_comment_ policies for background script": {
+    "Value": "-----------------------------------------------------------------"
+  },
+  "report_url": {
+    "Value": "https://example.appspot.com/report/"
+  },
+  "should_initialize_password": {
+    "Value": false
+  }
+}

@@ -1,0 +1,26 @@
+{% extends "templates/base.html" %}
+
+{% block head %}
+  {{ super() }}
+{% endblock head %}
+
+{% block title %}
+Allowed Hosts
+{% endblock %}
+
+{% block content %}
+<div align="center">
+  <h1>List of Hosts where password use is Allowed</h1></div>
+
+<table>
+  <tr>
+    <th>URL</th>
+  </tr>
+  {% for host in hosts %}
+  <tr>
+    <td class="url">{{host.host}}
+      [<a href="/search/?search_query={{host.host}}">details</a>]</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
