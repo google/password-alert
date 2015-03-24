@@ -100,4 +100,4 @@ ADMIN_GROUP = ''
 ##########
 # Your company's domain name.
 # In general you should not need to override this.
-DOMAIN = os.getenv('USER_ORGANIZATION')
+DOMAIN = os.getenv('AUTH_DOMAIN')
