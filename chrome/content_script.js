@@ -420,10 +420,6 @@ passwordcatcher.completePageInitialization_ = function() {
       passwordcatcher.injectWarningBanner_(
           passwordcatcher.PHISHING_WARNING_BANNER_TEXT_,
           passwordcatcher.createButtonsForPhishingWarningBanner_());
-      chrome.runtime.sendMessage({
-        action: 'displayWarningNotification',
-        text: chrome.i18n.getMessage('phishing_warning_banner_body')
-      });
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     console.log('Completed page initialization.');
@@ -661,10 +657,6 @@ passwordcatcher.checkChars_ = function(typed) {
         passwordcatcher.injectWarningBanner_(
             passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_,
             passwordcatcher.createButtonsForPasswordWarningBanner_());
-        chrome.runtime.sendMessage({
-          action: 'displayWarningNotification',
-          text: chrome.i18n.getMessage('password_warning_banner_body')
-        });
       }
     }
   });

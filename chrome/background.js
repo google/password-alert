@@ -342,9 +342,6 @@ passwordcatcher.background.handleRequest_ = function(
     case 'clearOtpMode':
       delete passwordcatcher.background.tabState_[sender.tab.id];
       break;
-    case 'displayWarningNotification':
-      passwordcatcher.background.displayWarningNotification_(request);
-      break;
   }
 };
 
@@ -705,23 +702,6 @@ passwordcatcher.background.pushToTab_ = function(tabId) {
     otpTime: otpTime
   };
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
-};
-
-
-/**
- * Displays a chrome notification to warn users.
- * @param {passwordcatcher.background.Request_} request Request object from
- *     content_script. Contains text.
- * @private
- */
-passwordcatcher.background.displayWarningNotification_ = function(request) {
-  var options = {
-    type: 'basic',
-    title: chrome.i18n.getMessage('extension_name'),
-    message: request.text,
-    iconUrl: chrome.extension.getURL('block.svg')
-  };
-  chrome.notifications.create('password_catcher_warn', options, function() {});
 };
 
 
