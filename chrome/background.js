@@ -595,13 +595,18 @@ passwordcatcher.background.sendReportPhishing_ = function(request) {
   xhr.onreadystatechange = function() {};
   xhr.setRequestHeader('X-Same-Domain', 'true');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  var data = (
-      'referer=' + encodeURIComponent(request.referer || '') +
-      '&url=' + encodeURIComponent(request.url || '') +
-      '&version=' + chrome.runtime.getManifest().version +
-      '&email=' + encodeURIComponent(passwordcatcher.background.guessUser_())
-      );
-  xhr.send(data);
+  chrome.identity.getAuthToken({'interactive': false},
+    function(oauthToken) {
+      var data = (
+        'referer=' + encodeURIComponent(request.referer || '') +
+        '&url=' + encodeURIComponent(request.url || '') +
+        '&version=' + chrome.runtime.getManifest().version +
+        '&oauth_token=' + encodeURIComponent(oauthToken) +
+        '&email=' + encodeURIComponent(passwordcatcher.background.guessUser_())
+        );
+      xhr.send(data);
+    }
+  );
 };
 
 
