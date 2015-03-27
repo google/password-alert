@@ -103,9 +103,7 @@ fi
 if ! command -v bower >/dev/null; then
     $SUDO npm install -g bower
 fi
-bower init
-bower install --save Polymer/polymer
-bower install --save Polymer/core-elements
-bower install --save Polymer/paper-elements
+bower install Polymer/polymer
+bower install Polymer/core-elements
+bower install Polymer/paper-elements
 mv bower_components ../bower_components
-mv bower.json ../bower.json
