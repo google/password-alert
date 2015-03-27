@@ -836,8 +836,8 @@ passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
   var backButton = passwordcatcher.createButton_(
       chrome.i18n.getMessage('back'), '45%', passwordcatcher.back_, false);
   var visitThisSiteButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('visit_this_site'), '70%', passwordcatcher.closeWarningBanner_,
-      false);
+      chrome.i18n.getMessage('visit_this_site'), '70%',
+      passwordcatcher.closeWarningBanner_, false);
   return [contactSecurityButton, backButton, visitThisSiteButton];
 };
 

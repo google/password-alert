@@ -75,20 +75,35 @@ if [ -f master.zip ]; then rm master.zip ;fi
 mv uritemplate-py-master/uritemplate ../uritemplate
 if [ -d uritemplate-py-master ]; then rm -rf  uritemplate-py-master ;fi
 
+# OSX typically doesn't require sudo if you're using homebrew
+case "$(uname -s)" in
+    Darwin)
+        SUDO="";;
+    *)
+        SUDO="sudo";;
+esac
+
 # Download Polymer/Material Design components
 # https://www.polymer-project.org/docs/start/getting-the-code.html
 if ! command -v npm >/dev/null; then
-  sudo apt-get install nodejs
-  sudo ln -s /usr/bin/nodejs /usr/bin/node
-  curl -L https://www.npmjs.com/install.sh > install_npm.sh
-  chmod +x install_npm.sh
-  sudo ./install_npm.sh
-  rm install_npm.sh
+    case "$(uname -s)" in
+        Darwin)
+            brew install node # Comes with npm
+            ;;
+        Linux)
+            sudo apt-get install nodejs
+            sudo ln -s /usr/bin/nodejs /usr/bin/node
+            curl -L https://www.npmjs.com/install.sh > install_npm.sh
+            chmod +x install_npm.sh
+            sudo ./install_npm.sh
+            rm install_npm.sh
+            ;;
+    esac
 fi
-sudo npm install -g bower
-bower init
-bower install --save Polymer/polymer
-bower install --save Polymer/core-elements
-bower install --save Polymer/paper-elements
+if ! command -v bower >/dev/null; then
+    $SUDO npm install -g bower
+fi
+bower install Polymer/polymer
+bower install Polymer/core-elements
+bower install Polymer/paper-elements
 mv bower_components ../bower_components
-mv bower.json ../bower.json

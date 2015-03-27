@@ -4,19 +4,16 @@ which links to a [pre-built copy of the server](https://drive.google.com/corp/dr
 
 # Steps to deploy the server from source
 
-1. Install 3rd party libraries as described here https://docs.google.com/document/d/1aKvgbmXfyI8p2MnnvjqGfogoK1GhF_YdhiuQsN1vzVo/edit
-
-2. Install polymer and material design with bower package manager:
+1. For your first time, run the script to download and install dependencies:
 
     ```shell
-    cd password_catcher/server/
-    bower init
-    bower install --save Polymer/polymer
-    bower install --save Polymer/core-elements
-    bower install --save Polymer/paper-elements
+    cd password_catcher/server/setup/
+    ./download_dependencies.sh
     ```
 
-3. Run the server:
+2. Edit server/app.yaml so that the application setting points to your App Engine app.
+
+3. upload the server:
 
     ```shell
     ~/google_appengine/appcfg.py update password_catcher/server/
