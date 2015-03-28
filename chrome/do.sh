@@ -87,6 +87,8 @@ pc_build_extension() {
   cp -f *.png "$BUILD_EXT_DIR"
   cp -f *.svg "$BUILD_EXT_DIR"
   cp -f *.json "$BUILD_EXT_DIR"
+  cp -f *.css "$BUILD_EXT_DIR"
+  cp -fR _locales/ "$BUILD_EXT_DIR"
   echo "Done."
 }
 
@@ -103,6 +105,8 @@ pc_install_deps() {
 }
 
 pc_generate_jsdeps() {
+  echo "Generating build/deps.js file..."
+  mkdir -p "$BUILD_DIR"
   $PYTHON_CMD lib/closure-library/closure/bin/build/depswriter.py \
     background.js content_script.js \
     > "$BUILD_DIR/deps.js"
