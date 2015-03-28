@@ -87,6 +87,8 @@ pc_build_extension() {
   cp -f *.png "$BUILD_EXT_DIR"
   cp -f *.svg "$BUILD_EXT_DIR"
   cp -f *.json "$BUILD_EXT_DIR"
+  cp -f *.css "$BUILD_EXT_DIR"
+  cp -fR _locales/ "$BUILD_EXT_DIR"
   echo "Done."
 }
 
