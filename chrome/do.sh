@@ -103,6 +103,8 @@ pc_install_deps() {
 }
 
 pc_generate_jsdeps() {
+  echo "Generating build/deps.js file..."
+  mkdir -p "$BUILD_DIR"
   $PYTHON_CMD lib/closure-library/closure/bin/build/depswriter.py \
     background.js content_script.js \
     > "$BUILD_DIR/deps.js"
