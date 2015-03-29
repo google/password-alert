@@ -1,0 +1,45 @@
+{
+  "name": "__MSG_extension_name__",
+  "description": "__MSG_extension_description__",
+  "version": "0.40.5",
+  "default_locale": "en",
+  "minimum_chrome_version": "33",
+  "icons": { "128": "icon128.png" },
+  "permissions": [
+    "identity",
+    "notifications",
+    "<all_urls>"
+  ],
+
+  "web_accessible_resources": [
+    "block.svg",
+    "logo_password_catcher.svg",
+    "warning_banner.css"
+  ],
+
+  "storage": {
+    "managed_schema": "managed_policy_schema.json"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script_compiled.js"],
+      "all_frames": true
+    }
+  ],
+
+  "background": {
+    "scripts": ["background_compiled.js"],
+    "persistent": false
+  },
+
+  "content_security_policy": "default-src 'none'; script-src 'self'; connect-src https://*",
+
+  "manifest_version": 2,
+
+  "oauth2": {
+    "client_id": "894133746257-ci014prch1u46rn7lfbm9neg9ppn9a8a.apps.googleusercontent.com",
+    "scopes": ["email"]
+  }
+}
