@@ -13,7 +13,9 @@ which links to a [pre-built copy of the server](https://drive.google.com/corp/dr
 
 2. Edit server/app.yaml so that the application setting points to your App Engine app.
 
-3. upload the server:
+3. If needed, download the [Google App Engine SDK for Python](https://cloud.google.com/appengine/downloads).
+
+4. Upload the server:
 
     ```shell
     ~/google_appengine/appcfg.py update password_catcher/server/
