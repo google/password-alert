@@ -227,6 +227,10 @@ passwordcatcher.background.handleManagedPolicyChanges_ =
     console.log('Handling changed policies.');
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
+      if (!passwordcatcher.background.isEnterpriseUse_) {
+        passwordcatcher.background.isEnterpriseUse_ = true;
+        console.log('Enterprise use via updated managed policy.');
+      }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       switch (changedPolicy) {
         case 'report_url':
@@ -621,6 +625,9 @@ passwordcatcher.background.sendReport_ = function(request, email, date, otp,
  * @private
  */
 passwordcatcher.background.sendReportPhishing_ = function(request) {
+  if (!passwordcatcher.background.isEnterpriseUse_) {
+    return;
+  }
   console.log('Sending phishing page alert to the server.');
   var xhr = new XMLHttpRequest();
   xhr.open('POST', passwordcatcher.background.report_url_ + 'page/', true);
