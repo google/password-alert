@@ -242,30 +242,65 @@ passwordcatcher.background.handleManagedPolicyChanges_ =
 
 
 /**
+ * Programmatically inject the content script into all existing tabs that
+ * belongs to the user who has just installed the extension.
+ * https://developer.chrome.com/extensions/content_scripts#pi
+ *
+ * The programmatically injected script will be replaced by the
+ * normally injected script when a tab reloads or loads a new url.
+ * @param {function()} callback Executed after content scripts have been
+ *     injected, e.g. user to initialize password.
+ * @private
+ */
+passwordcatcher.background.injectContentScriptIntoAllTabs_ =
+    function(callback) {
+  chrome.tabs.query({}, function(tabs) {
+    for (var i = 0; i < tabs.length; i++) {
+      var tabIdentifier = tabs[i].id + ' - ' + tabs[i].url;
+      console.log('Checking if content script should be injected: ' +
+                  tabIdentifier);
+      // Skip chrome:// and chrome-devtools:// pages
+      if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
+        console.log('Injecting content script into tab: ' + tabIdentifier);
+        chrome.tabs.executeScript(tabs[i].id,
+                                  {file: 'content_script_compiled.js'});
+      }
+    }
+    callback();
+  });
+};
+
+
+/**
  * Prompts the user to initialize their password.
  * @private
  */
 passwordcatcher.background.initializePassword_ = function() {
-  var options = {
-    type: 'basic',
-    title: chrome.i18n.getMessage('extension_name'),
-    message: chrome.i18n.getMessage('initialization_message'),
-    iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
-    buttons: [{
-      title: chrome.i18n.getMessage('sign_in')
-    }]
-  };
-  chrome.notifications.create(
-      passwordcatcher.background.NOTIFICATION_ID_, options, function() {});
+  if (!passwordcatcher.background.isEnterpriseUse_ ||
+      (passwordcatcher.background.isEnterpriseUse_ &&
+      passwordcatcher.background.shouldInitializePassword_)) {
+    console.log('start initializing password');
+    var options = {
+      type: 'basic',
+      title: chrome.i18n.getMessage('extension_name'),
+      message: chrome.i18n.getMessage('initialization_message'),
+      iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
+      buttons: [{
+        title: chrome.i18n.getMessage('sign_in')
+      }]
+    };
+    chrome.notifications.create(
+        passwordcatcher.background.NOTIFICATION_ID_, options, function() {});
 
-  chrome.notifications.onButtonClicked.addListener(
-      function(notificationId, buttonIndex) {
-        if (notificationId === passwordcatcher.background.NOTIFICATION_ID_) {
-          chrome.tabs.create({'url':
-            'https://accounts.google.com/ServiceLogin?' +
-            'continue=https://www.google.com'});
-        }
-      });
+    chrome.notifications.onButtonClicked.addListener(
+        function(notificationId, buttonIndex) {
+          if (notificationId === passwordcatcher.background.NOTIFICATION_ID_) {
+            chrome.tabs.create({'url':
+              'https://accounts.google.com/ServiceLogin?' +
+              'continue=https://www.google.com'});
+          }
+        });
+  }
 };
 
 
@@ -281,15 +316,12 @@ passwordcatcher.background.completePageInitialization_ = function() {
   chrome.storage.onChanged.addListener(
       passwordcatcher.background.handleManagedPolicyChanges_);
 
-  // The conditions to prompt the user to initialize the password are:
-  // consumer: extension has been newly installed
-  // enterprise: extension has been newly installed and policy allows it
-  if (passwordcatcher.background.isNewInstall_ &&
-      (!passwordcatcher.background.isEnterpriseUse_ ||
-          (passwordcatcher.background.isEnterpriseUse_ &&
-              passwordcatcher.background.shouldInitializePassword_))) {
-    console.log('start initializing passowrd');
-    passwordcatcher.background.initializePassword_();
+  // initializePassword_ is a callback because it should occur after
+  // injectContentScriptIntoAllTabs_.  This way, the content script will be
+  // available and ready to receive post-password initialization messages.
+  if (passwordcatcher.background.isNewInstall_) {
+    passwordcatcher.background.injectContentScriptIntoAllTabs_(
+        passwordcatcher.background.initializePassword_);
   }
   console.log('Completed page initialization.');
 };
@@ -596,16 +628,16 @@ passwordcatcher.background.sendReportPhishing_ = function(request) {
   xhr.setRequestHeader('X-Same-Domain', 'true');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   chrome.identity.getAuthToken({'interactive': false},
-    function(oauthToken) {
-      var data = (
+      function(oauthToken) {
+        var data = (
         'referer=' + encodeURIComponent(request.referer || '') +
         '&url=' + encodeURIComponent(request.url || '') +
         '&version=' + chrome.runtime.getManifest().version +
         '&oauth_token=' + encodeURIComponent(oauthToken) +
         '&email=' + encodeURIComponent(passwordcatcher.background.guessUser_())
         );
-      xhr.send(data);
-    }
+        xhr.send(data);
+      }
   );
 };
 
