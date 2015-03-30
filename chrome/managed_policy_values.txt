@@ -6,7 +6,7 @@
     "Value": "@example.com"
   },
   "corp_html": {
-    "Value": ["CHANGE ME Your Example Company Name"
+    "Value": ["CHANGE ME Your Example Company Name",
               "CHANGE ME Some text from your SSO Page"]
   },
   "corp_html_tight": {
