@@ -152,6 +152,14 @@ passwordcatcher.background.isEnterpriseUse_ = false;
 
 
 /**
+ * Domain-specific shared auth secret for enterprise when oauth token fails.
+ * @type {string}
+ * @private
+ */
+passwordcatcher.background.domain_auth_secret_ = '';
+
+
+/**
  * The id of the chrome notification that prompts the user to initialize
  * their password.
  * @type {string}
@@ -199,6 +207,8 @@ passwordcatcher.background.setManagedPolicyValuesIntoConfigurableVariables_ =
       passwordcatcher.background.report_url_ = managedPolicy['report_url'];
       passwordcatcher.background.shouldInitializePassword_ =
           managedPolicy['should_initialize_password'];
+      passwordcatcher.background.domain_auth_secret_ =
+          managedPolicy['domain_auth_secret'];
     }
     callback();
   });
@@ -238,6 +248,9 @@ passwordcatcher.background.handleManagedPolicyChanges_ =
           break;
         case 'should_initialize_password':
           passwordcatcher.background.shouldInitializePassword_ = newPolicyValue;
+          break;
+        case 'domain_auth_secret':
+          passwordcatcher.background.domain_auth_secret_ = newPolicyValue;
           break;
       }
     }
@@ -356,7 +369,7 @@ passwordcatcher.background.handleRequest_ = function(
       passwordcatcher.background.pushToTab_(sender.tab.id);
       break;
     case 'looksLikeGoogle':
-      passwordcatcher.background.sendReportPhishing_(request);
+      passwordcatcher.background.sendReportPage_(request);
       break;
     case 'deletePossiblePassword':
       delete passwordcatcher.background.possiblePassword_[sender.tab.id];
@@ -567,15 +580,9 @@ passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
     passwordcatcher.background.tabState_[tabId] = {hash: hash,
       time: new Date()};
 
-    if (passwordcatcher.background.isEnterpriseUse_) {
-      chrome.identity.getAuthToken({'interactive': false},
-          function(oauthToken) {
-            console.log('Successfully retrieved oauth token.');
-            var item = JSON.parse(localStorage[hash]);
-            passwordcatcher.background.sendReport_(
-            request, item['email'], item['date'], otp, oauthToken);
-          });
-    }
+    var item = JSON.parse(localStorage[hash]);
+    passwordcatcher.background.sendReportPassword_(
+        request, item['email'], item['date'], otp);
     return true;
   }
   return false;
@@ -590,31 +597,17 @@ passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
  * @param {string} date The date when the correct password hash was saved.
  *                      It is a string from JavaScript's Date().
  * @param {boolean} otp True if this is for an OTP alert.
- * @param {string} oauthToken The user's oauth token from chrome.identity.
  * @private
  */
-passwordcatcher.background.sendReport_ = function(request, email, date, otp,
-                                                  oauthToken) {
+passwordcatcher.background.sendReportPassword_ = function(
+    request, email, date, otp) {
   console.log('Sending password typed alert to the server.');
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', passwordcatcher.background.report_url_ + 'password/', true);
-  xhr.onreadystatechange = function() {};
-  xhr.setRequestHeader('X-Same-Domain', 'true');
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  var data = (
-      'email=' + encodeURIComponent(email) +
-      // password_date is in seconds. Date.parse() returns milliseconds.
-      '&password_date=' + Math.floor(Date.parse(date) / 1000) +
-      '&referer=' + encodeURIComponent(request.referer || '') +
-      '&url=' + encodeURIComponent(request.url || '') +
-      '&oauth_token=' + encodeURIComponent(oauthToken));
-  if (otp) {
-    data += '&otp=true';
-  }
-  if (request.looksLikeGoogle) {
-    data += '&looksLikeGoogle=true';
-  }
-  xhr.send(data);
+  passwordcatcher.background.sendReport_(
+      request,
+      email,
+      date,
+      otp,
+      'password/');
 };
 
 
@@ -624,28 +617,66 @@ passwordcatcher.background.sendReport_ = function(request, email, date, otp,
  *     content_script. Contains url and referer.
  * @private
  */
-passwordcatcher.background.sendReportPhishing_ = function(request) {
+passwordcatcher.background.sendReportPage_ = function(request) {
+  console.log('Sending phishing page alert to the server.');
+  passwordcatcher.background.sendReport_(
+      request,
+      passwordcatcher.background.guessUser_(),
+      '',  // date not used.
+      false, // not an OTP alert.
+      'page/');
+};
+
+
+/**
+ * Sends an alert to the server if in Enterprise mode.
+ * @param {passwordcatcher.background.Request_} request Request object from
+ *     content_script. Contains url and referer.
+ * @param {string} email The email to report.
+ * @param {string} date The date when the correct password hash was saved.
+ *                      It is a string from JavaScript's Date().
+ * @param {boolean} otp True if this is for an OTP alert.
+ * @param {string} path Server path for report, such as "page/" or "password/".
+ * @private
+ */
+passwordcatcher.background.sendReport_ = function(
+    request, email, date, otp, path) {
   if (!passwordcatcher.background.isEnterpriseUse_) {
     return;
   }
-  console.log('Sending phishing page alert to the server.');
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', passwordcatcher.background.report_url_ + 'page/', true);
+  xhr.open('POST', passwordcatcher.background.report_url_ + path, true);
   xhr.onreadystatechange = function() {};
   xhr.setRequestHeader('X-Same-Domain', 'true');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-  chrome.identity.getAuthToken({'interactive': false},
-      function(oauthToken) {
-        var data = (
-        'referer=' + encodeURIComponent(request.referer || '') +
-        '&url=' + encodeURIComponent(request.url || '') +
-        '&version=' + chrome.runtime.getManifest().version +
-        '&oauth_token=' + encodeURIComponent(oauthToken) +
-        '&email=' + encodeURIComponent(passwordcatcher.background.guessUser_())
-        );
-        xhr.send(data);
-      }
-  );
+  var data = (
+      'email=' + encodeURIComponent(email) +
+      '&referer=' + encodeURIComponent(request.referer || '') +
+      '&url=' + encodeURIComponent(request.url || '') +
+      '&version=' + chrome.runtime.getManifest().version);
+  if (date) {
+    // password_date is in seconds. Date.parse() returns milliseconds.
+    data += '&password_date=' + Math.floor(Date.parse(date) / 1000);
+  }
+  if (otp) {
+    data += '&otp=true';
+  }
+  if (request.looksLikeGoogle) {
+    data += '&looksLikeGoogle=true';
+  }
+  if (passwordcatcher.background.domain_auth_secret_) {
+    data += '&domain_auth_secret=' + encodeURIComponent(
+        passwordcatcher.background.domain_auth_secret_);
+  }
+  chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
+    console.log('oauth callback called.');
+    if (oauthToken) {
+      console.log('Successfully retrieved oauth token.');
+      data += '&oauth_token=' + encodeURIComponent(oauthToken);
+    }
+    console.log('Sending password typed alert to the server.');
+    xhr.send(data);
+  });
 };
 
 

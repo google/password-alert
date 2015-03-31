@@ -40,5 +40,8 @@
   },
   "should_initialize_password": {
     "Value": false
+  },
+  "domain_auth_secret": {
+    "Value": "CHANGE ME"
   }
 }
