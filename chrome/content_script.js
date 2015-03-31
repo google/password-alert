@@ -100,6 +100,15 @@ passwordcatcher.YOUTUBE_CHECK_URL_ =
 
 
 /**
+ * Namespace for chrome's managed storage.
+ * @type {string}
+ * @private
+ * @const
+ */
+passwordcatcher.MANAGED_STORAGE_NAMESPACE_ = 'managed';
+
+
+/**
  * HTML snippets from corp login pages.  Default values are for consumers.
  * @type {Array.<string>}
  * @private
@@ -139,7 +148,6 @@ passwordcatcher.corp_html_tight_ = [
  * Email address of the security admin.
  * @type {string}
  * @private
- * @const
  */
 passwordcatcher.security_email_address_;
 
@@ -361,6 +369,76 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
 };
 
 
+// This switch style is a bit verbose with lots of properties. Perhaps it
+// would be cleaner to have a list of allowed properties and do something like
+// if (changedPolicy in listOfPolicies)
+//   passwordcatcher[changedPolicy + '_'] = newPolicyValue;
+/**
+ * Handle managed policy changes by updating the configurable variables.
+ * @param {!Object} changedPolicies Object mapping each policy to its
+ *     new values.  Policies that have not changed will not be present.
+ *     For example:
+ *     {
+ *      report_url: {
+ *        newValue: "https://passwordcatcher222.example.com/report/"
+ *        oldValue: "https://passwordcatcher111.example.com/report/"
+ *        }
+ *     }
+ * @param {!string} storageNamespace The name of the storage area
+ *     ("sync", "local" or "managed") the changes are for.
+ * @private
+ */
+passwordcatcher.handleManagedPolicyChanges_ =
+    function(changedPolicies, storageNamespace) {
+  if (storageNamespace == passwordcatcher.MANAGED_STORAGE_NAMESPACE_) {
+    console.log('Handling changed policies.');
+    var changedPolicy;
+    for (changedPolicy in changedPolicies) {
+      if (!passwordcatcher.isEnterpriseUse_) {
+        passwordcatcher.isEnterpriseUse_ = true;
+        console.log('Enterprise use via updated managed policy.');
+      }
+      var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
+      switch (changedPolicy) {
+        case 'corp_email_domain':
+          passwordcatcher.corp_email_domain_ = newPolicyValue;
+          break;
+        case 'corp_html':
+          passwordcatcher.corp_html_ = newPolicyValue;
+          break;
+        case 'corp_html_tight':
+          passwordcatcher.corp_html_tight_ = newPolicyValue;
+          break;
+        case 'security_email_address':
+          passwordcatcher.security_email_address_ = newPolicyValue;
+          break;
+        case 'sso_form_selector':
+          passwordcatcher.sso_form_selector_ = newPolicyValue;
+          break;
+        case 'sso_password_selector':
+          passwordcatcher.sso_password_selector_ = newPolicyValue;
+          break;
+        case 'sso_url':
+          passwordcatcher.sso_url_ = newPolicyValue;
+          break;
+        case 'sso_username_selector':
+          passwordcatcher.sso_username_selector_ = newPolicyValue;
+          break;
+        case 'whitelist_top_domains':
+          passwordcatcher.whitelist_top_domains_ = newPolicyValue;
+          break;
+        case 'max_length':
+          passwordcatcher.max_length_ = newPolicyValue;
+          break;
+        case 'otp_length':
+          passwordcatcher.otp_length_ = newPolicyValue;
+          break;
+      }
+    }
+  }
+};
+
+
 /**
  * Complete page initialization.  This is executed after managed policy values
  * have been set.
@@ -370,6 +448,9 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
  * @private
  */
 passwordcatcher.completePageInitialization_ = function() {
+  chrome.storage.onChanged.addListener(
+      passwordcatcher.handleManagedPolicyChanges_);
+
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (goog.string.startsWith(passwordcatcher.url_,
