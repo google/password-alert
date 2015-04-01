@@ -350,8 +350,6 @@ passwordcatcher.background.completePageInitialization_ = function() {
   passwordcatcher.background.refreshPasswordLengths_();
   chrome.runtime.onMessage.addListener(
       passwordcatcher.background.handleRequest_);
-  chrome.storage.onChanged.addListener(
-      passwordcatcher.background.handleManagedPolicyChanges_);
 
   // initializePassword_ is a callback because it should occur after
   // injectContentScriptIntoAllTabs_.  This way, the content script will be
@@ -803,5 +801,9 @@ passwordcatcher.background.pushToTab_ = function(tabId) {
 // Set this early, or else the install event will not be picked up.
 chrome.runtime.onInstalled.addListener(
     passwordcatcher.background.handleNewInstall_);
+
+// Set listener before initializePage_ which calls chrome.storage.managed.get.
+chrome.storage.onChanged.addListener(
+    passwordcatcher.background.handleManagedPolicyChanges_);
 
 passwordcatcher.background.initializePage_();

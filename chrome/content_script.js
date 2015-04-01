@@ -448,9 +448,6 @@ passwordcatcher.handleManagedPolicyChanges_ =
  * @private
  */
 passwordcatcher.completePageInitialization_ = function() {
-  chrome.storage.onChanged.addListener(
-      passwordcatcher.handleManagedPolicyChanges_);
-
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (goog.string.startsWith(passwordcatcher.url_,
@@ -961,5 +958,9 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons) {
 
   blockIcon.focus();  // Prevent pressing Enter from triggering a button.
 };
+
+// Set listener before initializePage_ which calls chrome.storage.managed.get.
+chrome.storage.onChanged.addListener(
+    passwordcatcher.handleManagedPolicyChanges_);
 
 passwordcatcher.initializePage_();

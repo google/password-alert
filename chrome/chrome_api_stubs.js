@@ -45,6 +45,8 @@ chrome.storage.managed.get = function() {
     'report_url': 'https://passwordcatcher.example.com/report/'
   };
 };
+chrome.storage.onChanged = {};
+chrome.storage.onChanged.addListener = function() {};
 
 chrome.i18n = {};
 chrome.i18n.getMessage = function() {};

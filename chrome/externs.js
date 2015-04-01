@@ -44,6 +44,7 @@ chrome.notifications.onButtonClicked.addListener;
 chrome.storage;
 chrome.storage.managed;
 chrome.storage.onChanged;
+chrome.storage.onChanged.addListener;
 
 // When updating values here, also update extension_stubs.js for tests.
 chrome.runtime;
