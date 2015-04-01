@@ -289,34 +289,54 @@ passwordcatcher.background.injectContentScriptIntoAllTabs_ =
 
 
 /**
+ * Creates the notification for user to initialize their password.
+ * @private
+ */
+passwordcatcher.background.createInitializePasswordNotification_ = function() {
+  var options = {
+    type: 'basic',
+    title: chrome.i18n.getMessage('extension_name'),
+    message: chrome.i18n.getMessage('initialization_message'),
+    iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
+    buttons: [{
+      title: chrome.i18n.getMessage('sign_in')
+    }]
+  };
+  chrome.notifications.create(
+      passwordcatcher.background.NOTIFICATION_ID_, options, function() {});
+
+  chrome.notifications.onButtonClicked.addListener(
+      function(notificationId, buttonIndex) {
+        if (notificationId === passwordcatcher.background.NOTIFICATION_ID_) {
+          chrome.tabs.create({'url':
+            'https://accounts.google.com/ServiceLogin?' +
+            'continue=https://www.google.com'});
+        }
+      });
+};
+
+
+/**
  * Prompts the user to initialize their password.
  * @private
  */
 passwordcatcher.background.initializePassword_ = function() {
-  if (!passwordcatcher.background.isEnterpriseUse_ ||
-      (passwordcatcher.background.isEnterpriseUse_ &&
-      passwordcatcher.background.shouldInitializePassword_)) {
-    console.log('start initializing password');
-    var options = {
-      type: 'basic',
-      title: chrome.i18n.getMessage('extension_name'),
-      message: chrome.i18n.getMessage('initialization_message'),
-      iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
-      buttons: [{
-        title: chrome.i18n.getMessage('sign_in')
-      }]
-    };
-    chrome.notifications.create(
-        passwordcatcher.background.NOTIFICATION_ID_, options, function() {});
-
-    chrome.notifications.onButtonClicked.addListener(
-        function(notificationId, buttonIndex) {
-          if (notificationId === passwordcatcher.background.NOTIFICATION_ID_) {
-            chrome.tabs.create({'url':
-              'https://accounts.google.com/ServiceLogin?' +
-              'continue=https://www.google.com'});
-          }
-        });
+  if (passwordcatcher.background.isEnterpriseUse_ &&
+      !passwordcatcher.background.shouldInitializePassword_) {
+    console.log('Password should not be initialized.');
+    return;
+  }
+  console.log('Start initializing password.');
+  // For OS X, we add a delay that will give the user a chance to dismiss
+  // the webstore's post-install popup.  Otherwise, there will be an overlap
+  // between this popup and the chrome.notification message.
+  // TODO(henryc): Find a more robust way to overcome this overlap issue.
+  if (navigator.appVersion.indexOf('Macintosh') != -1) {
+    console.log('Detected OS X.');
+    setTimeout(passwordcatcher.background.createInitializePasswordNotification_,
+               10000);
+  } else {
+    passwordcatcher.background.createInitializePasswordNotification_();
   }
 };
 
