@@ -88,64 +88,84 @@ def user_authorization_required(handler_method):
   Returns:
     Nothing. It just calls the handler_method after checking for authorization.
   """
+
   def decorate(self, *args, **kwargs):
     """Check if user is authenticated."""
+
     oauth_token = self.request.get('oauth_token', None)
     email = self.request.get('email', None)
-    if not oauth_token:
-      logging.warning('Request is missing oauth token.')
-      self.abort(403)
-    if not email:
-      logging.warning('Request is missing email.')
-      self.abort(403)
-    # Prevent attackers from sending alerts for random@attacker.com, which
-    # could pollute the list of reports and send email alerts.
-    if not email.endswith('@' + config.DOMAIN):
-      logging.warning('Email domain %s in request does not match domain %s in '
-                      'config.py.', email, config.DOMAIN)
-      self.abort(403)
+    if is_oauth_valid(oauth_token, email):
+      logging.info('oauth valid, so allowing')
+    elif config.DOMAIN_AUTH_SECRET:
+      if (self.request.get('domain_auth_secret', None)
+          == config.DOMAIN_AUTH_SECRET):
+        logging.info('domain_auth_secret matches, so allowing')
+      else:
+        logging.warning('domain_auth_secret is set, but does NOT match')
+        self.abort(403)
+    else:
+      logging.info('oauth not valid, but no secret configured, so allowing')
 
-    validation_request_params = {}
-    validation_request_params['access_token'] = oauth_token
-    validation_request = urllib2.Request(
-        '%s?%s' % (AUTH_SERVER_URL,
-                   urllib.urlencode(validation_request_params)))
-
-    try:
-      validation_response = urllib2.urlopen(validation_request)
-    except urllib2.HTTPError as e:
-      validation_response_data = json.load(e)
-      logging.warning('Unable to validate oauth token for user %s due to: %s',
-                      email, validation_response_data['error'])
-      self.abort(403)
-    except urllib2.URLError as e:
-      logging.warning('Unable to reach authentication server: %s', e.reason)
-      self.abort(403)
-
-    # Per the link below: When verifying a token, it is critical to ensure
-    # the audience field in the response exactly matches the client ID. It is
-    # absolutely vital to perform this step, because it is the mitigation for
-    # the confused deputy issue.
-    # https://developers.google.com/accounts/docs/OAuth2UserAgent#validatetoken
-    validation_response_data = json.load(validation_response)
-    if not validation_response_data['verified_email']:
-      logging.warning('Unable to validate oauth token: Email %s can not be '
-                      'verified.', email)
-      self.abort(403)
-    if validation_response_data['email'] != email:
-      logging.warning('Unable to validate oauth token. Email %s '
-                      'in the token validation response is not the '
-                      'same as the email in the request %s.',
-                      validation_response_data['email'], email)
-      self.abort(403)
-    if validation_response_data['audience'] != CHROME_EXTENSION_CLIENT_ID:
-      logging.warning('Unable to validate oauth token. Audience %s in the '
-                      'token validation response is not the same as the '
-                      'the actual chrome extension client id %s.',
-                      validation_response_data['audience'],
-                      CHROME_EXTENSION_CLIENT_ID)
-      self.abort(403)
-    logging.info('Oauth token for user %s is valid.', email)
     handler_method(self, *args, **kwargs)
 
   return decorate
+
+
+def is_oauth_valid(oauth_token, email):
+  """Returns True if oauth token is valid."""
+
+  if not oauth_token:
+    logging.warning('Request is missing oauth token.')
+    return False
+  if not email:
+    logging.warning('Request is missing email.')
+    return False
+  # Prevent attackers from sending alerts for random@attacker.com, which
+  # could pollute the list of reports and send email alerts.
+  if not email.endswith('@' + config.DOMAIN):
+    logging.warning('Email domain %s in request does not match domain %s in '
+                    'config.py.', email, config.DOMAIN)
+    return False
+
+  validation_request_params = {}
+  validation_request_params['access_token'] = oauth_token
+  validation_request = urllib2.Request(
+      '%s?%s' % (AUTH_SERVER_URL,
+                 urllib.urlencode(validation_request_params)))
+
+  try:
+    validation_response = urllib2.urlopen(validation_request)
+  except urllib2.HTTPError as e:
+    validation_response_data = json.load(e)
+    logging.warning('Unable to validate oauth token for user %s due to: %s',
+                    email, validation_response_data['error'])
+    return False
+  except urllib2.URLError as e:
+    logging.warning('Unable to reach authentication server: %s', e.reason)
+    return False
+
+  # Per the link below: When verifying a token, it is critical to ensure
+  # the audience field in the response exactly matches the client ID. It is
+  # absolutely vital to perform this step, because it is the mitigation for
+  # the confused deputy issue.
+  # https://developers.google.com/accounts/docs/OAuth2UserAgent#validatetoken
+  validation_response_data = json.load(validation_response)
+  if not validation_response_data['verified_email']:
+    logging.warning('Unable to validate oauth token: Email %s can not be '
+                    'verified.', email)
+    return False
+  if validation_response_data['email'] != email:
+    logging.warning('Unable to validate oauth token. Email %s '
+                    'in the token validation response is not the '
+                    'same as the email in the request %s.',
+                    validation_response_data['email'], email)
+    return False
+  if validation_response_data['audience'] != CHROME_EXTENSION_CLIENT_ID:
+    logging.warning('Unable to validate oauth token. Audience %s in the '
+                    'token validation response is not the same as the '
+                    'the actual chrome extension client id %s.',
+                    validation_response_data['audience'],
+                    CHROME_EXTENSION_CLIENT_ID)
+    return False
+  logging.info('Oauth token for user %s is valid.', email)
+  return True

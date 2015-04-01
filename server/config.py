@@ -20,6 +20,11 @@ https://docs.google.com/document/d/1Rz5NLa4chL5LL1rOhbQRicFetSWeCFmQS8MM5CcP7VM/
 
 import os
 
+# A domain-specific secret that provides some authentication if the oauth token
+# generation fails. Set this to a random value that is the same in your chrome/
+# JSON configuration.
+DOMAIN_AUTH_SECRET = ''
+
 ##########
 # Settings for Email notifications.
 # If you would like to recieve email notifications instead of checking your
