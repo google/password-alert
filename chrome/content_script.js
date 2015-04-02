@@ -329,6 +329,15 @@ passwordcatcher.PHISHING_WARNING_BANNER_TEXT_ =
 
 
 /**
+ * Key for the allowed hosts object in chrome storage.
+ * @type {string}
+ * @private
+ * @const
+ */
+passwordcatcher.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
+
+
+/**
  * Set the managed policy values into the configurable variables.
  * @param {function()} callback Executed after policy values have been set.
  * @private
@@ -731,11 +740,7 @@ passwordcatcher.checkChars_ = function(typed) {
       passwordcatcher.otpMode_ = true;
       passwordcatcher.otpTime_ = new Date();
 
-      if (!passwordcatcher.isEnterpriseUse_) {
-        passwordcatcher.injectWarningBanner_(
-            passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_,
-            passwordcatcher.createButtonsForPasswordWarningBanner_());
-      }
+      passwordcatcher.injectPasswordWarningIfNeeded_();
     }
   });
 };
@@ -921,12 +926,102 @@ passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
 
 
 /**
+ * Save the allowed host into chrome storage.  The saved object
+ * in chrome storage has the below structure. The top-level key is used
+ * as the argument for StorageArea get(), and the associated value will be
+ * an inner object that has all the host details.
+ *
+ * {allowed_hosts:
+ *     {https://www.example1.com: true,
+ *      https://www.example2.com: true}
+ * }
+ *
+ * @private
+ */
+passwordcatcher.saveAllowedHost_ = function() {
+  chrome.storage.local.get(
+      passwordcatcher.ALLOWED_HOSTS_KEY_,
+      function(allowedHosts) {
+        console.log('Allowed hosts in chrome storage:');
+        console.log(allowedHosts);
+        var currentHost = window.location.origin;
+        console.log('Current host is: ' + currentHost);
+        if (Object.keys(allowedHosts).length == 0) {
+          console.log('No allowed hosts in local storage.');
+          allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_] = {};
+        }
+        allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_][currentHost] = true;
+        console.log('Updated allowed hosts:');
+        console.log(allowedHosts);
+        chrome.storage.local.set(
+            allowedHosts,
+            function() {
+              console.log('Finished setting allowed hosts.');
+              passwordcatcher.closeWarningBanner_();
+            });
+      });
+};
+
+
+/**
+ * Create the link on the warning banner that allows the url host to be always
+ * ignored in the future, i.e. save the host as allowed.
+ * @return {!Element} The always ignore link.
+ * @private
+ */
+passwordcatcher.createAlwaysIgnoreLink_ = function() {
+  var alwaysIgnoreLink = document.createElement('span');
+  alwaysIgnoreLink.setAttribute('id', 'always_ignore');
+  alwaysIgnoreLink.innerText = chrome.i18n.getMessage('always_ignore');
+  alwaysIgnoreLink.onclick = passwordcatcher.saveAllowedHost_;
+  return alwaysIgnoreLink;
+};
+
+
+/**
+ * Check if the password warning banner should be injected.
+ *
+ * TODO(henryc): Instead of this function, we could instead check in
+ * passwordcatcher.start_() similar to the existing
+ * if ((passwordcatcher.sso_url_  check that sees if the pwc content_script
+ * should do anything for that URL. That way pwc won't even bother to hash
+ * keypresses on an ignored site.
+ *
+ * @private
+ */
+passwordcatcher.injectPasswordWarningIfNeeded_ = function() {
+  console.log('Check if the password warning banner should be injected.');
+  if (passwordcatcher.isEnterpriseUse_) {
+    return;
+  }
+  chrome.storage.local.get(
+      passwordcatcher.ALLOWED_HOSTS_KEY_,
+      function(allowedHosts) {
+        console.log('Allowed hosts in chrome storage:');
+        console.log(allowedHosts);
+        var currentHost = window.location.origin;
+        if (Object.keys(allowedHosts).length > 0 &&
+            allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_][currentHost]) {
+          console.log('Current host is allowed. So will not display warning.');
+          return;
+        }
+        passwordcatcher.injectWarningBanner_(
+            passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_,
+            passwordcatcher.createButtonsForPasswordWarningBanner_(),
+            passwordcatcher.createAlwaysIgnoreLink_());
+      });
+};
+
+
+/**
  * Injects a banner into the page to warn users.
  * @param {string} bannerText The text to display in the banner.
  * @param {Array} bannerButtons The set of buttons to disply in the banner.
+ * @param {!Element=} opt_alwaysIgnoreLink The always ignore link (optional).
  * @private
  */
-passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons) {
+passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
+    opt_alwaysIgnoreLink) {
   var style = document.createElement('link');
   style.rel = 'stylesheet';
   style.type = 'text/css';
@@ -949,6 +1044,9 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons) {
   bannerInnerContainer.appendChild(textElement);
   for (var i = 0; i < bannerButtons.length; ++i) {
     bannerInnerContainer.appendChild(bannerButtons[i]);
+  }
+  if (opt_alwaysIgnoreLink) {
+    bannerInnerContainer.appendChild(opt_alwaysIgnoreLink);
   }
 
   var bannerElement = document.createElement('div');

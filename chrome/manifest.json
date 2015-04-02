@@ -8,6 +8,7 @@
   "permissions": [
     "identity",
     "notifications",
+    "storage",
     "tabs",
     "<all_urls>"
   ],

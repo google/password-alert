@@ -8,7 +8,7 @@
     "description": "This is used for the general description that is displayed in chrome web store."
   },
   "extension_detailed_description": {
-    "message": "If you enter your Gmail or Google for Work password into anywhere other than accounts.google.com, you’ll receive an alert, so you can change your password if needed.\n\nPassword Catcher also tries to detect fake Google login pages to alert you before you’ve typed in your password. To do so, Password Catcher checks the HTML of each page you visit to see if it’s impersonating a Google login page.\n\nFAQ\n-- Does Password Catcher store my password?\nNo. Password Catcher doesn’t store your password or keystrokes -- instead, it uses a secure thumbnail of your password, which it compares against your recent keystrokes within Chrome to help spot the secure thumbnail on sites that might be malicious.\n\n-- Where does Password Catcher send data?\nIf you are using Password Catcher in a Gmail account, Password Catcher does not send any data from your local computer. If your Google for Work administrator deploys Password Catcher across all managed Chrome browsers in your domain, the administrator will receive alerts when Password Catcher triggers.\n\n-- What are Password Catcher’s limits?\nPassword Catcher does not protect incognito windows, Chrome Apps, or Chrome Extensions. It also does not protect passwords for non-Google services. Password Catcher only operates inside the Chrome web browser when Javascript is enabled.\n",
+    "message": "If you enter your Gmail or Google for Work password into anywhere other than accounts.google.com, you’ll receive an alert, so you can change your password if needed.\n\nPassword Catcher also tries to detect fake Google login pages to alert you before you’ve typed in your password. To do so, Password Catcher checks the HTML of each page you visit to see if it’s impersonating a Google login page.\n\nFAQ\n-- When will Password Catcher take effect?\nPassword Catcher will initialize itself the next time you enter your password into accounts.google.com.\n\n-- Does Password Catcher store my password or keystrokes?\nNo. Password Catcher doesn’t store your password or keystrokes -- instead, it stores a secure thumbnail of your password, which it compares against a thumbnail of your most recent keystrokes within Chrome.\n\n-- Where does Password Catcher send data?\nIf you are using Password Catcher in a Gmail account, Password Catcher does not send any data from your local computer. If your Google for Work administrator chooses to deploy Password Catcher across your domain, the administrator will receive alerts when Password Catcher triggers.\n\n-- What are Password Catcher's limits?\nPassword Catcher doesn't protect incognito windows, Chrome Apps, or Chrome Extensions. It also does not protect passwords for non-Google services. Password Catcher only operates inside the Chrome web browser when Javascript is enabled.\n\n-- Where can I find more details?\nVisit the full FAQ at LINK_TBD, or you can see the entire open-source codebase at https://github.com/google/password-catcher.\n\nBy installing this item, you agree to the Google Terms of Service and Privacy Policy at www.google.com/policies/\n",
     "description": "This is used for the detailed (long) description that is displayed in chrome web store."
   },
   "initialization_message": {
@@ -32,8 +32,12 @@
     "description": "This is used for the warning banner to warn users that they have typed their password."
   },
   "ignore": {
-    "message": "Ignore",
-    "description": "This is used to tell the user that they can ignore the warning."
+    "message": "Ignore this time",
+    "description": "This is used to tell the user that they can ignore the warning for this time only."
+  },
+  "always_ignore": {
+    "message": "Always ignore for this website",
+    "description": "This is used to tell the user to always ignore this website from further warnings."
   },
   "reset_password": {
     "message": "Reset Password",
