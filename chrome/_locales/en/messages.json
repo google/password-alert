@@ -59,6 +59,10 @@
     "message": "Contact Security",
     "description": "This is used to tell the user to contact the security administrators."
   },
+  "report_phishing": {
+    "message": "Report This Site",
+    "description": "This is used to tell the user to report this potentially malicious website to Google."
+  },
   "visit_this_site": {
     "message": "Visit This Site",
     "description": "This is used to tell the user that they can visit the current website."

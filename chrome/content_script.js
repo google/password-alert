@@ -836,6 +836,16 @@ passwordcatcher.createPhishingWarningEmail_ = function() {
 
 
 /**
+ * Navigates to the page for reporting a phishing page to Google Safe Browsing.
+ * @private
+ */
+passwordcatcher.reportToSafeBrowsing_ = function() {
+  window.location = 'https://www.google.com/safebrowsing/report_phish/?url=' +
+      encodeURIComponent(passwordcatcher.url_);
+};
+
+
+/**
  * Browser's back functionality.
  * @private
  */
@@ -913,9 +923,16 @@ passwordcatcher.createButtonsForPasswordWarningBanner_ = function() {
  * @private
  */
 passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
-  var contactSecurityButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('contact_security'), '20%',
-      passwordcatcher.createPhishingWarningEmail_, true);
+  var contactSecurityButton;
+  if (passwordcatcher.isEnterpriseUse_) {
+    contactSecurityButton = passwordcatcher.createButton_(
+        chrome.i18n.getMessage('contact_security'), '20%',
+        passwordcatcher.createPhishingWarningEmail_, true);
+  } else { // Consumer mode.
+    contactSecurityButton = passwordcatcher.createButton_(
+        chrome.i18n.getMessage('report_phishing'), '20%',
+        passwordcatcher.reportToSafeBrowsing_, true);
+  }
   var backButton = passwordcatcher.createButton_(
       chrome.i18n.getMessage('back'), '45%', passwordcatcher.back_, false);
   var visitThisSiteButton = passwordcatcher.createButton_(
