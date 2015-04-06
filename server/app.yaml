@@ -46,6 +46,12 @@ handlers:
   login: required
   secure: always
 
+- url: /settings/
+  script: settings.application
+  # login authentication handled per group by auth.py check.
+  login: required
+  secure: always
+
 - url: /update/.*
   script: datastore.application
   login: admin

@@ -22,6 +22,7 @@ https://github.com/cyberphobia/xsrfutil/blob/master/xsrfutil.py
 import base64
 import binascii
 import hmac
+import logging
 import os
 
 from google.appengine.api import memcache
@@ -40,9 +41,11 @@ def xsrf_protect(func):
   def decorate(self, *args, **kwargs):
     token = self.request.get('xsrf', None)
     if not token:
+      logging.error('xsrf token not included')
       self.error(403)
       return
     if not const_time_compare(token, xsrf_token()):
+      logging.error('xsrf token does not validate')
       self.error(403)
       return
     return func(self, *args, **kwargs)

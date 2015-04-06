@@ -19,7 +19,7 @@ import logging
 import urllib
 import urllib2
 
-import config
+import datastore
 import google_directory_service
 
 from google.appengine.api import users
@@ -57,7 +57,7 @@ def admin_authorization_required(handler_method):
     if users.is_current_user_admin():
       logging.debug('User is an App Engine app admin, so allowing access.')
       handler_method(self, *args, **kwargs)
-    elif not config.ADMIN_GROUP:
+    elif not datastore.Setting.get('admin_group'):
       logging.warning('%s is not authorized for access.', current_user.email())
       logging.warning('If you wan to grant access to users that are not App '
                       'Engine app administrators, you must configure '
@@ -96,9 +96,9 @@ def user_authorization_required(handler_method):
     email = self.request.get('email', None)
     if is_oauth_valid(oauth_token, email):
       logging.info('oauth valid, so allowing')
-    elif config.DOMAIN_AUTH_SECRET:
+    elif datastore.Setting.get('domain_auth_secret'):
       if (self.request.get('domain_auth_secret', None)
-          == config.DOMAIN_AUTH_SECRET):
+          == datastore.Setting.get('domain_auth_secret')):
         logging.info('domain_auth_secret matches, so allowing')
       else:
         logging.warning('domain_auth_secret is set, but does NOT match')
@@ -122,9 +122,9 @@ def is_oauth_valid(oauth_token, email):
     return False
   # Prevent attackers from sending alerts for random@attacker.com, which
   # could pollute the list of reports and send email alerts.
-  if not email.endswith('@' + config.DOMAIN):
+  if not email.endswith('@' + datastore.Setting.get('domain')):
     logging.warning('Email domain %s in request does not match domain %s in '
-                    'config.py.', email, config.DOMAIN)
+                    'config.py.', email, datastore.Setting.get('domain'))
     return False
 
   validation_request_params = {}

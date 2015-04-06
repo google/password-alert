@@ -21,7 +21,6 @@ import logging
 import urlparse
 
 import auth
-import config
 import datastore
 import password_change
 import webapp2
@@ -81,16 +80,17 @@ class ReportPasswordHandler(webapp2.RequestHandler):
     # returns 200 OK by default
 
   def _GetSearchUrl(self, host_or_email):
-    return '%s/search/?search_query=%s' % (config.PASSWORDCATCHER_SERVER_URL,
-                                           host_or_email)
+    return '%s/search/?search_query=%s' % (
+        datastore.Setting.get('passwordcatcher_server_url'),
+        host_or_email)
 
   def SendNewHostAlert(self, report):
     """Email an alert about a new host."""
-    if not config.PASSWORDCATCHER_ALERTS_EMAIL:
+    if not datastore.Setting.get('passwordcathcer_alerts_email'):
       return  # Email alerts not configured.
     message = mail.EmailMessage()
-    message.sender = config.EMAIL_SENDER
-    message.to = config.PASSWORDCATCHER_ALERTS_EMAIL
+    message.sender = datastore.Setting.get('email_sender')
+    message.to = datastore.Setting.get('passwordcathcer_alerts_email')
     message.subject = HOST_ALERT_SUBJECT % report.host
     message.body = EMAIL_ALERT_BODY % (
         report.host,
@@ -101,11 +101,11 @@ class ReportPasswordHandler(webapp2.RequestHandler):
 
   def SendOtpAlert(self, report):
     """Email an OTP alert."""
-    if not config.PASSWORDCATCHER_ALERTS_EMAIL:
+    if not datastore.Setting.get('passwordcathcer_alerts_email'):
       return  # Email alerts not configured.
     message = mail.EmailMessage()
-    message.sender = config.EMAIL_SENDER
-    message.to = config.PASSWORDCATCHER_ALERTS_EMAIL
+    message.sender = datastore.Setting.get('email_sender')
+    message.to = datastore.Setting.get('passwordcatcher_alerts_email')
     message.subject = OTP_ALERT_SUBJECT % report.host
     if report.looks_like_google:
       message.subject = LOOKS_LIKE_GOOGLE + message.subject
@@ -131,11 +131,11 @@ class ReportPageHandler(webapp2.RequestHandler):
 
     logging.info('reportpage url: %s', self.request.get('url'))
     logging.info('reportpage referer: %s', self.request.get('referer'))
-    if not config.PASSWORDCATCHER_ALERTS_EMAIL:
+    if not datastore.Setting.get('passwordcatcher_alerts_email'):
       return  # Email alerts not configured.
     message = mail.EmailMessage()
-    message.sender = config.EMAIL_SENDER
-    message.to = config.PASSWORDCATCHER_ALERTS_EMAIL
+    message.sender = datastore.Setting.get('email_sender')
+    message.to = datastore.Setting.get('passwordcatcher_alerts_email')
     message.subject = PHISHING_ALERT_SUBJECT % self.request.get('url')
     message.body = (PHISHING_ALERT_BODY
                     % (self.request.get('referer'),

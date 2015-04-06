@@ -1,0 +1,45 @@
+{% extends "templates/base.html" %}
+
+{% block head %}
+  {{ super() }}
+  <link rel="import" href="/bower_components/paper-input/paper-input-decorator.html">
+  <link rel="import" href="/bower_components/paper-input/paper-input.html">
+{% endblock head %}
+
+{% block title %}
+Settings
+{% endblock %}
+
+{% block content %}
+<div align="center">
+<h1>Configure settings for your Password Catcher server</h1></div>
+
+<table>
+<tr><td>
+
+  <!-- TODO(adhintz) display bool and text differently. -->
+  {% for setting in settings %}
+    <section>
+      <div>{{setting.desc}}</div>
+      <paper-input-decorator  label="">
+        <input is="core-input" id="{{setting.name}}" value="{{setting.value}}">
+      </paper-input-decorator>
+    </section>
+  {% endfor %}
+
+</td></tr>
+</table>
+
+<script>
+  // TODO(adhintz) Support JavaScript being disabled?
+  document.body.addEventListener('change', function(e) {
+    console.log('change', e.target);
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/settings/", true);
+    xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    // TODO(adhintz) encode e.value?
+    xhr.send("xsrf={{xsrf_token}}&key=" + e.target.id + "&value=" + e.target.value);
+  });
+</script>
+
+{% endblock %}

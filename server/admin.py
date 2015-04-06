@@ -21,7 +21,6 @@ import logging
 import os
 
 import auth
-import config
 import datastore
 import jinja2
 import password_change
@@ -90,7 +89,7 @@ class PasswordHandler(webapp2.RequestHandler):
     if '@' in user:
       email = user
     else:
-      email = '%s@%s' % (user, config.DOMAIN)
+      email = '%s@%s' % (user, datastore.Setting.get('domain'))
     logging.info('Email to be expired is: %s', email)
     result = password_change.ChangePasswordAtNextLogin(email)
     self.response.headers['Content-Type'] = 'application/json'

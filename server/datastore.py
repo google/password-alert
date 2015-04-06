@@ -22,6 +22,7 @@ import webapp2
 from google.appengine.api import datastore_types
 from google.appengine.api import memcache
 from google.appengine.ext import db
+from google.appengine.ext import ndb
 
 MAX_STRING_LENGTH = datastore_types._MAX_STRING_LENGTH
 
@@ -127,6 +128,31 @@ def NormalizeUrl(url):
 
   normalized_url = '%s://%s' % (url_scheme, url_host)
   return normalized_url
+
+
+class Setting(ndb.Model):  # keyed by the setting name
+  """Key value pairs for the configuration settings."""
+  value = ndb.TextProperty()
+
+  @classmethod
+  def set(cls, name, value):
+    entity = cls.get_or_insert(name)
+    entity.value = value
+    entity.put()
+    return
+
+  @classmethod
+  def get(cls, name):
+    entity = ndb.Key(Setting, name).get()
+    return entity.value
+
+  @classmethod
+  def exists(cls, name):
+    entity = ndb.Key(Setting, name).get()
+    if entity:
+      return True
+    else:
+      return False
 
 
 class UpdateHandler(webapp2.RequestHandler):

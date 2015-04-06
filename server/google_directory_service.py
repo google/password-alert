@@ -18,6 +18,7 @@ import logging
 
 from apiclient.discovery import build
 import config
+import datastore
 import httplib2
 from oauth2client import appengine
 from oauth2client import client
@@ -116,7 +117,7 @@ def _GetAdminEmails():
   """
   admin_emails = []
   admin_group_info = _BuildDirectoryService().members().list(
-      groupKey=config.ADMIN_GROUP).execute()
+      groupKey=datastore.Setting.get('admin_group')).execute()
   for member in admin_group_info['members']:
     admin_emails.append(member['email'])
   memcache.set(MEMCACHE_ADMIN_KEY, admin_emails,
@@ -140,7 +141,7 @@ def IsInAdminGroup(user):
     Exception: If ADMIN_GROUP is not configured in config.py
   """
   logging.debug('Checking if %s is in admin group.', user.nickname())
-  if not config.ADMIN_GROUP:
+  if not datastore.Setting.get('admin_group'):
     raise Exception('You must configure ADMIN_GROUP in config.py')
   cached_admin_emails = memcache.get(MEMCACHE_ADMIN_KEY)
   if cached_admin_emails is not None:

@@ -19,7 +19,6 @@ import os
 from urlparse import urlparse
 
 import auth
-import config
 import datastore
 import jinja2
 import webapp2
@@ -65,7 +64,7 @@ class SearchHandler(webapp2.RequestHandler):
     if '@' in search_query:
       email_address = search_query
     else:
-      email_address = search_query + '@' + config.DOMAIN
+      email_address = search_query + '@' + datastore.Setting.get('domain')
     logging.info('email_address is: %s', email_address)
     return (self._CreateReportQuery().filter('email =', email_address),
             email_address)

@@ -21,7 +21,6 @@ from datetime import datetime
 from datetime import timedelta
 import logging
 
-import config
 import datastore
 import google_directory_service
 
@@ -61,7 +60,7 @@ def ProcessReport(report, host):
     report.status = datastore.NO_ACTION_NEEDED
     report.put()
     return
-  if not config.ENABLE_ENFORCEMENT:
+  if not datastore.Setting.get('enable_enforcement'):
     logging.info('Will not enforce password change for: %s', report.email)
     return
   _ExpireUser(report)
@@ -114,8 +113,9 @@ def SendPasswordEmail(report):
   """Notifies a user that they must change their password."""
 
   message = mail.EmailMessage()
-  message.sender = config.EMAIL_SENDER
+  message.sender = datastore.Setting.get('email_sender')
   message.to = report.email
-  message.subject = config.EMAIL_SUBJECT % report.email
-  message.body = config.EMAIL_BODY % (report.host, report.date)
+  message.subject = datastore.Setting.get('email_subject') % report.email
+  message.body = datastore.Setting.get('email_body') % (report.host,
+                                                        report.date)
   message.send()
