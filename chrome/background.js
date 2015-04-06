@@ -447,13 +447,15 @@ passwordcatcher.background.handleRequest_ = function(
  * @private
  */
 passwordcatcher.background.setPossiblePassword_ = function(tabId, request) {
-  console.log('Start setting possible password: ' + request);
+  console.log('Start setting possible password for %s, password length of %s',
+              request.email, request.password.length);
   if (!request.email ||
       !request.password ||
       request.password.length < passwordcatcher.background.minimum_password_) {
     return;
   }
-  console.log('Setting possible password: ' + request);
+  console.log('Setting possible password for %s, password length of %s',
+              request.email, request.password.length);
   passwordcatcher.background.possiblePassword_[tabId] = {
     'email': request.email,
     'password': passwordcatcher.background.hashPassword_(request.password),
