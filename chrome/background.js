@@ -187,6 +187,14 @@ passwordcatcher.background.handleNewInstall_ = function(details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
     passwordcatcher.background.isNewInstall_ = true;
+
+    setTimeout(function() {
+      if (!localStorage.hasOwnProperty(passwordcatcher.background.SALT_KEY_)) {
+        console.log('Password still has not been initialized.  ' +
+                    'Start the password initialization process again.');
+        passwordcatcher.background.initializePassword_();
+      }
+    }, 300000);  // 5 minutes
   }
 };
 
@@ -289,30 +297,46 @@ passwordcatcher.background.injectContentScriptIntoAllTabs_ =
 
 
 /**
- * Creates the notification for user to initialize their password.
+ * Display the notification for user to initialize their password.
+ * If a notification has not been created, a new one is created and displayed.
+ * If a notification has already been created, it will be updated and displayed.
+ *
+ * A trick is used to make the notification display again --
+ * essentially updating it to a higher priority (> 0).
+ * http://stackoverflow.com/a/26358154/2830207
  * @private
  */
-passwordcatcher.background.createInitializePasswordNotification_ = function() {
-  var options = {
-    type: 'basic',
-    title: chrome.i18n.getMessage('extension_name'),
-    message: chrome.i18n.getMessage('initialization_message'),
-    iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
-    buttons: [{
-      title: chrome.i18n.getMessage('sign_in')
-    }]
-  };
-  chrome.notifications.create(
-      passwordcatcher.background.NOTIFICATION_ID_, options, function() {});
-
-  chrome.notifications.onButtonClicked.addListener(
-      function(notificationId, buttonIndex) {
-        if (notificationId === passwordcatcher.background.NOTIFICATION_ID_) {
-          chrome.tabs.create({'url':
-            'https://accounts.google.com/ServiceLogin?' +
-            'continue=https://www.google.com'});
-        }
-      });
+passwordcatcher.background.displayInitializePasswordNotification_ = function() {
+  chrome.notifications.getAll(function(notifications) {
+    console.log('Getting all created notifications: %O', notifications);
+    if (notifications[passwordcatcher.background.NOTIFICATION_ID_]) {
+      chrome.notifications.update(passwordcatcher.background.NOTIFICATION_ID_,
+          {priority: 2}, function() {});
+    } else {
+      var options = {
+        type: 'basic',
+        priority: 1,
+        title: chrome.i18n.getMessage('extension_name'),
+        message: chrome.i18n.getMessage('initialization_message'),
+        iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
+        buttons: [{
+          title: chrome.i18n.getMessage('sign_in')
+        }]
+      };
+      chrome.notifications.create(passwordcatcher.background.NOTIFICATION_ID_,
+          options, function() {});
+      chrome.notifications.onButtonClicked.addListener(
+          function(notificationId, buttonIndex) {
+            if (notificationId ===
+                passwordcatcher.background.NOTIFICATION_ID_) {
+              chrome.tabs.create({'url':
+                'https://accounts.google.com/ServiceLogin?' +
+                'continue=https://www.google.com'});
+            }
+          }
+      );
+    }
+  });
 };
 
 
@@ -333,10 +357,11 @@ passwordcatcher.background.initializePassword_ = function() {
   // TODO(henryc): Find a more robust way to overcome this overlap issue.
   if (navigator.appVersion.indexOf('Macintosh') != -1) {
     console.log('Detected OS X.');
-    setTimeout(passwordcatcher.background.createInitializePasswordNotification_,
-               10000);
+    setTimeout(
+        passwordcatcher.background.displayInitializePasswordNotification_,
+        10000);
   } else {
-    passwordcatcher.background.createInitializePasswordNotification_();
+    passwordcatcher.background.displayInitializePasswordNotification_();
   }
 };
 

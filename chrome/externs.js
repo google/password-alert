@@ -38,6 +38,7 @@ chrome.identity.getAuthToken;
 
 chrome.notifications;
 chrome.notifications.create;
+chrome.notifications.getAll;
 chrome.notifications.onButtonClicked;
 chrome.notifications.onButtonClicked.addListener;
 
@@ -87,3 +88,6 @@ var state;
 state.passwordLengths;
 state.otpMode;
 state.otpTime;
+
+var options;
+options.priority;

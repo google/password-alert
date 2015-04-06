@@ -54,3 +54,5 @@ chrome.i18n.getMessage = function() {};
 chrome.notifications = {};
 chrome.notifications.getMessage = function() {};
 chrome.notifications.getMessage.addListener = function() {};
+chrome.notifications.onButtonClicked = {};
+chrome.notifications.onButtonClicked.addListener = function() {};
