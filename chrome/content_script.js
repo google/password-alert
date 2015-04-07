@@ -956,27 +956,29 @@ passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
  * @private
  */
 passwordcatcher.saveAllowedHost_ = function() {
-  chrome.storage.local.get(
-      passwordcatcher.ALLOWED_HOSTS_KEY_,
-      function(allowedHosts) {
-        console.log('Allowed hosts in chrome storage:');
-        console.log(allowedHosts);
-        var currentHost = window.location.origin;
-        console.log('Current host is: ' + currentHost);
-        if (Object.keys(allowedHosts).length == 0) {
-          console.log('No allowed hosts in local storage.');
-          allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_] = {};
-        }
-        allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_][currentHost] = true;
-        console.log('Updated allowed hosts:');
-        console.log(allowedHosts);
-        chrome.storage.local.set(
-            allowedHosts,
-            function() {
-              console.log('Finished setting allowed hosts.');
-              passwordcatcher.closeWarningBanner_();
-            });
-      });
+  if (confirm(chrome.i18n.getMessage('always_ignore_confirmation'))) {
+    chrome.storage.local.get(
+        passwordcatcher.ALLOWED_HOSTS_KEY_,
+        function(allowedHosts) {
+          console.log('Allowed hosts in chrome storage:');
+          console.log(allowedHosts);
+          var currentHost = window.location.origin;
+          console.log('Current host is: ' + currentHost);
+          if (Object.keys(allowedHosts).length == 0) {
+            console.log('No allowed hosts in local storage.');
+            allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_] = {};
+          }
+          allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_][currentHost] = true;
+          console.log('Updated allowed hosts:');
+          console.log(allowedHosts);
+          chrome.storage.local.set(
+              allowedHosts,
+              function() {
+                console.log('Finished setting allowed hosts.');
+                passwordcatcher.closeWarningBanner_();
+              });
+        });
+  }
 };
 
 

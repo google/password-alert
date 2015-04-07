@@ -39,6 +39,10 @@
     "message": "Always ignore for this website",
     "description": "This is used to tell the user to always ignore this website from further warnings."
   },
+  "always_ignore_confirmation": {
+    "message": "Do you want Password Catcher to always ignore this website?",
+    "description": "This is used to tell the user to confirm that he/she always wants to ignore this website from further warnings."
+  },
   "reset_password": {
     "message": "Reset Password",
     "description": "This is used to tell the user to reset their passord."
