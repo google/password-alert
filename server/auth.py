@@ -54,22 +54,20 @@ def admin_authorization_required(handler_method):
     """Check if user is authorized as admin."""
     current_user = users.GetCurrentUser()
 
-    if users.is_current_user_admin():
-      logging.debug('User is an App Engine app admin, so allowing access.')
-      handler_method(self, *args, **kwargs)
-    elif not datastore.Setting.get('admin_group'):
-      logging.warning('%s is not authorized for access.', current_user.email())
-      logging.warning('If you wan to grant access to users that are not App '
-                      'Engine app administrators, you must configure '
-                      'ADMIN_GROUP in config.py')
-      self.abort(403)
-    # Check if the user is in the configured admin group.
-    elif google_directory_service.IsInAdminGroup(current_user):
-      logging.debug('User is in configured admin group, so allowing access.')
-      handler_method(self, *args, **kwargs)
-    else:
-      logging.warning('%s is not authorized for access.', current_user.email())
-      self.abort(403)
+    try:
+      if users.is_current_user_admin():
+        logging.debug('User is an App Engine app admin, so allowing access.')
+        handler_method(self, *args, **kwargs)
+      # Check if the user is in the configured admin group.
+      elif google_directory_service.IsInAdminGroup(current_user):
+        logging.debug('User is in configured admin group, so allowing access.')
+        handler_method(self, *args, **kwargs)
+      else:
+        logging.warning('%s not authorized for access.', current_user.email())
+        self.abort(403)
+    except:  # TODO(adhintz) Catch a more specific Exception type.
+      logging.warning('credentials not set up, so configuring')
+      self.redirect('/setup/')
 
   return decorate
 

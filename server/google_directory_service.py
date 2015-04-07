@@ -17,70 +17,57 @@
 import logging
 
 from apiclient.discovery import build
-import config
 import datastore
 import httplib2
 from oauth2client import appengine
-from oauth2client import client
 
 from google.appengine.api import memcache
+from google.appengine.api import users
 from google.appengine.ext import ndb
 
 
 API_SERVICE_NAME = 'admin'
-API_SCOPES = (
-    'https://www.googleapis.com/auth/admin.directory.user '
-    'https://www.googleapis.com/auth/admin.directory.group.member.readonly')
 DIRECTORY_API_VERSION = 'directory_v1'
 MEMCACHE_ADMIN_KEY = 'admins'
 MEMCACHE_EXPIRATION_TIME_IN_SECONDS = 600
 
 
-def _GetPrivateKey(private_key_filename):
-  """Get the PEM certificate.
+def _GetAuthorizedHttp(credentials=None):
+  """Get the authorized http from the stored credentials.
+
+  The client library will validate and refresh credentials as needed.
 
   Args:
-    private_key_filename: string of the private key filename
-
-  Returns:
-    string content of the private key (i.e. PEM certificate)
-  """
-  with open(private_key_filename, 'rb') as f:
-    return f.read()
-
-
-def _GetAuthorizedHttp():
-  """Get the authorized http from the signed jwt assertion credentials.
-
-  The credential will be stored in datastore.  The client library will find
-  it, validate it, and refresh it.
+    credentials: Optional credentials to use instead of any in the datastore.
 
   Returns:
     authorized http, a "httplib2.Http" instance, with the proper authentication
         header, access token, and credential.
+
+  Raises:
+    Exception: An exception that there are no credentails in the datastore.
   """
-  credential_storage = appengine.StorageByKeyName(
-      appengine.CredentialsModel, 'passwordcatcher', 'credentials')
+  if not credentials:
+    credential_storage = appengine.StorageByKeyName(
+        appengine.CredentialsModel,
+        users.get_current_user().email().split('@')[1],
+        'credentials')
+    credentials = credential_storage.get()
+    if credentials:
+      logging.debug('Successfully got credentials from storage.')
+    else:
+      # TODO(adhintz) Raise more specific type and ensure callers redirect
+      # to /setup/ where possible.
+      raise Exception('Credentials not in storage')
 
-  logging.debug('Getting credentials from storage.')
-  credential = credential_storage.get()
-  if credential:
-    logging.debug('Successfully got credential from storage.')
-  else:
-    logging.debug('Credential not in storage. Creating new credential.')
-    credential = client.SignedJwtAssertionCredentials(
-        config.SERVICE_ACCOUNT,
-        _GetPrivateKey(config.PRIVATE_KEY_FILENAME),
-        API_SCOPES,
-        sub=config.SERVICE_ACCOUNT_ADMIN)
-    credential_storage.put(credential)
-    logging.debug('Successfully saved credential in storage.')
-
-  return credential.authorize(httplib2.Http())
+  return credentials.authorize(httplib2.Http())
 
 
-def _BuildDirectoryService():
+def BuildService(credentials=None):
   """Build the directory api service.
+
+  Args:
+    credentials: Optional credentials to use instead of any in the datastore.
 
   Returns:
     service object for interacting with the directory api
@@ -92,9 +79,10 @@ def _BuildDirectoryService():
     return build(
         serviceName=API_SERVICE_NAME,
         version=DIRECTORY_API_VERSION,
-        http=_GetAuthorizedHttp())
+        http=_GetAuthorizedHttp(credentials))
   except NotImplementedError:
-    ndb.Key('CredentialsModel', 'passwordcatcher').delete()
+    ndb.Key('CredentialsModel',
+            users.get_current_user().email().split('@')[1]).delete()
     if memcache.flush_all():
       logging.debug('Memcache flushed successfully due to invalid service '
                     'account credentials.')
@@ -116,7 +104,7 @@ def _GetAdminEmails():
      admin_emails: Emails of the members of the admin group.
   """
   admin_emails = []
-  admin_group_info = _BuildDirectoryService().members().list(
+  admin_group_info = BuildService().members().list(
       groupKey=datastore.Setting.get('admin_group')).execute()
   for member in admin_group_info['members']:
     admin_emails.append(member['email'])
@@ -140,6 +128,11 @@ def IsInAdminGroup(user):
   Raises:
     Exception: If ADMIN_GROUP is not configured in config.py
   """
+  user_info = GetUserInfo(user.email())
+  # TODO(adhintz) memcache this isAdmin check.
+  if user_info.get('isAdmin', ''):
+    logging.info('user is a domain admin')
+    return True
   logging.debug('Checking if %s is in admin group.', user.nickname())
   if not datastore.Setting.get('admin_group'):
     raise Exception('You must configure ADMIN_GROUP in config.py')
@@ -168,7 +161,7 @@ def GetUserInfo(user_email):
     user_info: A dictionary of the user's domain info.
   """
   logging.debug('Getting domain info for %s.', user_email)
-  user_info = _BuildDirectoryService().users().get(userKey=user_email).execute()
+  user_info = BuildService().users().get(userKey=user_email).execute()
   return user_info
 
 
@@ -180,5 +173,5 @@ def UpdateUserInfo(user_email, new_user_info):
     new_user_info: A dictionary of the user's new domain info to be updated.
   """
   logging.debug('Updating domain info for %s.', user_email)
-  _BuildDirectoryService().users().update(
+  BuildService().users().update(
       userKey=user_email, body=new_user_info).execute()

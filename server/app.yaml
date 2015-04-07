@@ -34,6 +34,11 @@ handlers:
   login: required
   secure: always
 
+- url: /(setup|oauth).*
+  script: setup.application
+  secure: always
+
+
 - url: /report/.*
   script: report.application
   # Login is intentionally not required here, but there are

@@ -106,3 +106,10 @@ ADMIN_GROUP = ''
 # Your company's domain name.
 # In general you should not need to override this.
 DOMAIN = os.getenv('AUTH_DOMAIN')
+
+##########
+# Experimental settings for using oauth2 authentication instead of a service
+# account with a privatekey.
+OAUTH_CLIENT_ID = ''
+OAUTH_CLIENT_SECRET = ''
+OAUTH_REDIRECT_URI = ''
