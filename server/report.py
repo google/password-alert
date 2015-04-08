@@ -139,7 +139,7 @@ class ReportPageHandler(webapp2.RequestHandler):
     message.subject = PHISHING_ALERT_SUBJECT % self.request.get('url')
     message.body = (PHISHING_ALERT_BODY
                     % (self.request.get('referer'),
-                       self.request.get('username'),
+                       self.request.get('email'),
                        self.request.get('version')))
     message.send()
 
