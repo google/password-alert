@@ -1071,7 +1071,7 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   var bannerElement = document.createElement('div');
   bannerElement.setAttribute('id', 'warning_banner');
   bannerElement.appendChild(bannerInnerContainer);
-  document.body.insertBefore(bannerElement, document.body.firstChild);
+  document.body.appendChild(bannerElement);
 
   blockIcon.focus();  // Prevent pressing Enter from triggering a button.
 };

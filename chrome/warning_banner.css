@@ -16,7 +16,7 @@
 #warning_banner {
   background-color: black;
   position: fixed;
-  z-index: 9999;
+  z-index: 2147483647;
   top: 0;
   left: 0;
   width: 100%;
