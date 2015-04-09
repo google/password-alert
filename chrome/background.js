@@ -407,6 +407,9 @@ passwordcatcher.background.initializePage_ = function() {
  */
 passwordcatcher.background.handleRequest_ = function(
     request, sender, sendResponse) {
+  if (sender.tab === undefined) {
+    return;
+  }
   switch (request.action) {
     case 'statusRequest':
       passwordcatcher.background.pushToTab_(sender.tab.id);
