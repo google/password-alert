@@ -28,8 +28,12 @@
     "description": "This is used for the warning banner to warn users that they have typed their password."
   },
   "password_warning_banner_body": {
-    "message": "Your Gmail password was just exposed to a non-Gmail login page. You should immediately reset your password to keep your Gmail account secure. Also, please make sure your Gmail password is not reused on other services -- otherwise, if one of your accounts is compromised, they could all be compromised.",
+    "message": "Your Gmail password was just exposed to a non-Gmail login page. You should immediately reset your password to keep your Gmail account secure. Also, please make sure your Gmail password is not reused on other services.",
     "description": "This is used for the warning banner to warn users that they have typed their password."
+  },
+  "learn_more": {
+    "message": "Learn more",
+    "description": "This is used for the warning banner's learn more link, which the user can click to open a page to learn more information."
   },
   "ignore": {
     "message": "Ignore this time",
