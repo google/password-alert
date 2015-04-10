@@ -372,12 +372,20 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
       passwordcatcher.whitelist_top_domains_ =
           managedPolicy['whitelist_top_domains'];
 
+      // Append policy html to the extension-provided Google login page html
       if (managedPolicy['corp_html']) {
-        passwordcatcher.corp_html_ = managedPolicy['corp_html'];
+        passwordcatcher.corp_html_.push.apply(
+            passwordcatcher.corp_html_,
+            managedPolicy['corp_html']
+        );
       }
       if (managedPolicy['corp_html_tight']) {
-        passwordcatcher.corp_html_tight_ = managedPolicy['corp_html_tight'];
+        passwordcatcher.corp_html_tight_.push.apply(
+            passwordcatcher.corp_html_tight_,
+            managedPolicy['corp_html_tight']
+        );
       }
+
       if (managedPolicy['max_length']) {
         passwordcatcher.max_length_ = managedPolicy['max_length'];
       }
@@ -413,6 +421,13 @@ passwordcatcher.handleManagedPolicyChanges_ =
     function(changedPolicies, storageNamespace) {
   if (storageNamespace == passwordcatcher.MANAGED_STORAGE_NAMESPACE_) {
     console.log('Handling changed policies.');
+
+    var subtractArray = function(currentPolicyArray, oldPolicyArray) {
+      return currentPolicyArray.filter(
+        function(val) { return oldPolicyArray.indexOf(val) < 0; }
+      );
+    };
+
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
       if (!passwordcatcher.isEnterpriseUse_) {
@@ -420,15 +435,29 @@ passwordcatcher.handleManagedPolicyChanges_ =
         console.log('Enterprise use via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
+      var oldPolicyValue = changedPolicies[changedPolicy]['oldValue'];
       switch (changedPolicy) {
         case 'corp_email_domain':
           passwordcatcher.corp_email_domain_ = newPolicyValue;
           break;
         case 'corp_html':
-          passwordcatcher.corp_html_ = newPolicyValue;
+          // Remove the old values before appending new ones
+          passwordcatcher.corp_html_ = subtractArray(
+            passwordcatcher.corp_html_,
+            oldPolicyValue);
+
+          passwordcatcher.corp_html_.push.apply(
+            passwordcatcher.corp_html_,
+            newPolicyValue);
           break;
         case 'corp_html_tight':
-          passwordcatcher.corp_html_tight_ = newPolicyValue;
+          passwordcatcher.corp_html_tight_ = subtractArray(
+            passwordcatcher.corp_html_tight_,
+            oldPolicyValue);
+
+          passwordcatcher.corp_html_tight_.push.apply(
+            passwordcatcher.corp_html_tight_,
+            newPolicyValue);
           break;
         case 'security_email_address':
           passwordcatcher.security_email_address_ = newPolicyValue;
