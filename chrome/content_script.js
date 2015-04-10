@@ -353,8 +353,6 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
       console.log('Enterprise use.');
       passwordcatcher.isEnterpriseUse_ = true;
       passwordcatcher.corp_email_domain_ = managedPolicy['corp_email_domain'];
-      passwordcatcher.corp_html_ = managedPolicy['corp_html'];
-      passwordcatcher.corp_html_tight_ = managedPolicy['corp_html_tight'];
       passwordcatcher.security_email_address_ =
           managedPolicy['security_email_address'];
       passwordcatcher.sso_form_selector_ = managedPolicy['sso_form_selector'];
@@ -366,6 +364,12 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
       passwordcatcher.whitelist_top_domains_ =
           managedPolicy['whitelist_top_domains'];
 
+      if (managedPolicy['corp_html']) {
+        passwordcatcher.corp_html_ = managedPolicy['corp_html'];
+      }
+      if (managedPolicy['corp_html_tight']) {
+        passwordcatcher.corp_html_tight_ = managedPolicy['corp_html_tight'];
+      }
       if (managedPolicy['max_length']) {
         passwordcatcher.max_length_ = managedPolicy['max_length'];
       }
