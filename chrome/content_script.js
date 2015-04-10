@@ -372,12 +372,20 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
       passwordcatcher.whitelist_top_domains_ =
           managedPolicy['whitelist_top_domains'];
 
+      // Append policy html to the extension-provided Google login page html
       if (managedPolicy['corp_html']) {
-        passwordcatcher.corp_html_ = managedPolicy['corp_html'];
+        passwordcatcher.corp_html_.push.apply(
+            passwordcatcher.corp_html_,
+            managedPolicy['corp_html']
+        );
       }
       if (managedPolicy['corp_html_tight']) {
-        passwordcatcher.corp_html_tight_ = managedPolicy['corp_html_tight'];
+        passwordcatcher.corp_html_tight_.push.apply(
+            passwordcatcher.corp_html_tight_,
+            managedPolicy['corp_html_tight']
+        );
       }
+
       if (managedPolicy['max_length']) {
         passwordcatcher.max_length_ = managedPolicy['max_length'];
       }
