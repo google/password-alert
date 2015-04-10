@@ -374,13 +374,13 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
 
       // Append policy html to the extension-provided Google login page html
       if (managedPolicy['corp_html']) {
-        passwordcatcher.corp_html_.push.apply(
+        Array.prototype.push.apply(
             passwordcatcher.corp_html_,
             managedPolicy['corp_html']
         );
       }
       if (managedPolicy['corp_html_tight']) {
-        passwordcatcher.corp_html_tight_.push.apply(
+        Array.prototype.push.apply(
             passwordcatcher.corp_html_tight_,
             managedPolicy['corp_html_tight']
         );
@@ -446,7 +446,7 @@ passwordcatcher.handleManagedPolicyChanges_ =
             passwordcatcher.corp_html_,
             oldPolicyValue);
 
-          passwordcatcher.corp_html_.push.apply(
+          Array.prototype.push.apply(
             passwordcatcher.corp_html_,
             newPolicyValue);
           break;
@@ -455,7 +455,7 @@ passwordcatcher.handleManagedPolicyChanges_ =
             passwordcatcher.corp_html_tight_,
             oldPolicyValue);
 
-          passwordcatcher.corp_html_tight_.push.apply(
+          Array.prototype.push.apply(
             passwordcatcher.corp_html_tight_,
             newPolicyValue);
           break;
