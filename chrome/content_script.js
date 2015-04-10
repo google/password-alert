@@ -914,11 +914,11 @@ passwordcatcher.openChangePasswordPage_ = function() {
 
 
 /**
- * Close the phishing warning banner.
+ * Remove the warning banner.
  * @private
  */
-passwordcatcher.closeWarningBanner_ = function() {
-  document.getElementById('warning_banner').style.display = 'none';
+passwordcatcher.removeWarningBanner_ = function() {
+  document.getElementById('warning_banner').remove();
 };
 
 
@@ -961,7 +961,7 @@ passwordcatcher.createButtonsForPasswordWarningBanner_ = function() {
       passwordcatcher.openChangePasswordPage_, true);
   var ignoreButton = passwordcatcher.createButton_(
       chrome.i18n.getMessage('ignore'), '50%',
-      passwordcatcher.closeWarningBanner_, false);
+      passwordcatcher.removeWarningBanner_, false);
   return [resetPasswordButton, ignoreButton];
 };
 
@@ -986,7 +986,7 @@ passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
       chrome.i18n.getMessage('back'), '45%', passwordcatcher.back_, false);
   var visitThisSiteButton = passwordcatcher.createButton_(
       chrome.i18n.getMessage('visit_this_site'), '70%',
-      passwordcatcher.closeWarningBanner_, false);
+      passwordcatcher.removeWarningBanner_, false);
   return [contactSecurityButton, backButton, visitThisSiteButton];
 };
 
@@ -1024,7 +1024,7 @@ passwordcatcher.saveAllowedHost_ = function() {
               allowedHosts,
               function() {
                 console.log('Finished setting allowed hosts.');
-                passwordcatcher.closeWarningBanner_();
+                passwordcatcher.removeWarningBanner_();
               });
         });
   }
