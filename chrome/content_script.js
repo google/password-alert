@@ -1060,7 +1060,12 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   document.head.appendChild(style);
 
   var textElement = document.createElement('span');
-  textElement.innerHTML = bannerText;
+  if (passwordcatcher.isEnterpriseUse_ && passwordcatcher.corp_name_) {
+    textElement.innerHTML = bannerText.replace('Gmail',
+        passwordcatcher.corp_name_);
+  } else {
+    textElement.innerHTML = bannerText;
+  }
 
   var blockIcon = document.createElement('img');
   blockIcon.setAttribute('id', 'warning_banner_block_icon');
