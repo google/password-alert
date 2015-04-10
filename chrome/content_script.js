@@ -427,7 +427,7 @@ passwordcatcher.handleManagedPolicyChanges_ =
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       switch (changedPolicy) {
         case 'corp_name':
-          passwordcatcher.corp_name = newPolicyValue;
+          passwordcatcher.corp_name_ = newPolicyValue;
           break;
         case 'corp_email_domain':
           passwordcatcher.corp_email_domain_ = newPolicyValue;
