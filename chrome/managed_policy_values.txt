@@ -46,7 +46,7 @@
   },
   "enable_password_warning_banner" {
     "Value": false
-  }
+  },
   "domain_auth_secret": {
     "Value": "CHANGE ME"
   }
