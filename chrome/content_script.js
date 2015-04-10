@@ -1081,7 +1081,7 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   for (var i = 0; i < bannerButtons.length; ++i) {
     bannerInnerContainer.appendChild(bannerButtons[i]);
   }
-  if (opt_alwaysIgnoreLink) {
+  if (opt_alwaysIgnoreLink && !passwordcatcher.isEnterpriseUse_) {
     bannerInnerContainer.appendChild(opt_alwaysIgnoreLink);
   }
 
