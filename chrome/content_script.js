@@ -433,10 +433,14 @@ passwordcatcher.handleManagedPolicyChanges_ =
           passwordcatcher.corp_email_domain_ = newPolicyValue;
           break;
         case 'corp_html':
-          passwordcatcher.corp_html_ = newPolicyValue;
+          passwordcatcher.corp_html_.push.apply(
+            passwordcatcher.corp_html_,
+            newPolicyValue);
           break;
         case 'corp_html_tight':
-          passwordcatcher.corp_html_tight_ = newPolicyValue;
+          passwordcatcher.corp_html_tight_.push.apply(
+            passwordcatcher.corp_html_tight_,
+            newPolicyValue);
           break;
         case 'security_email_address':
           passwordcatcher.security_email_address_ = newPolicyValue;
