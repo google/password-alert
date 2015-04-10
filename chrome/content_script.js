@@ -421,6 +421,13 @@ passwordcatcher.handleManagedPolicyChanges_ =
     function(changedPolicies, storageNamespace) {
   if (storageNamespace == passwordcatcher.MANAGED_STORAGE_NAMESPACE_) {
     console.log('Handling changed policies.');
+
+    var subtractArray = function(currentPolicyArray, oldPolicyArray) {
+      return currentPolicyArray.filter(
+        function(val) { return oldPolicyArray.indexOf(val) < 0; }
+      );
+    };
+
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
       if (!passwordcatcher.isEnterpriseUse_) {
@@ -428,16 +435,26 @@ passwordcatcher.handleManagedPolicyChanges_ =
         console.log('Enterprise use via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
+      var oldPolicyValue = changedPolicies[changedPolicy]['oldValue'];
       switch (changedPolicy) {
         case 'corp_email_domain':
           passwordcatcher.corp_email_domain_ = newPolicyValue;
           break;
         case 'corp_html':
+          // Remove the old values before appending new ones
+          passwordcatcher.corp_html_ = subtractArray(
+            passwordcatcher.corp_html_,
+            oldPolicyValue);
+
           passwordcatcher.corp_html_.push.apply(
             passwordcatcher.corp_html_,
             newPolicyValue);
           break;
         case 'corp_html_tight':
+          passwordcatcher.corp_html_tight_ = subtractArray(
+            passwordcatcher.corp_html_tight_,
+            oldPolicyValue);
+
           passwordcatcher.corp_html_tight_.push.apply(
             passwordcatcher.corp_html_tight_,
             newPolicyValue);
