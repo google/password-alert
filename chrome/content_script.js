@@ -145,6 +145,14 @@ passwordcatcher.corp_html_tight_ = [
 
 
 /**
+ * If the current page looks like corp_html_. undefined means not checked yet.
+ * @type {boolean}
+ * @private
+ */
+passwordcatcher.looks_like_google;
+
+
+/**
  * Email address of the security admin.
  * @type {string}
  * @private
@@ -731,7 +739,8 @@ passwordcatcher.checkChars_ = function(typed) {
     action: 'checkPassword',
     password: typed,
     url: passwordcatcher.url_,
-    referer: document.referrer.toString()
+    referer: document.referrer.toString(),
+    looksLikeGoogle: passwordcatcher.looksLikeGooglePage_()
   }, function(response) {
     // TODO(adhintz) use response.isCorrect and jsdoc to preserve the name.
     if (response) {  // Password was entered, so now watch for an OTP.
@@ -763,18 +772,25 @@ passwordcatcher.otpAlert_ = function() {
 /**
  * Detects if this page looks like a Google login page.
  * For example, a phishing page would return true.
+ * Cached so it only runs once per content_script load.
  * @return {boolean} True if this page looks like a Google login page.
  * @private
  */
 passwordcatcher.looksLikeGooglePage_ = function() {
-  var allHtml = document.documentElement.innerHTML;
+  if (passwordcatcher.looks_like_google_ == true ||
+      passwordcatcher.looks_like_google_ == false) {
+    return passwordcatcher.looks_like_google_;
+  }
+  var allHtml = document.documentElement.innerHTML.slice(0, 100000);
   for (var i in passwordcatcher.corp_html_) {
     if (allHtml.indexOf(passwordcatcher.corp_html_[i]) >= 0) {
       console.log('Looks like login page.');
+      passwordcatcher.looks_like_google_ = true;
       return true;
     }
   }
   console.log('Does not look like login page.');
+  passwordcatcher.looks_like_google_ = false;
   return false;
 };
 
