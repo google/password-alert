@@ -298,6 +298,14 @@ passwordcatcher.isEnterpriseUse_ = false;
 
 
 /**
+ * Should password warning page be shown in an enterprise environment?
+ * @type {boolean}
+ * @private
+ */
+passwordcatcher.enable_password_warning_banner = false;
+
+
+/**
  * The text to display in the password warning banner.
  * @type {string}
  * @private
@@ -1022,7 +1030,8 @@ passwordcatcher.createAlwaysIgnoreLink_ = function() {
  */
 passwordcatcher.injectPasswordWarningIfNeeded_ = function() {
   console.log('Check if the password warning banner should be injected.');
-  if (passwordcatcher.isEnterpriseUse_) {
+  if (passwordcatcher.isEnterpriseUse_ &&
+      !passwordcatcher.enable_password_warning_banner) {
     return;
   }
   chrome.storage.local.get(

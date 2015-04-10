@@ -44,6 +44,9 @@
   "should_initialize_password": {
     "Value": false
   },
+  "enable_password_warning_banner" {
+    "Value": false
+  }
   "domain_auth_secret": {
     "Value": "CHANGE ME"
   }

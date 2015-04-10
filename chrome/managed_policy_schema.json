@@ -24,6 +24,7 @@
     "_comment_ policies for background script": {"type": "string"},
     "report_url": {"type": "string"},
     "should_initialize_password": {"type": "boolean"},
+    "enable_password_warning_banner": {"type": "boolean"},
     "domain_auth_secret": {"type": "string"},
     "_comment_ TODO(adhintz) add enforcement flag to not display any page warning dialogs?": {"type": "string"}
   }
