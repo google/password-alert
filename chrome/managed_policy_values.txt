@@ -2,6 +2,9 @@
   "_comment_ policies for content script": {
     "Value": "-----------------------------------------------------------------"
   },
+  "corp_name": {
+    "Value": "Example Company Name"
+  },
   "corp_email_domain": {
     "Value": "@example.com"
   },
@@ -39,6 +42,9 @@
     "Value": "https://example.appspot.com/report/"
   },
   "should_initialize_password": {
+    "Value": false
+  },
+  "enable_password_warning_banner" {
     "Value": false
   },
   "domain_auth_secret": {

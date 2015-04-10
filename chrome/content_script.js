@@ -109,6 +109,14 @@ passwordcatcher.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 
 
 /**
+ * Name of the corporation for an enterprise deployment.
+ * @type {string}
+ * @private
+ */
+passwordcatcher.corp_name_;
+
+
+/**
  * HTML snippets from corp login pages.  Default values are for consumers.
  * @type {Array.<string>}
  * @private
@@ -298,6 +306,14 @@ passwordcatcher.isEnterpriseUse_ = false;
 
 
 /**
+ * Should password warning page be shown in an enterprise environment?
+ * @type {boolean}
+ * @private
+ */
+passwordcatcher.enable_password_warning_banner = false;
+
+
+/**
  * The text to display in the password warning banner.
  * @type {string}
  * @private
@@ -360,6 +376,7 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
     } else {
       console.log('Enterprise use.');
       passwordcatcher.isEnterpriseUse_ = true;
+      passwordcatcher.corp_name_ = managedPolicy['corp_name'];
       passwordcatcher.corp_email_domain_ = managedPolicy['corp_email_domain'];
       passwordcatcher.security_email_address_ =
           managedPolicy['security_email_address'];
@@ -437,6 +454,9 @@ passwordcatcher.handleManagedPolicyChanges_ =
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       var oldPolicyValue = changedPolicies[changedPolicy]['oldValue'];
       switch (changedPolicy) {
+        case 'corp_name':
+          passwordcatcher.corp_name_ = newPolicyValue;
+          break;
         case 'corp_email_domain':
           passwordcatcher.corp_email_domain_ = newPolicyValue;
           break;
@@ -1059,7 +1079,8 @@ passwordcatcher.createAlwaysIgnoreLink_ = function() {
  */
 passwordcatcher.injectPasswordWarningIfNeeded_ = function() {
   console.log('Check if the password warning banner should be injected.');
-  if (passwordcatcher.isEnterpriseUse_) {
+  if (passwordcatcher.isEnterpriseUse_ &&
+      !passwordcatcher.enable_password_warning_banner) {
     return;
   }
   chrome.storage.local.get(
@@ -1097,7 +1118,12 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   document.head.appendChild(style);
 
   var textElement = document.createElement('span');
-  textElement.innerHTML = bannerText;
+  if (passwordcatcher.isEnterpriseUse_ && passwordcatcher.corp_name_) {
+    textElement.innerHTML = bannerText.replace('Gmail',
+        passwordcatcher.corp_name_);
+  } else {
+    textElement.innerHTML = bannerText;
+  }
 
   var blockIcon = document.createElement('img');
   blockIcon.setAttribute('id', 'warning_banner_block_icon');
@@ -1113,7 +1139,7 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   for (var i = 0; i < bannerButtons.length; ++i) {
     bannerInnerContainer.appendChild(bannerButtons[i]);
   }
-  if (opt_alwaysIgnoreLink) {
+  if (opt_alwaysIgnoreLink && !passwordcatcher.isEnterpriseUse_) {
     bannerInnerContainer.appendChild(opt_alwaysIgnoreLink);
   }
 
