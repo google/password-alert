@@ -109,6 +109,14 @@ passwordcatcher.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 
 
 /**
+ * Name of the corporation for an enterprise deployment.
+ * @type {string}
+ * @private
+ */
+passwordcatcher.corp_name_;
+
+
+/**
  * HTML snippets from corp login pages.  Default values are for consumers.
  * @type {Array.<string>}
  * @private
@@ -352,6 +360,7 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
     } else {
       console.log('Enterprise use.');
       passwordcatcher.isEnterpriseUse_ = true;
+      passwordcatcher.corp_name_ = managedPolicy['corp_name'];
       passwordcatcher.corp_email_domain_ = managedPolicy['corp_email_domain'];
       passwordcatcher.corp_html_ = managedPolicy['corp_html'];
       passwordcatcher.corp_html_tight_ = managedPolicy['corp_html_tight'];
@@ -409,6 +418,9 @@ passwordcatcher.handleManagedPolicyChanges_ =
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       switch (changedPolicy) {
+        case 'corp_name':
+          passwordcatcher.corp_name = newPolicyValue;
+          break;
         case 'corp_email_domain':
           passwordcatcher.corp_email_domain_ = newPolicyValue;
           break;

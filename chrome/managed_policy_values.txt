@@ -2,6 +2,9 @@
   "_comment_ policies for content script": {
     "Value": "-----------------------------------------------------------------"
   },
+  "corp_name": {
+    "Value": "Example Company Name"
+  },
   "corp_email_domain": {
     "Value": "@example.com"
   },

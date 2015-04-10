@@ -2,6 +2,7 @@
   "type": "object",
   "properties": {
     "_comment_ policies for content script": {"type": "string"},
+    "corp_name": {"type": "string"},
     "corp_email_domain": {"type": "string"},
     "corp_html": {
       "type": "array",
