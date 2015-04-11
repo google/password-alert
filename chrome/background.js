@@ -171,6 +171,15 @@ passwordcatcher.background.NOTIFICATION_ID_ =
 
 
 /**
+ * The email of the user signed in to Chrome (which could be empty if there's
+ * no signed in user). Only updates when the background page first loads.
+ * @type {string}
+ * @private
+ */
+passwordcatcher.background.signed_in_email_ = '';
+
+
+/**
  * Whether the extension was newly installed.
  * @type {boolean}
  * @private
@@ -383,6 +392,14 @@ passwordcatcher.background.completePageInitialization_ = function() {
     passwordcatcher.background.injectContentScriptIntoAllTabs_(
         passwordcatcher.background.initializePassword_);
   }
+
+  // Get the username from a signed in Chrome profile, which might be used
+  // for reporting phishing sites (if the password store isn't initialized).
+  chrome.identity.getProfileUserInfo(function(userInfo) {
+    if (userInfo) {
+      passwordcatcher.signed_in_email_ = userInfo.email;
+    }
+  });
   console.log('Completed page initialization.');
 };
 
@@ -740,7 +757,7 @@ passwordcatcher.background.guessUser_ = function() {
       return item['email'];
     }
   }
-  return '';
+  return passwordcatcher.background.signed_in_email_;
 };
 
 
