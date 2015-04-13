@@ -424,7 +424,7 @@ passwordcatcher.handleManagedPolicyChanges_ =
 
     var subtractArray = function(currentPolicyArray, oldPolicyArray) {
       return currentPolicyArray.filter(
-        function(val) { return oldPolicyArray.indexOf(val) < 0; }
+          function(val) { return oldPolicyArray.indexOf(val) < 0; }
       );
     };
 
@@ -441,23 +441,21 @@ passwordcatcher.handleManagedPolicyChanges_ =
           passwordcatcher.corp_email_domain_ = newPolicyValue;
           break;
         case 'corp_html':
-          // Remove the old values before appending new ones
+          // Remove the old values before appending new ones.
           passwordcatcher.corp_html_ = subtractArray(
-            passwordcatcher.corp_html_,
-            oldPolicyValue);
-
+              passwordcatcher.corp_html_,
+              oldPolicyValue);
           Array.prototype.push.apply(
-            passwordcatcher.corp_html_,
-            newPolicyValue);
+              passwordcatcher.corp_html_,
+              newPolicyValue);
           break;
         case 'corp_html_tight':
           passwordcatcher.corp_html_tight_ = subtractArray(
-            passwordcatcher.corp_html_tight_,
-            oldPolicyValue);
-
+              passwordcatcher.corp_html_tight_,
+              oldPolicyValue);
           Array.prototype.push.apply(
-            passwordcatcher.corp_html_tight_,
-            newPolicyValue);
+              passwordcatcher.corp_html_tight_,
+              newPolicyValue);
           break;
         case 'security_email_address':
           passwordcatcher.security_email_address_ = newPolicyValue;
