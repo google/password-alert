@@ -666,7 +666,6 @@ passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
  */
 passwordcatcher.background.sendReportPassword_ = function(
     request, email, date, otp) {
-  console.log('Sending password typed alert to the server.');
   passwordcatcher.background.sendReport_(
       request,
       email,
@@ -683,7 +682,6 @@ passwordcatcher.background.sendReportPassword_ = function(
  * @private
  */
 passwordcatcher.background.sendReportPage_ = function(request) {
-  console.log('Sending phishing page alert to the server.');
   passwordcatcher.background.sendReport_(
       request,
       passwordcatcher.background.guessUser_(),
@@ -707,6 +705,7 @@ passwordcatcher.background.sendReportPage_ = function(request) {
 passwordcatcher.background.sendReport_ = function(
     request, email, date, otp, path) {
   if (!passwordcatcher.background.isEnterpriseUse_) {
+    console.log('Not in enterprise mode, so not sending a report.');
     return;
   }
   var xhr = new XMLHttpRequest();
@@ -739,7 +738,7 @@ passwordcatcher.background.sendReport_ = function(
       console.log('Successfully retrieved oauth token.');
       data += '&oauth_token=' + encodeURIComponent(oauthToken);
     }
-    console.log('Sending password typed alert to the server.');
+    console.log('Sending alert to the server.');
     xhr.send(data);
   });
 };
