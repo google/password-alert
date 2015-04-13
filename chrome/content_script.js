@@ -1120,7 +1120,8 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   bannerElement.appendChild(bannerInnerContainer);
   document.body.appendChild(bannerElement);
 
-  blockIcon.focus();  // Prevent pressing Enter from triggering a button.
+  // Prevent pressing Enter from triggering a button or form submission.
+  document.activeElement.blur();
 };
 
 // Set listener before initializePage_ which calls chrome.storage.managed.get.
