@@ -57,11 +57,11 @@ function testOnKeypress() {
 
   // Test that the buffer is trimmed if it gets too big.
   // It's trimmed at 2 * max, but test 10 * max so the test is less brittle.
-  for (var i = 0; i < 10 * passwordcatcher.max_length_; i++) {
+  for (var i = 0; i < 10 * 5; i++) {  // 5 is length from msg passwordLengths.
     sendKeypress('e');
   }
   assertTrue(
-      passwordcatcher.typedChars_.length < 5 * passwordcatcher.max_length_);
+      passwordcatcher.typedChars_.length < 5 * 5);
 
   // test that time gaps clear the buffer
   passwordcatcher.typedTime_ = passwordcatcher.typedTime_ -

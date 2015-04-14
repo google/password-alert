@@ -172,14 +172,6 @@ passwordcatcher.whitelist_top_domains_ = [
 
 
 /**
- * Maximum length for passwords for Google accounts.
- * @type {number}
- * @private
- */
-passwordcatcher.max_length_ = 100;
-
-
-/**
  * If no key presses for this many seconds, flush buffer.
  * @type {number}
  * @private
@@ -386,9 +378,6 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
         );
       }
 
-      if (managedPolicy['max_length']) {
-        passwordcatcher.max_length_ = managedPolicy['max_length'];
-      }
       if (managedPolicy['otp_length']) {
         passwordcatcher.otp_length_ = managedPolicy['otp_length'];
       }
@@ -474,9 +463,6 @@ passwordcatcher.handleManagedPolicyChanges_ =
           break;
         case 'whitelist_top_domains':
           passwordcatcher.whitelist_top_domains_ = newPolicyValue;
-          break;
-        case 'max_length':
-          passwordcatcher.max_length_ = newPolicyValue;
           break;
         case 'otp_length':
           passwordcatcher.otp_length_ = newPolicyValue;
