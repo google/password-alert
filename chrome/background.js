@@ -253,9 +253,9 @@ passwordcatcher.background.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
     if (Object.keys(managedPolicy).length == 0) {
-      console.log('Consumer use.');
+      console.log('No managed policy found. Consumer use.');
     } else {
-      console.log('Enterprise use.');
+      console.log('Managed policy found.  Enterprise use.');
       passwordcatcher.background.isEnterpriseUse_ = true;
       passwordcatcher.background.report_url_ = managedPolicy['report_url'];
       passwordcatcher.background.shouldInitializePassword_ =

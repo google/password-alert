@@ -272,10 +272,10 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
   chrome.storage.managed.get(function(managedPolicy) {
     console.log('Setting managed policy.');
     if (Object.keys(managedPolicy).length == 0) {
-      console.log('Consumer use.');
+      console.log('No managed policy found. Consumer use.');
       passwordcatcher.isEnterpriseUse_ = false;
     } else {
-      console.log('Enterprise use.');
+      console.log('Managed policy found.  Enterprise use.');
       passwordcatcher.isEnterpriseUse_ = true;
       passwordcatcher.corp_email_domain_ = managedPolicy['corp_email_domain'];
       passwordcatcher.security_email_address_ =
