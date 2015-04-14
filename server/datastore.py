@@ -16,8 +16,10 @@
 
 __author__ = 'adhintz@google.com (Drew Hintz)'
 
+import logging
 import urlparse
 
+import config
 import webapp2
 from google.appengine.api import datastore_types
 from google.appengine.api import memcache
@@ -143,8 +145,13 @@ class Setting(ndb.Model):  # keyed by the setting name
 
   @classmethod
   def get(cls, name):
-    entity = ndb.Key(Setting, name).get()
-    return entity.value
+    if Setting.exists('initialized'):
+      logging.info('using datastore for configuration data')
+      entity = ndb.Key(Setting, name).get()
+      return entity.value
+    else:
+      logging.info('using config.py for configuration data')
+      return getattr(config, name.upper(), '')
 
   @classmethod
   def exists(cls, name):
