@@ -17,9 +17,11 @@
 import logging
 
 from apiclient.discovery import build
+import config
 import datastore
 import httplib2
 from oauth2client import appengine
+import setup
 
 from google.appengine.api import memcache
 from google.appengine.api import users
@@ -60,7 +62,10 @@ def _GetAuthorizedHttp(credentials=None):
     if credentials:
       logging.debug('Successfully got credentials from storage.')
     else:
-      raise SetupNeeded('Credentials not in storage')
+      if config.SERVICE_ACCOUNT:
+        credentials = setup.LoadCredentialsFromPem()
+      else:
+        raise SetupNeeded('Credentials not in storage')
 
   return credentials.authorize(httplib2.Http())
 

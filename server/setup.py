@@ -56,12 +56,7 @@ class SetupHandler(webapp2.RequestHandler):
 
   def get(self):
     if config.SERVICE_ACCOUNT:
-      credentials = client.SignedJwtAssertionCredentials(
-          config.SERVICE_ACCOUNT,
-          _GetPrivateKey(config.PRIVATE_KEY_FILENAME),
-          API_SCOPES,
-          sub=config.SERVICE_ACCOUNT_ADMIN)
-      _StoreCredentials(credentials)
+      LoadCredentialsFromPem()
       self.redirect('/settings/')
     elif config.OAUTH_CLIENT_ID:
       flow = OAuth2WebServerFlow(
@@ -98,6 +93,17 @@ class RedirectHandler(webapp2.RequestHandler):
       self.error(403)
     _StoreCredentials(credentials)
     self.redirect('/settings/')
+
+
+def LoadCredentialsFromPem():
+  logging.info('Loading credentials from uploaded private key.')
+  credentials = client.SignedJwtAssertionCredentials(
+      config.SERVICE_ACCOUNT,
+      _GetPrivateKey(config.PRIVATE_KEY_FILENAME),
+      API_SCOPES,
+      sub=config.SERVICE_ACCOUNT_ADMIN)
+  _StoreCredentials(credentials)
+  return credentials
 
 
 def _StoreCredentials(credentials):
