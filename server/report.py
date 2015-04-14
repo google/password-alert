@@ -86,11 +86,11 @@ class ReportPasswordHandler(webapp2.RequestHandler):
 
   def SendNewHostAlert(self, report):
     """Email an alert about a new host."""
-    if not datastore.Setting.get('passwordcathcer_alerts_email'):
+    if not datastore.Setting.get('passwordcatcher_alerts_email'):
       return  # Email alerts not configured.
     message = mail.EmailMessage()
     message.sender = datastore.Setting.get('email_sender')
-    message.to = datastore.Setting.get('passwordcathcer_alerts_email')
+    message.to = datastore.Setting.get('passwordcatcher_alerts_email')
     message.subject = HOST_ALERT_SUBJECT % report.host
     message.body = EMAIL_ALERT_BODY % (
         report.host,
@@ -101,7 +101,7 @@ class ReportPasswordHandler(webapp2.RequestHandler):
 
   def SendOtpAlert(self, report):
     """Email an OTP alert."""
-    if not datastore.Setting.get('passwordcathcer_alerts_email'):
+    if not datastore.Setting.get('passwordcatcher_alerts_email'):
       return  # Email alerts not configured.
     message = mail.EmailMessage()
     message.sender = datastore.Setting.get('email_sender')
