@@ -1,7 +1,4 @@
 {
-  "_comment_ policies for content script": {
-    "Value": "-----------------------------------------------------------------"
-  },
   "corp_email_domain": {
     "Value": "@example.com"
   },
@@ -31,9 +28,6 @@
   "whitelist_top_domains": {
     "Value": ["legit-site.example.com",
               "localhost"]
-  },
-  "_comment_ policies for background script": {
-    "Value": "-----------------------------------------------------------------"
   },
   "report_url": {
     "Value": "https://example.appspot.com/report/"

@@ -1,7 +1,6 @@
 {
   "type": "object",
   "properties": {
-    "_comment_ policies for content script": {"type": "string"},
     "corp_email_domain": {"type": "string"},
     "corp_html": {
       "type": "array",
@@ -20,10 +19,8 @@
       "type": "array",
       "items": {"type": "string"}
     },
-    "_comment_ policies for background script": {"type": "string"},
     "report_url": {"type": "string"},
     "should_initialize_password": {"type": "boolean"},
-    "domain_auth_secret": {"type": "string"},
-    "_comment_ TODO(adhintz) add enforcement flag to not display any page warning dialogs?": {"type": "string"}
+    "domain_auth_secret": {"type": "string"}
   }
 }
