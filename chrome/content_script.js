@@ -172,32 +172,6 @@ passwordcatcher.whitelist_top_domains_ = [
 
 
 /**
- * If no key presses for this many seconds, flush buffer.
- * @type {number}
- * @private
- * @const
- */
-passwordcatcher.SECONDS_TO_CLEAR_ = 10;
-
-
-/**
- * ASCII code for enter character.
- * @type {number}
- * @private
- * @const
- */
-passwordcatcher.ENTER_ASCII_CODE_ = 13;
-
-
-/**
- * Number of digits in a valid OTP.
- * @type {number}
- * @private
- */
-passwordcatcher.otp_length_ = 6;
-
-
-/**
  * The URL for the current page.
  * @private
  * @type {string}
@@ -211,22 +185,6 @@ passwordcatcher.url_ = location.href.toString();
  * @type {boolean}
  */
 passwordcatcher.isRunning_ = false;
-
-
-/**
- * The most recently typed characters for this page.
- * @private
- * @type {string}
- */
-passwordcatcher.typedChars_;
-
-
-/**
- * Time that the most recent character was typed.
- * @private
- * @type {Date}
- */
-passwordcatcher.typedTime_;
 
 
 /**
@@ -245,39 +203,6 @@ passwordcatcher.lastKeypressTimeStamp_;
  * @type {Array.<boolean>}
  */
 passwordcatcher.passwordLengths_;
-
-
-/**
- * Are we watching for an OTP after a valid password entry?
- * @private
- * @type {boolean}
- */
-passwordcatcher.otpMode_ = false;
-
-
-/**
- * Time that the password was typed that resulted in enabling otpMode.
- * @private
- * @type {Date}
- */
-passwordcatcher.otpTime_;
-
-
-/**
- * OTP must be typed within this time since the password was typed.
- * @type {number}
- * @private
- * @const
- */
-passwordcatcher.SECONDS_TO_CLEAR_OTP_ = 60;
-
-
-/**
- * Number of OTP digits that have been typed so far.
- * @private
- * @type {number}
- */
-passwordcatcher.otpCount_ = 0;
 
 
 /**
@@ -378,9 +303,6 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
         );
       }
 
-      if (managedPolicy['otp_length']) {
-        passwordcatcher.otp_length_ = managedPolicy['otp_length'];
-      }
     }
     callback();
   });
@@ -464,9 +386,6 @@ passwordcatcher.handleManagedPolicyChanges_ =
         case 'whitelist_top_domains':
           passwordcatcher.whitelist_top_domains_ = newPolicyValue;
           break;
-        case 'otp_length':
-          passwordcatcher.otp_length_ = newPolicyValue;
-          break;
       }
     }
   }
@@ -542,6 +461,10 @@ passwordcatcher.completePageInitialization_ = function() {
        * @param {string} msg JSON object containing valid password lengths.
        */
       function(msg) {
+        if (msg == 'injectPasswordWarning') {
+          passwordcatcher.injectPasswordWarningIfNeeded_();
+          return;
+        }
         passwordcatcher.stop_();
         passwordcatcher.start_(msg);
       });
@@ -568,14 +491,13 @@ passwordcatcher.initializePage_ = function() {
  */
 passwordcatcher.start_ = function(msg) {
   var state = JSON.parse(msg);
+  // TODO(henryc): Content_script is now only using passwordLengths_ to tell
+  // if passwordLengths_length == 0. So, do not store passwordLengths,
+  // just have the message from background page tell it to start or stop.
   passwordcatcher.passwordLengths_ = state.passwordLengths;
   if (passwordcatcher.passwordLengths_.length == 0) {
     passwordcatcher.stop_(); // no passwords, so no need to watch
     return;
-  }
-  if (state.otpMode) {
-    passwordcatcher.otpMode_ = true;
-    passwordcatcher.otpTime_ = new Date(state.otpTime);
   }
 
   if ((passwordcatcher.sso_url_ &&
@@ -586,7 +508,6 @@ passwordcatcher.start_ = function(msg) {
     return;
   }
 
-  passwordcatcher.typedChars_ = '';
   passwordcatcher.isRunning_ = true;
   console.log('Password catcher is running.');
 };
@@ -598,17 +519,6 @@ passwordcatcher.start_ = function(msg) {
  */
 passwordcatcher.stop_ = function() {
   passwordcatcher.isRunning_ = false;
-};
-
-
-/**
- * Clears OTP mode in both content_script and background.
- * @private
- */
-passwordcatcher.clearOtpMode_ = function() {
-  passwordcatcher.otpMode_ = false;
-  // Tell background to clear otpMode_ for this tab id.
-  chrome.runtime.sendMessage({action: 'clearOtpMode'});
 };
 
 
@@ -631,51 +541,14 @@ passwordcatcher.handleKeypress_ = function(evt) {
   }
   passwordcatcher.lastKeypressTimeStamp_ = evt.timeStamp;
 
-  if (passwordcatcher.otpMode_) {
-    var now = new Date();
-    if (now - passwordcatcher.otpTime_ >
-        passwordcatcher.SECONDS_TO_CLEAR_OTP_ * 1000) {
-      passwordcatcher.clearOtpMode_();
-    } else if (evt.charCode >= 0x30 && evt.charCode <= 0x39) {  // is a digit
-      passwordcatcher.otpCount_++;
-    } else if (evt.charCode > 0x20 || // non-digit printable characters reset it
-               // Non-printable only allowed at start:
-               passwordcatcher.otpCount_ > 0) {
-      passwordcatcher.clearOtpMode_();
-    }
-    if (passwordcatcher.otpCount_ >= passwordcatcher.otp_length_) {
-      passwordcatcher.otpAlert_();
-      passwordcatcher.clearOtpMode_();
-    }
-  }
-
-  if (evt.charCode == passwordcatcher.ENTER_ASCII_CODE_) {
-    passwordcatcher.typedChars_ = '';
-    return;
-  }
-
-  var now = new Date();
-  if (now - passwordcatcher.typedTime_ >
-      passwordcatcher.SECONDS_TO_CLEAR_ * 1000) {
-    passwordcatcher.typedChars_ = '';
-  }
-
-  passwordcatcher.typedChars_ += String.fromCharCode(evt.charCode);
-  passwordcatcher.typedTime_ = now;
-
-  // trim the buffer when it's too big
-  if (passwordcatcher.typedChars_.length >
-      passwordcatcher.passwordLengths_.length) {
-    passwordcatcher.typedChars_ = passwordcatcher.typedChars_.slice(
-        -1 * passwordcatcher.passwordLengths_.length);
-  }
-
-  for (var i = 1; i < passwordcatcher.passwordLengths_.length; i++) {
-    if (passwordcatcher.passwordLengths_[i] &&
-        passwordcatcher.typedChars_.length >= i) {
-      passwordcatcher.checkChars_(passwordcatcher.typedChars_.substr(-1 * i));
-    }
-  }
+  chrome.runtime.sendMessage({
+    action: 'handleKeypress',
+    charCode: evt.charCode,
+    lastKeypressTimeStamp: evt.timeStamp,
+    url: passwordcatcher.url_,
+    referer: document.referrer.toString(),
+    looksLikeGoogle: passwordcatcher.looksLikeGooglePage_()
+  });
 };
 
 
@@ -743,46 +616,6 @@ passwordcatcher.validateSso_ = function() {
   }
   console.log('SSO data is filled in.');
   return true;
-};
-
-
-/**
- * Sends typed strings to background.js to see if a password has been typed.
- * @param {string} typed Characters typed by the user.
- * @private
- */
-passwordcatcher.checkChars_ = function(typed) {
-  chrome.runtime.sendMessage({
-    action: 'checkPassword',
-    password: typed,
-    url: passwordcatcher.url_,
-    referer: document.referrer.toString(),
-    looksLikeGoogle: passwordcatcher.looksLikeGooglePage_()
-  }, function(response) {
-    // TODO(adhintz) use response.isCorrect and jsdoc to preserve the name.
-    if (response) {  // Password was entered, so now watch for an OTP.
-      console.log('Password has been typed.');
-      passwordcatcher.otpCount_ = 0;
-      passwordcatcher.otpMode_ = true;
-      passwordcatcher.otpTime_ = new Date();
-
-      passwordcatcher.injectPasswordWarningIfNeeded_();
-    }
-  });
-};
-
-
-/**
- * Sends OTP alert to background.js.
- * @private
- */
-passwordcatcher.otpAlert_ = function() {
-  chrome.runtime.sendMessage({
-    action: 'otpAlert',
-    url: passwordcatcher.url_,
-    referer: document.referrer.toString(),
-    looksLikeGoogle: passwordcatcher.looksLikeGooglePage_()
-  });
 };
 
 

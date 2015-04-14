@@ -77,12 +77,14 @@ subscriber.sender.tab;
 subscriber.sender.tab.id;
 
 var request;
-request.password;
-request.url;
-request.referer;
-request.email;
 request.action;
+request.charCode;
+request.email;
+request.lastKeypressTimeStamp;
 request.looksLikeGoogle;
+request.password;
+request.referer;
+request.url;
 
 var state;
 state.passwordLengths;

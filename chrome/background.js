@@ -108,7 +108,8 @@ passwordcatcher.background.possiblePassword_ = {};
 
 /**
  * Associative array of tab state. Keyed by tab id.
- * @type {Object.<number, {hash: string, time: Date}>}
+ * @type {Object.<number, {hash: string, otpCount: number, otpMode: boolean,
+ *                         otpTime: Date, typedChars: string, typedTime: Date}>}
  * @private
  */
 passwordcatcher.background.tabState_ = {};
@@ -121,6 +122,41 @@ passwordcatcher.background.tabState_ = {};
  * @private
  */
 passwordcatcher.background.passwordLengths_;
+
+
+/**
+ * If no key presses for this many seconds, flush buffer.
+ * @type {number}
+ * @private
+ * @const
+ */
+passwordcatcher.background.SECONDS_TO_CLEAR_ = 10;
+
+
+/**
+ * OTP must be typed within this time since the password was typed.
+ * @type {number}
+ * @private
+ * @const
+ */
+passwordcatcher.background.SECONDS_TO_CLEAR_OTP_ = 60;
+
+
+/**
+ * Number of digits in a valid OTP.
+ * @type {number}
+ * @private
+ */
+passwordcatcher.background.OTP_LENGTH_ = 6;
+
+
+/**
+ * ASCII code for enter character.
+ * @type {number}
+ * @private
+ * @const
+ */
+passwordcatcher.background.ENTER_ASCII_CODE_ = 13;
 
 
 /**
@@ -428,6 +464,9 @@ passwordcatcher.background.handleRequest_ = function(
     return;
   }
   switch (request.action) {
+    case 'handleKeypress':
+      passwordcatcher.background.handleKeypress_(sender.tab.id, request);
+      break;
     case 'statusRequest':
       passwordcatcher.background.pushToTab_(sender.tab.id);
       break;
@@ -443,17 +482,98 @@ passwordcatcher.background.handleRequest_ = function(
     case 'savePossiblePassword':
       passwordcatcher.background.savePossiblePassword_(sender.tab.id);
       break;
-    case 'checkPassword':
-      var isCorrect = passwordcatcher.background.checkPassword_(sender.tab.id,
-                                                                request, false);
-      sendResponse(isCorrect);
-      break;
-    case 'otpAlert':
-      passwordcatcher.background.checkPassword_(sender.tab.id, request, true);
-      break;
-    case 'clearOtpMode':
-      delete passwordcatcher.background.tabState_[sender.tab.id];
-      break;
+  }
+};
+
+
+/**
+ * Clears OTP mode.
+ * @param {number} tabId Id of the browser tab.
+ * @private
+ */
+passwordcatcher.background.clearOtpMode_ = function(tabId) {
+  passwordcatcher.background.tabState_[tabId]['otpMode'] = false;
+  passwordcatcher.background.tabState_[tabId]['otpCount'] = 0;
+  passwordcatcher.background.tabState_[tabId]['otpTime'] = '';
+
+};
+
+
+/**
+ * Called on each key press. Checks the most recent possible characters.
+ * @param {number} tabId Id of the browser tab.
+ * @param {passwordcatcher.background.Request_} request Request object from
+ *     content_script. Contains url and referer.
+ * @private
+ */
+passwordcatcher.background.handleKeypress_ = function(tabId, request) {
+  if (passwordcatcher.background.tabState_[tabId] === undefined) {
+    passwordcatcher.background.tabState_[tabId] = {'hash': '',
+                                                   'otpCount': 0,
+                                                   'otpMode': false,
+                                                   'otpTime': null,
+                                                   'typedChars': '',
+                                                   'typedTime': null};
+  }
+
+  if (passwordcatcher.background.tabState_[tabId]['otpMode']) {
+    console.log('in otp mode');
+    var now = new Date();
+    if (now - passwordcatcher.background.tabState_[tabId]['otpTime'] >
+        passwordcatcher.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
+      console.log('reached time to clear otp; clearing otp');
+      passwordcatcher.background.clearOtpMode_(tabId);
+    } else if (request.charCode >= 0x30 && request.charCode <= 0x39) {
+      // is a digit
+      console.log('digit typed');
+      passwordcatcher.background.tabState_[tabId]['otpCount']++;
+    } else if (request.charCode > 0x20 ||
+        // non-digit printable characters reset it
+        // Non-printable only allowed at start:
+        passwordcatcher.background.tabState_[tabId]['otpCount'] > 0) {
+      console.log('non-digit typed; clearing otp mode');
+      passwordcatcher.background.clearOtpMode_(tabId);
+    }
+    if (passwordcatcher.background.tabState_[tabId]['otpCount'] >=
+        passwordcatcher.background.OTP_LENGTH_) {
+      console.log('otp count is greater than otp length');
+      passwordcatcher.background.checkPassword_(tabId, request, true);
+      passwordcatcher.background.clearOtpMode_(tabId);
+    }
+  }
+
+  if (request.charCode == passwordcatcher.background.ENTER_ASCII_CODE_) {
+    passwordcatcher.background.tabState_[tabId]['typedChars'] = '';
+    return;
+  }
+
+  var now = new Date();
+  if (now - passwordcatcher.background.tabState_[tabId]['typedTime'] >
+      passwordcatcher.background.SECONDS_TO_CLEAR_ * 1000) {
+    passwordcatcher.background.tabState_[tabId]['typedChars'] = '';
+  }
+
+  passwordcatcher.background.tabState_[tabId]['typedChars'] +=
+      String.fromCharCode(request.charCode);
+  passwordcatcher.background.tabState_[tabId]['typedTime'] = now;
+  console.log('typed chars in buffer is: %s',
+      passwordcatcher.background.tabState_[tabId]['typedChars']);
+
+  // trim the buffer when it's too big
+  if (passwordcatcher.background.tabState_[tabId]['typedChars'].length >
+      passwordcatcher.background.passwordLengths_.length) {
+    passwordcatcher.background.tabState_[tabId]['typedChars'] =
+        passwordcatcher.background.tabState_[tabId]['typedChars'].slice(
+        -1 * passwordcatcher.background.passwordLengths_.length);
+  }
+
+  for (var i = 1; i < passwordcatcher.background.passwordLengths_.length; i++) {
+    if (passwordcatcher.background.passwordLengths_[i] &&
+        passwordcatcher.background.tabState_[tabId]['typedChars'].length >= i) {
+      request['password'] = passwordcatcher.background
+          .tabState_[tabId]['typedChars'].substr(-1 * i);
+      passwordcatcher.background.checkPassword_(tabId, request, false);
+    }
   }
 };
 
@@ -620,20 +740,21 @@ passwordcatcher.background.checkRateLimit_ = function() {
  * @param {passwordcatcher.background.Request_} request Request object from
  *     content_script.
  * @param {boolean} otp If this is for an OTP alert.
- * @return {boolean} If password is a match.
  * @private
  */
 passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
   if (!passwordcatcher.background.checkRateLimit_()) {
-    return false;  // This limits content_script brute-forcing the password.
+    return;  // This limits content_script brute-forcing the password.
   }
 
   if (otp) {
+    console.log('is otp; getting hash from tabState');
     var hash = passwordcatcher.background.tabState_[tabId].hash;
   } else if (request.password) {
+    console.log('not otp; getting hash from request.password');
     var hash = passwordcatcher.background.hashPassword_(request.password);
   } else {
-    return false; // Should never happen.
+    return; // Should never happen.
   }
 
   if (localStorage[hash]) {
@@ -642,15 +763,19 @@ passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
         date.getSeconds();
     console.log('PASSWORD and/or OTP TYPED! ' + formattedTime + '\n' +
         request.url);
-    passwordcatcher.background.tabState_[tabId] = {hash: hash,
-      time: new Date()};
+    passwordcatcher.background.tabState_[tabId]['hash'] = hash;
 
     var item = JSON.parse(localStorage[hash]);
     passwordcatcher.background.sendReportPassword_(
         request, item['email'], item['date'], otp);
-    return true;
+
+    console.log('Password has been typed.');
+    passwordcatcher.background.tabState_[tabId]['otpCount'] = 0;
+    passwordcatcher.background.tabState_[tabId]['otpMode'] = true;
+    passwordcatcher.background.tabState_[tabId]['otpTime'] = new Date();
+
+    chrome.tabs.sendMessage(tabId, 'injectPasswordWarning');
   }
-  return false;
 };
 
 
@@ -830,15 +955,8 @@ passwordcatcher.background.pushToAllTabs_ = function() {
  * @private
  */
 passwordcatcher.background.pushToTab_ = function(tabId) {
-  var otpMode = Boolean(passwordcatcher.background.tabState_[tabId]);
-  var otpTime;
-  if (otpMode) {
-    otpTime = passwordcatcher.background.tabState_[tabId].time;
-  }
   var state = {
-    passwordLengths: passwordcatcher.background.passwordLengths_,
-    otpMode: otpMode,
-    otpTime: otpTime
+    passwordLengths: passwordcatcher.background.passwordLengths_
   };
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
