@@ -224,7 +224,10 @@ passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_ =
     '<span id="warning_banner_header">' +
     chrome.i18n.getMessage('password_warning_banner_header') + '</span>' +
     '<span id="warning_banner_body">' +
-    chrome.i18n.getMessage('password_warning_banner_body') + '</span>';
+    chrome.i18n.getMessage('password_warning_banner_body') + '&nbsp;' +
+    '<a href="https://support.googe.com/accounts/?p=passwordcatcher" ' +
+    'class="warning_banner_link">' +
+    chrome.i18n.getMessage('learn_more') + '</a></span>';
 
 
 /**
@@ -774,10 +777,10 @@ passwordcatcher.createButton_ = function(buttonText, buttonLeftPosition,
  */
 passwordcatcher.createButtonsForPasswordWarningBanner_ = function() {
   var resetPasswordButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('reset_password'), '20%',
+      chrome.i18n.getMessage('reset_password'), '7%',
       passwordcatcher.openChangePasswordPage_, true);
   var ignoreButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('ignore'), '50%',
+      chrome.i18n.getMessage('ignore'), '33%',
       passwordcatcher.removeWarningBanner_, false);
   return [resetPasswordButton, ignoreButton];
 };
@@ -792,17 +795,17 @@ passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
   var contactSecurityButton;
   if (passwordcatcher.isEnterpriseUse_) {
     contactSecurityButton = passwordcatcher.createButton_(
-        chrome.i18n.getMessage('contact_security'), '20%',
+        chrome.i18n.getMessage('contact_security'), '7%',
         passwordcatcher.createPhishingWarningEmail_, true);
   } else { // Consumer mode.
     contactSecurityButton = passwordcatcher.createButton_(
-        chrome.i18n.getMessage('report_phishing'), '20%',
+        chrome.i18n.getMessage('report_phishing'), '7%',
         passwordcatcher.reportToSafeBrowsing_, true);
   }
   var backButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('back'), '45%', passwordcatcher.back_, false);
+      chrome.i18n.getMessage('back'), '33%', passwordcatcher.back_, false);
   var visitThisSiteButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('visit_this_site'), '70%',
+      chrome.i18n.getMessage('visit_this_site'), '59%',
       passwordcatcher.removeWarningBanner_, false);
   return [contactSecurityButton, backButton, visitThisSiteButton];
 };
@@ -917,8 +920,9 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   textElement.innerHTML = bannerText;
 
   var blockIcon = document.createElement('img');
-  blockIcon.setAttribute('id', 'warning_banner_block_icon');
-  blockIcon.setAttribute('src', chrome.extension.getURL('block.svg'));
+  blockIcon.setAttribute('id', 'warning_banner_icon');
+  blockIcon.setAttribute('src',
+                         chrome.extension.getURL('logo_password_catcher.png'));
 
   // A fixed-size inner container is the key to make the banner content
   // look good across different screen sizes.

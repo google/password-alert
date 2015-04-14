@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
-  "version": "0.40.11",
+  "version": "0.40.12",
   "default_locale": "en",
   "minimum_chrome_version": "33",
   "icons": { "128": "icon128.png" },
@@ -15,8 +15,7 @@
   ],
 
   "web_accessible_resources": [
-    "block.svg",
-    "logo_password_catcher.svg",
+    "logo_password_catcher.png",
     "warning_banner.css"
   ],
 

@@ -363,7 +363,7 @@ passwordcatcher.background.displayInitializePasswordNotification_ = function() {
         priority: 1,
         title: chrome.i18n.getMessage('extension_name'),
         message: chrome.i18n.getMessage('initialization_message'),
-        iconUrl: chrome.extension.getURL('logo_password_catcher.svg'),
+        iconUrl: chrome.extension.getURL('logo_password_catcher.png'),
         buttons: [{
           title: chrome.i18n.getMessage('sign_in')
         }]
@@ -676,7 +676,7 @@ passwordcatcher.background.savePossiblePassword_ = function(tabId) {
       type: 'basic',
       title: chrome.i18n.getMessage('extension_name'),
       message: chrome.i18n.getMessage('initialization_thank_you_message'),
-      iconUrl: chrome.extension.getURL('logo_password_catcher.svg')
+      iconUrl: chrome.extension.getURL('logo_password_catcher.png')
     };
     chrome.notifications.create('thank_you_notification',
         options, function() {

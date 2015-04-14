@@ -14,7 +14,7 @@
 */
 
 #warning_banner {
-  background-color: black;
+  background-color: #EFEFEF;
   position: fixed;
   z-index: 2147483647;
   top: 0;
@@ -24,9 +24,9 @@
 }
 
 #warning_banner_inner_container {
-  background-color: black;
+  background-color: #EFEFEF;
   position: relative;
-  top: 50%;
+  top: 40%;
   left: 50%;
   width: 700px;
   height: 300px;
@@ -34,52 +34,59 @@
   margin-left: -300px;
 }
 
-#warning_banner_block_icon {
-  width: 50px;
-  height: 50px;
+#warning_banner_icon {
+  width: 88px;
+  height: auto;
   position: absolute;
-  top: 17%;
-  left: 8%;
+  top: -10%;
+  left: 7%;
 }
 
 #warning_banner_header {
   /* emulate h1 properties */
   position: absolute;
-  top: 15%;
-  left: 20%;
-  font-family: 'Helvetica Neue', Helvetica, Arial;
-  font-size: 25px;
-  font-weight: bold;
-  line-height: 125%;
+  top: 20%;
+  left: 0%;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  font-weight: normal;
+  line-height: 32px;
   margin-top: 0.67em;
   margin-bottom: 0.67em;
-  margin-left: 0;
-  margin-right: 0;
-  color: white;
+  margin-left: 7%;
+  margin-right: 7%;
+  color: #607D8B;
 }
 
 #warning_banner_body {
-  font-family: 'Helvetica Neue', Helvetica, Arial;
-  font-size: 13px;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
   font-style: normal;
-  line-height: 150%;
-  color: white;
+  font-weight: normal;
+  line-height: 24px;
+  color: #607D8B;
   position: absolute;
-  top: 37%;
-  left: 20%;
-  right: 15%;
+  top: 42%;
+  left: 7%;
+  right: 7%;
   text-align: left;
 }
 
+#warning_banner_body a:link {
+  color: #607D8B;
+  text-decoration: underline;
+}
+
 #always_ignore {
-  font-family: 'Helvetica Neue', Helvetica, Arial;
+  font-family: Arial, sans-serif;
   font-size: 11px;
   font-style: normal;
+  font-weight: normal;
   line-height: 150%;
-  color: #585858;
+  color: #607D8B;
   position: absolute;
-  top: 100%;
-  left: 49%;
+  top: 95%;
+  left: 34.25%;
   right: 15%;
   text-align: left;
   cursor: pointer;
@@ -88,25 +95,28 @@
 
 .warning_banner_button {
   font-family: Arial;
-  font-size: 13px;
+  font-size: 15px;
   font-style: normal;
   font-weight: normal;
   line-height: normal;
-  padding-left: 20px;
-  padding-right: 20px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-top: 0px;
+  padding-bottom: 0px;
   border: none;
   cursor: pointer;
   position: absolute;
-  top: 80%;
-  width: 120px;
-  height: 50px;
-  background-color: #fff;
-  border-radius: 3px;
+  top: 78%;
+  width: 160px;
+  height: 44px;
+  background-color: #D7DBDD;
+  background-image: none;
+  border-radius: 2px;
   display: inline-block;
+  color: #607D8B;
 }
 
 .warning_banner_button_primary {
-  background-color: #fc0;
+  background-color: #607D8B;
+  color: white;
 }
