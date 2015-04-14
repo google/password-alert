@@ -45,10 +45,6 @@ PHISHING_ALERT_BODY = ('referer: %s\n\n'
                        'version: %s')
 
 
-class Error(Exception):
-  pass
-
-
 class ReportPasswordHandler(webapp2.RequestHandler):
   """Saves reports from users to the datastore."""
 

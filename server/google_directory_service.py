@@ -32,6 +32,10 @@ MEMCACHE_ADMIN_KEY = 'admins'
 MEMCACHE_EXPIRATION_TIME_IN_SECONDS = 600
 
 
+class SetupNeeded(Exception):
+  pass
+
+
 def _GetAuthorizedHttp(credentials=None):
   """Get the authorized http from the stored credentials.
 
@@ -45,7 +49,7 @@ def _GetAuthorizedHttp(credentials=None):
         header, access token, and credential.
 
   Raises:
-    Exception: An exception that there are no credentails in the datastore.
+    SetupNeeded: An exception that there are no credentails in the datastore.
   """
   if not credentials:
     credential_storage = appengine.StorageByKeyName(
@@ -56,9 +60,7 @@ def _GetAuthorizedHttp(credentials=None):
     if credentials:
       logging.debug('Successfully got credentials from storage.')
     else:
-      # TODO(adhintz) Raise more specific type and ensure callers redirect
-      # to /setup/ where possible.
-      raise Exception('Credentials not in storage')
+      raise SetupNeeded('Credentials not in storage')
 
   return credentials.authorize(httplib2.Http())
 

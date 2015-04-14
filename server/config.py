@@ -106,6 +106,8 @@ ADMIN_GROUP = ''
 # Your company's domain name.
 # In general you should not need to override this.
 DOMAIN = os.getenv('AUTH_DOMAIN')
+# If you have multiple domains you can set it like this:
+# DOMAIN = 'example.com,example.org,example.net'
 
 ##########
 # Experimental settings for using oauth2 authentication instead of a service

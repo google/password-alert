@@ -77,7 +77,7 @@ class SetupHandler(webapp2.RequestHandler):
       self.redirect(auth_uri)
     else:
       self.response.out.write('In config.py you must either configure the'
-                              'service account or oauth.')
+                              ' service account or oauth.')
 
 
 class RedirectHandler(webapp2.RequestHandler):

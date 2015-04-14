@@ -58,16 +58,17 @@ class SearchHandler(webapp2.RequestHandler):
           searching by email.
 
     Returns:
-      An iterable of Report Models.
-      The email address queryed for.
+      A Query of Report Models.
     """
+    email_addresses = []
     if '@' in search_query:
-      email_address = search_query
+      email_addresses.append(search_query)
     else:
-      email_address = search_query + '@' + datastore.Setting.get('domain')
-    logging.info('email_address is: %s', email_address)
-    return (self._CreateReportQuery().filter('email =', email_address),
-            email_address)
+      domains = datastore.Setting.get('domain').split(',')
+      for domain in domains:
+        email_addresses.append(search_query + '@' + domain.strip().lower())
+    logging.info('email_addresses are: %s', email_addresses)
+    return self._CreateReportQuery().filter('email IN', email_addresses)
 
   def _SearchByHost(self, host):
     """Perform a search of the Report datastore by host.
@@ -79,7 +80,7 @@ class SearchHandler(webapp2.RequestHandler):
       host: A string of the host.
 
     Returns:
-      An iterable of Report Models.
+      A Query of Report Models.
     """
     url = urlparse(host)
     host_query = '%s://%s' % (url.scheme, url.netloc)
@@ -112,11 +113,13 @@ class SearchHandler(webapp2.RequestHandler):
     search_query = search_query.strip().lower()
 
     if self._ShouldSearchByEmail(search_query):
-      (report_query_by_email, email_address) = self._SearchByEmail(search_query)
+      report_query_by_email = self._SearchByEmail(search_query)
       if report_query_by_email.count() > 0:
+        reports = report_query_by_email.run(limit=100)
+        reports = list(reports)  # Convert to list to get the first value.
+        email_address = reports[0].email
         logging.info('Found reports by email: %s', email_address)
-        return (report_query_by_email.run(limit=100), 'email', None,
-                email_address)
+        return (reports, 'email', None, email_address)
 
     if self._ShouldSearchByHost(search_query):
       host = datastore.NormalizeUrl(search_query)

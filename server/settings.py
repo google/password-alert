@@ -56,8 +56,6 @@ CONFIGS = [
     {'name': 'domain', 'type': 'input',
      'desc': 'Your company\'s domain name.'},
     ]
-# TODO(adhintz) Do an OAuth flow to get service account credentials to replace
-# the SERVICE_ACCOUNT, SERVICE_ACCOUNT_ADMIN, and PRIVATE_KEY_FILENAME configs.
 
 
 class MainHandler(webapp2.RequestHandler):

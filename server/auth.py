@@ -65,7 +65,7 @@ def admin_authorization_required(handler_method):
       else:
         logging.warning('%s not authorized for access.', current_user.email())
         self.abort(403)
-    except:  # TODO(adhintz) Catch a more specific Exception type.
+    except google_directory_service.SetupNeeded:
       logging.warning('credentials not set up, so configuring')
       self.redirect('/setup/')
 
@@ -92,6 +92,14 @@ def user_authorization_required(handler_method):
 
     oauth_token = self.request.get('oauth_token', None)
     email = self.request.get('email', None)
+    if not email:
+      logging.warning('Request is missing email.')
+      self.abort(403)
+    if not _is_email_in_domain(email):
+      logging.warning('Email %s in request does not match domain %s in '
+                      'config.py.', email, datastore.Setting.get('domain'))
+      self.abort(403)
+
     if is_oauth_valid(oauth_token, email):
       logging.info('oauth valid, so allowing')
     elif datastore.Setting.get('domain_auth_secret'):
@@ -114,15 +122,6 @@ def is_oauth_valid(oauth_token, email):
 
   if not oauth_token:
     logging.warning('Request is missing oauth token.')
-    return False
-  if not email:
-    logging.warning('Request is missing email.')
-    return False
-  # Prevent attackers from sending alerts for random@attacker.com, which
-  # could pollute the list of reports and send email alerts.
-  if not email.endswith('@' + datastore.Setting.get('domain')):
-    logging.warning('Email domain %s in request does not match domain %s in '
-                    'config.py.', email, datastore.Setting.get('domain'))
     return False
 
   validation_request_params = {}
@@ -167,3 +166,11 @@ def is_oauth_valid(oauth_token, email):
     return False
   logging.info('Oauth token for user %s is valid.', email)
   return True
+
+
+def _is_email_in_domain(email):
+  domains = datastore.Setting.get('domain').split(',')
+  for domain in domains:
+    if email.endswith('@' + domain.strip().lower()):
+      return True
+  return False

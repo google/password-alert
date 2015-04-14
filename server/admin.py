@@ -84,13 +84,8 @@ class PasswordHandler(webapp2.RequestHandler):
   @xsrf.xsrf_protect
   @auth.admin_authorization_required
   def post(self):
-    user = self.request.get('user')
-    logging.info('Expiring password for: %s', user)
-    if '@' in user:
-      email = user
-    else:
-      email = '%s@%s' % (user, datastore.Setting.get('domain'))
-    logging.info('Email to be expired is: %s', email)
+    email = self.request.get('email')
+    logging.info('Expiring password for: %s', email)
     result = password_change.ChangePasswordAtNextLogin(email)
     self.response.headers['Content-Type'] = 'application/json'
     return self.response.out.write(json.dumps(result))

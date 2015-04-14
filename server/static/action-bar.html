@@ -81,7 +81,7 @@
     <core-ajax id="expire_password_ajax"
       url="/password"
       method="POST"
-      params='{"user": "{{user}}",
+      params='{"email": "{{email}}",
                "xsrf": "{{xsrfToken}}"}'
       on-core-response="{{handleExpirePasswordResult}}"
       handleAs="json">
@@ -130,7 +130,7 @@
         this.coreSelectTriggerCount = 0;
         this.host = '';
         this.updatedHostStatusName = '';
-        this.user = '';
+        this.email = '';
       },
       updateHostStatus: function(event, detail, sender) {
         if (this.coreSelectTriggerCount > 0 && detail['isSelected']) {
@@ -148,11 +148,11 @@
         document.querySelector('#hostUpdatedToast').show();
       },
       expirePassword: function(event, detail, sender) {
-        this.user = this.$.actionBarContent.templateInstance_.model.innerText;
+        this.email = this.$.actionBarContent.templateInstance_.model.innerText;
         this.$.expire_password_ajax.go();
       },
       handleExpirePasswordResult: function() {
-        this.user = '';
+        this.email = '';
         document.querySelector('#passwordExpiredToast').show();
       }
     });
