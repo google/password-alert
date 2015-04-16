@@ -119,3 +119,4 @@ def SendPasswordEmail(report):
   message.body = datastore.Setting.get('email_body') % (report.host,
                                                         report.date)
   message.send()
+  logging.info('Sent user report to %s', message.to)

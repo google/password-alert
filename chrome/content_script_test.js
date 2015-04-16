@@ -35,46 +35,55 @@ function sendKeypress(char) {
   passwordcatcher.handleKeypress_(evt);
 }
 
-function DISABLEDtestOnKeypress() {
-  var msg = '{"passwordLengths":[null,null,true,null,true]}';  // pw len = 2 & 4
-  url = 'http://127.0.0.1/';
-  passwordcatcher.start_(msg); // set passwordLengths to msg
+function testOnKeypress() {
+  passwordcatcher.isRunning_ = true;
+  passwordcatcher.url_ = 'https://example.com';
+  passwordcatcher.looksLikeGooglePage_ = function() {
+    return true;
+  };
 
-  var checkedWords = [];
-  passwordcatcher.checkChars_ = function(typed) {
-    checkedWords.push(typed);
+  var requests = [];
+  chrome.runtime = {};
+  chrome.runtime.sendMessage = function(request) {
+    requests.push(request);
   };
 
   sendKeypress('a');
   sendKeypress('b');
   sendKeypress('c');
-  assertEquals('ab', checkedWords[0]);
-  assertEquals('bc', checkedWords[1]);
+  assertEquals('a', String.fromCharCode(requests[0].charCode));
+  assertEquals('b', String.fromCharCode(requests[1].charCode));
+  assertEquals('c', String.fromCharCode(requests[2].charCode));
 
-  sendKeypress('d');
-  assertNotEquals(-1, checkedWords.indexOf('abcd'));
-  assertNotEquals(-1, checkedWords.indexOf('cd'));
-
-  // Test that the buffer is trimmed if it gets too big.
-  // It's trimmed at 2 * max, but test 10 * max so the test is less brittle.
-  for (var i = 0; i < 10 * 5; i++) {  // 5 is length from msg passwordLengths.
-    sendKeypress('e');
+  // TODO(henryc): Find a way to mock document.referrer or its method
+  // so that we can assert on it.  Possibly change the method signature
+  // to allow document to be a parameter, which would allow a mock object
+  // to be passed in.
+  for (var i = 0; i < requests.length; i++) {
+    assertEquals('handleKeypress', requests[i].action);
+    assertEquals('https://example.com', requests[i].url);
+    assertTrue(requests[i].looksLikeGoogle);
+    if (i < (requests.length - 1)) {
+      assertTrue(requests[i].lastKeypressTimeStamp <
+                 requests[i + 1].lastKeypressTimeStamp);
+    }
   }
-  assertTrue(
-      passwordcatcher.typedChars_.length < 5 * 5);
-
-  // test that time gaps clear the buffer
-  passwordcatcher.typedTime_ = passwordcatcher.typedTime_ -
-      (passwordcatcher.SECONDS_TO_CLEAR_ * 1000 + 1);
-  sendKeypress('X');
-  assertEquals(passwordcatcher.typedChars_, 'X');
-
-  // test that enter clears the buffer
-  sendKeypress('\r');
-  sendKeypress('Y');
-  assertEquals(passwordcatcher.typedChars_, 'Y');
 }
 
+// TODO(henryc): Write a similar test case for when evt.view is null.
+// This will need evt.view to be set-able.
+function testKeypressWillNotBeHandledIfPasswordCatcherIsNotRunning() {
+  passwordcatcher.isRunning_ = false;
+
+  var requests = [];
+  chrome.runtime = {};
+  chrome.runtime.sendMessage = function(request) {
+    requests.push(request);
+  };
+
+  sendKeypress('a');
+  assertEquals(0, requests.length);
+}
 
 function testStart() {
   msg = '{"passwordLengths":[null,null,true,null,true]}';
@@ -97,47 +106,6 @@ function testStart() {
   assertTrue(passwordcatcher.isRunning_);
 }
 
-
-function DISABLEDtestOtpMode() {
-  var msg = '{"passwordLengths":[null,null,true]}';  // 2 character password
-  url = 'http://127.0.0.1/';
-  passwordcatcher.start_(msg); // set passwordLengths to msg
-
-  passwordcatcher.checkChars_ = function(typed) {
-    if (typed == 'pw') {
-      passwordcatcher.otpCount_ = 0;
-      passwordcatcher.otpMode_ = true;
-    }
-  };
-
-  alertCalled = false;
-  passwordcatcher.otpAlert_ = function() {
-    alertCalled = true;
-  };
-
-  // Alpha character ends OTP mode.
-  sendKeypress('p');
-  sendKeypress('w');
-  sendKeypress('1');
-  sendKeypress('a');
-  assertFalse(passwordcatcher.otpMode_);
-
-  // Test password and OTP entered.
-  sendKeypress('p');
-  sendKeypress('w');
-  // space and tabs at beginning are allowed.
-  sendKeypress(' ');
-  sendKeypress('\t');
-  assertTrue(passwordcatcher.otpMode_);
-
-  for (i = 0; i < passwordcatcher.otp_length_; i++) {
-    assertTrue(passwordcatcher.otpMode_);
-    sendKeypress('1');
-  }
-  assertTrue(alertCalled);
-}
-
-
 function testWhitelist() {
   passwordcatcher.url_ = 'https://foo.corp.google.com/';
   passwordcatcher.whitelist_top_domains_ = [
@@ -148,4 +116,18 @@ function testWhitelist() {
   passwordcatcher.url_ =
       'https://foo.corp.google.com.evil.com/login.corp.google.com/';
   assertFalse(passwordcatcher.whitelistUrl_());
+}
+
+
+function testIsEmailInDomain() {
+  passwordcatcher.corp_email_domain_ = '@example.com';
+  assertTrue(passwordcatcher.isEmailInDomain_('test@example.com'));
+  assertFalse(passwordcatcher.isEmailInDomain_('test@not.example.com'));
+
+  passwordcatcher.corp_email_domain_ =
+      '@0.example.com, @1.example.com, @2.example.com';
+  assertTrue(passwordcatcher.isEmailInDomain_('test@0.example.com'));
+  assertTrue(passwordcatcher.isEmailInDomain_('test@1.example.com'));
+  assertTrue(passwordcatcher.isEmailInDomain_('test@2.example.com'));
+  assertFalse(passwordcatcher.isEmailInDomain_('test@example.com'));
 }

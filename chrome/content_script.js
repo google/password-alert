@@ -569,7 +569,7 @@ passwordcatcher.saveSsoPassword_ = function(evt) {
     var password =
         document.querySelector(passwordcatcher.sso_password_selector_).value;
     if (username.indexOf('@') == -1) {
-      username += passwordcatcher.corp_email_domain_;
+      username += passwordcatcher.corp_email_domain_.split(',')[0];
     }
     chrome.runtime.sendMessage({
       action: 'setPossiblePassword',
@@ -593,7 +593,7 @@ passwordcatcher.saveGaiaPassword_ = function(evt) {
   email = goog.string.trim(email.toLowerCase());
   var password = document.getElementById('Passwd').value;
   if (passwordcatcher.isEnterpriseUse_ &&
-      !goog.string.endsWith(email, passwordcatcher.corp_email_domain_)) {
+      !passwordcatcher.isEmailInDomain_(email)) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage({
@@ -601,6 +601,24 @@ passwordcatcher.saveGaiaPassword_ = function(evt) {
     email: email,
     password: password
   });
+};
+
+
+/**
+ * Called when the GAIA page is submitted. Sends possible
+ * password to background.js.
+ * @param {string} email Email address to check.
+ * @return {boolean} True if email address is for a configured corporate domain.
+ * @private
+ */
+passwordcatcher.isEmailInDomain_ = function(email) {
+  var domains = passwordcatcher.corp_email_domain_.split(',');
+  for (var i in domains) {
+    if (goog.string.endsWith(email, domains[i].trim().toLowerCase())) {
+      return true;
+    }
+  }
+  return false;
 };
 
 

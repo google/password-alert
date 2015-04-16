@@ -25,11 +25,11 @@
   },
   "password_warning_banner_header": {
     "message": "Reset your Gmail password",
-    "description": "This is used for the warning banner to warn users that they have typed their password."
+    "description": "This is used for the warning banner to warn users that they have typed their password. [CHAR LIMIT = 50]"
   },
   "password_warning_banner_body": {
     "message": "Your Gmail password was just exposed to a non-Gmail login page. You should immediately reset your password to keep your Gmail account secure. Also, please make sure your Gmail password is not reused on other services.",
-    "description": "This is used for the warning banner to warn users that they have typed their password."
+    "description": "This is used for the warning banner to warn users that they have typed their password. [CHAR LIMIT = 300]"
   },
   "learn_more": {
     "message": "Learn more",
@@ -37,7 +37,7 @@
   },
   "ignore": {
     "message": "Ignore this time",
-    "description": "This is used to tell the user that they can ignore the warning for this time only."
+    "description": "This is used to tell the user that they can ignore the warning for this time only. [CHAR LIMIT = 25]"
   },
   "always_ignore": {
     "message": "Always ignore for this website",
@@ -49,30 +49,30 @@
   },
   "reset_password": {
     "message": "Reset Password",
-    "description": "This is used to tell the user to reset their passord."
+    "description": "This is used to tell the user to reset their passord. [CHAR LIMIT = 25]"
   },
   "phishing_warning_banner_header": {
     "message": "This site has been blocked.",
-    "description": "This is used for the warning banner to warn users that they are visiting a phishing website."
+    "description": "This is used for the warning banner to warn users that they are visiting a phishing website. [CHAR LIMIT = 50]"
   },
   "phishing_warning_banner_body": {
     "message": "This site appears to be using a fake version of the Google login page to steal your password, so it has been blocked. If you understand that this site may harm your computer, you may visit this site but please be careful about the information you type.",
-    "description": "This is used for the warning banner to warn users that they are visiting a phishing website."
+    "description": "This is used for the warning banner to warn users that they are visiting a phishing website. [CHAR LIMIT = 300]"
   },
   "back": {
     "message": "Back",
-    "description": "This is used to tell the user that they can navigate back to the previous webpage."
+    "description": "This is used to tell the user that they can navigate back to the previous webpage. [CHAR LIMIT = 25]"
   },
   "contact_security": {
     "message": "Contact Security",
-    "description": "This is used to tell the user to contact the security administrators."
+    "description": "This is used to tell the user to contact the security administrators. [CHAR LIMIT = 25]"
   },
   "report_phishing": {
     "message": "Report This Site",
-    "description": "This is used to tell the user to report this potentially malicious website to Google."
+    "description": "This is used to tell the user to report this potentially malicious website to Google. [CHAR LIMIT = 25]"
   },
   "visit_this_site": {
     "message": "Visit This Site",
-    "description": "This is used to tell the user that they can visit the current website."
+    "description": "This is used to tell the user that they can visit the current website. [CHAR LIMIT = 25]"
   }
 }

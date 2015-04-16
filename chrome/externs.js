@@ -37,6 +37,7 @@ chrome.identity;
 chrome.identity.getAuthToken;
 chrome.identity.getProfileUserInfo;
 
+
 chrome.notifications;
 chrome.notifications.create;
 chrome.notifications.getAll;
