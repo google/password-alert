@@ -433,7 +433,9 @@ passwordcatcher.background.completePageInitialization_ = function() {
   // for reporting phishing sites (if the password store isn't initialized).
   chrome.identity.getProfileUserInfo(function(userInfo) {
     if (userInfo) {
-      passwordcatcher.signed_in_email_ = userInfo.email;
+      passwordcatcher.background.signed_in_email_ = userInfo.email;
+      console.log('Retrieved user email from chrome profile: %s',
+                  passwordcatcher.background.signed_in_email_);
     }
   });
   console.log('Completed page initialization.');
@@ -556,8 +558,6 @@ passwordcatcher.background.handleKeypress_ = function(tabId, request) {
   passwordcatcher.background.tabState_[tabId]['typedChars'] +=
       String.fromCharCode(request.charCode);
   passwordcatcher.background.tabState_[tabId]['typedTime'] = now;
-  console.log('typed chars in buffer is: %s',
-      passwordcatcher.background.tabState_[tabId]['typedChars']);
 
   // trim the buffer when it's too big
   if (passwordcatcher.background.tabState_[tabId]['typedChars'].length >

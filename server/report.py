@@ -61,7 +61,7 @@ class ReportPasswordHandler(webapp2.RequestHandler):
     report.referer = self.request.get('referer')[:datastore.MAX_STRING_LENGTH]
     report.email = self.request.get('email')
     host = datastore.Host.get_by_key_name(report.host)
-    if not host or host.status == datastore.UNKNOWN:
+    if not host or host.status == datastore.UNKNOWN or not host.status:
       self.SendNewHostAlert(report)
     report.password_date = datetime.fromtimestamp(
         int(self.request.get('password_date')))  # password_date is in seconds
@@ -69,7 +69,7 @@ class ReportPasswordHandler(webapp2.RequestHandler):
       report.looks_like_google = True
     if self.request.get('otp'):
       report.otp = True
-      if not host or host.status == datastore.UNKNOWN:
+      if not host or host.status == datastore.UNKNOWN or not host.status:
         self.SendOtpAlert(report)
     report.put()
     password_change.ProcessReport(report, host)
@@ -94,6 +94,7 @@ class ReportPasswordHandler(webapp2.RequestHandler):
         report.email,
         self._GetSearchUrl(report.email))
     message.send()
+    logging.info('Sent new host alert to %s', message.to)
 
   def SendOtpAlert(self, report):
     """Email an OTP alert."""
@@ -111,6 +112,7 @@ class ReportPasswordHandler(webapp2.RequestHandler):
         report.email,
         self._GetSearchUrl(report.email))
     message.send()
+    logging.info('Sent OTP alert to %s', message.to)
 
 
 class ReportPageHandler(webapp2.RequestHandler):
@@ -138,6 +140,7 @@ class ReportPageHandler(webapp2.RequestHandler):
                        self.request.get('email'),
                        self.request.get('version')))
     message.send()
+    logging.info('Sent phishing page alert to %s', message.to)
 
 application = webapp2.WSGIApplication([
     ('/report/password/', ReportPasswordHandler),

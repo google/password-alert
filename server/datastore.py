@@ -90,7 +90,7 @@ def GetStatus(status_name):
   elif status_name == 'MUTE' or status_name == 'MUTEALERTS':
     return MUTE
   else:
-    return None
+    return UNKNOWN
 
 # Host status
 ALLOWED = 1  # Do not alert security and do not expire the user's password.
