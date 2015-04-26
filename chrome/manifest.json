@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
-  "version": "0.40.13",
+  "version": "0.40.19",
   "default_locale": "en",
   "minimum_chrome_version": "33",
   "icons": { "128": "icon128.png" },
@@ -15,7 +15,7 @@
   ],
 
   "web_accessible_resources": [
-    "logo_password_catcher.png",
+    "logo_password_alert.png",
     "warning_banner.css"
   ],
 
@@ -41,7 +41,7 @@
   "manifest_version": 2,
 
   "oauth2": {
-    "client_id": "894133746257-ci014prch1u46rn7lfbm9neg9ppn9a8a.apps.googleusercontent.com",
+    "client_id": "897749729682-2j2fjtnfde4kgi40fvjrp7ude48ooh4n.apps.googleusercontent.com",
     "scopes": ["email"]
   }
 }

@@ -32,13 +32,13 @@ function sendKeypress(char) {
   evt.charCode = char.charCodeAt(0);
   evt.timeStamp = timeStamp++;
   evt.view = Window;
-  passwordcatcher.handleKeypress_(evt);
+  passwordalert.handleKeypress_(evt);
 }
 
 function testOnKeypress() {
-  passwordcatcher.isRunning_ = true;
-  passwordcatcher.url_ = 'https://example.com';
-  passwordcatcher.looksLikeGooglePage_ = function() {
+  passwordalert.isRunning_ = true;
+  passwordalert.url_ = 'https://example.com';
+  passwordalert.looksLikeGooglePage_ = function() {
     return true;
   };
 
@@ -64,16 +64,15 @@ function testOnKeypress() {
     assertEquals('https://example.com', requests[i].url);
     assertTrue(requests[i].looksLikeGoogle);
     if (i < (requests.length - 1)) {
-      assertTrue(requests[i].lastKeypressTimeStamp <
-                 requests[i + 1].lastKeypressTimeStamp);
+      assertTrue(requests[i].typedTimeStamp < requests[i + 1].typedTimeStamp);
     }
   }
 }
 
 // TODO(henryc): Write a similar test case for when evt.view is null.
 // This will need evt.view to be set-able.
-function testKeypressWillNotBeHandledIfPasswordCatcherIsNotRunning() {
-  passwordcatcher.isRunning_ = false;
+function testKeypressWillNotBeHandledIfPasswordAlertIsNotRunning() {
+  passwordalert.isRunning_ = false;
 
   var requests = [];
   chrome.runtime = {};
@@ -88,46 +87,46 @@ function testKeypressWillNotBeHandledIfPasswordCatcherIsNotRunning() {
 function testStart() {
   msg = '{"passwordLengths":[null,null,true,null,true]}';
 
-  // passwordcatcher.sso_url_ is undefined by default.
-  passwordcatcher.url_ = 'https://login.corp.google.com/request?' +
+  // passwordalert.sso_url_ is undefined by default.
+  passwordalert.url_ = 'https://login.corp.google.com/request?' +
       'd=https%3A%2F%2Fcookieserver';
-  passwordcatcher.start_(msg);
-  assertTrue(passwordcatcher.isRunning_);
+  passwordalert.start_(msg);
+  assertTrue(passwordalert.isRunning_);
 
-  passwordcatcher.sso_url_ = chrome.storage.managed.get()['sso_url'];
+  passwordalert.sso_url_ = chrome.storage.managed.get()['sso_url'];
 
-  passwordcatcher.url_ = 'https://login.corp.google.com/request?' +
+  passwordalert.url_ = 'https://login.corp.google.com/request?' +
       'd=https%3A%2F%2Fcookieserver';
-  passwordcatcher.start_(msg);
-  assertFalse(passwordcatcher.isRunning_);
+  passwordalert.start_(msg);
+  assertFalse(passwordalert.isRunning_);
 
-  passwordcatcher.url_ = 'http://127.0.0.1/';
-  passwordcatcher.start_(msg);
-  assertTrue(passwordcatcher.isRunning_);
+  passwordalert.url_ = 'http://127.0.0.1/';
+  passwordalert.start_(msg);
+  assertTrue(passwordalert.isRunning_);
 }
 
 function testWhitelist() {
-  passwordcatcher.url_ = 'https://foo.corp.google.com/';
-  passwordcatcher.whitelist_top_domains_ = [
+  passwordalert.url_ = 'https://foo.corp.google.com/';
+  passwordalert.whitelist_top_domains_ = [
     '.borg.google.com',
     '.corp.google.com'
   ];
-  assertTrue(passwordcatcher.whitelistUrl_());
-  passwordcatcher.url_ =
+  assertTrue(passwordalert.whitelistUrl_());
+  passwordalert.url_ =
       'https://foo.corp.google.com.evil.com/login.corp.google.com/';
-  assertFalse(passwordcatcher.whitelistUrl_());
+  assertFalse(passwordalert.whitelistUrl_());
 }
 
 
 function testIsEmailInDomain() {
-  passwordcatcher.corp_email_domain_ = '@example.com';
-  assertTrue(passwordcatcher.isEmailInDomain_('test@example.com'));
-  assertFalse(passwordcatcher.isEmailInDomain_('test@not.example.com'));
+  passwordalert.corp_email_domain_ = 'example.com';
+  assertTrue(passwordalert.isEmailInDomain_('test@example.com'));
+  assertFalse(passwordalert.isEmailInDomain_('test@not.example.com'));
 
-  passwordcatcher.corp_email_domain_ =
-      '@0.example.com, @1.example.com, @2.example.com';
-  assertTrue(passwordcatcher.isEmailInDomain_('test@0.example.com'));
-  assertTrue(passwordcatcher.isEmailInDomain_('test@1.example.com'));
-  assertTrue(passwordcatcher.isEmailInDomain_('test@2.example.com'));
-  assertFalse(passwordcatcher.isEmailInDomain_('test@example.com'));
+  passwordalert.corp_email_domain_ =
+      '0.example.com, 1.example.com, 2.example.com';
+  assertTrue(passwordalert.isEmailInDomain_('test@0.example.com'));
+  assertTrue(passwordalert.isEmailInDomain_('test@1.example.com'));
+  assertTrue(passwordalert.isEmailInDomain_('test@2.example.com'));
+  assertFalse(passwordalert.isEmailInDomain_('test@example.com'));
 }

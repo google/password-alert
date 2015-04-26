@@ -9,7 +9,14 @@
 {% block content %}
   {% if reports is none %}
     <div align="center">
-      <h1>No results found for: {{search_query}}.</h1></div>
+      <h1>
+        {% if search_query is defined %}
+          No results found for: {{search_query}}.
+        {% else %}
+          There are no recent reports.
+        {% endif %}
+      </h1>
+    </div>
   {% else %}
     {% if search_query is defined %}
       <action-bar reportType="{{report_type}}" xsrfToken="{{xsrf_token}}"

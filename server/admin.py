@@ -43,9 +43,13 @@ class MainHandler(webapp2.RequestHandler):
   @auth.admin_authorization_required
   def get(self):
     query = datastore.Report.all().order('-date')
+    query.filter('domain =', datastore.CURRENT_DOMAIN)
     reports = query.fetch(100)
+    if not reports:
+      reports = None  # Conversion for templating.
     template_values = {
         'reports': reports,
+        'current_domain': datastore.CURRENT_DOMAIN,
         'xsrf_token': xsrf.xsrf_token()
     }
     template = JINJA_ENVIRONMENT.get_template('templates/admin.html')
@@ -58,11 +62,13 @@ class HostsHandler(webapp2.RequestHandler):
   @auth.admin_authorization_required
   def get(self):
     query = datastore.Host.all()
+    query.filter('domain =', datastore.CURRENT_DOMAIN)
     query.filter('status = ', datastore.ALLOWED)
     query.order('host')
     hosts = query.fetch(100)
     template_values = {
-        'hosts': hosts
+        'hosts': hosts,
+        'current_domain': datastore.CURRENT_DOMAIN
     }
     template = JINJA_ENVIRONMENT.get_template('templates/hosts.html')
     self.response.write(template.render(template_values))
@@ -70,8 +76,11 @@ class HostsHandler(webapp2.RequestHandler):
   @xsrf.xsrf_protect
   @auth.admin_authorization_required
   def post(self):
-    host = datastore.Host(key=db.Key.from_path('Host',
-                                               self.request.get('host')))
+    host = datastore.Host(
+        key=db.Key.from_path(
+            'Host',
+            datastore.CURRENT_DOMAIN + ':' + self.request.get('host')))
+    host.domain = datastore.CURRENT_DOMAIN
     host.host = datastore.NormalizeUrl(self.request.get('host'))
     host.status = datastore.GetStatus(self.request.get('updatedHostStatusName'))
     host.put()

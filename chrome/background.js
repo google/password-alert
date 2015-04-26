@@ -24,7 +24,7 @@
 
 'use strict';
 
-goog.provide('passwordcatcher.background');
+goog.provide('passwordalert.background');
 
 goog.require('goog.crypt');
 goog.require('goog.crypt.Sha1');
@@ -36,7 +36,7 @@ goog.require('goog.crypt.Sha1');
  * @private
  * @const
  */
-passwordcatcher.background.SALT_KEY_ = 'salt';
+passwordalert.background.SALT_KEY_ = 'salt';
 
 
 /**
@@ -45,7 +45,7 @@ passwordcatcher.background.SALT_KEY_ = 'salt';
  * @private
  * @const
  */
-passwordcatcher.background.HASH_BITS_ = 37;
+passwordalert.background.HASH_BITS_ = 37;
 
 
 /**
@@ -53,7 +53,7 @@ passwordcatcher.background.HASH_BITS_ = 37;
  * @type {string}
  * @private
  */
-passwordcatcher.background.report_url_;
+passwordalert.background.report_url_;
 
 
 /**
@@ -61,7 +61,7 @@ passwordcatcher.background.report_url_;
  * @type {boolean}
  * @private
  */
-passwordcatcher.background.shouldInitializePassword_;
+passwordalert.background.shouldInitializePassword_;
 
 
 /**
@@ -69,7 +69,7 @@ passwordcatcher.background.shouldInitializePassword_;
  * @type {number}
  * @private
  */
-passwordcatcher.background.minimum_password_ = 8;
+passwordalert.background.minimum_password_ = 8;
 
 
 /**
@@ -79,7 +79,7 @@ passwordcatcher.background.minimum_password_ = 8;
  * @private
  * @const
  */
-passwordcatcher.background.MAX_RATE_PER_HOUR_ = 18000;
+passwordalert.background.MAX_RATE_PER_HOUR_ = 18000;
 
 
 /**
@@ -87,7 +87,7 @@ passwordcatcher.background.MAX_RATE_PER_HOUR_ = 18000;
  * @type {number}
  * @private
  */
-passwordcatcher.background.rateLimitCount_ = 0;
+passwordalert.background.rateLimitCount_ = 0;
 
 
 /**
@@ -95,7 +95,7 @@ passwordcatcher.background.rateLimitCount_ = 0;
  * @type {Date}
  * @private
  */
-passwordcatcher.background.rateLimitResetDate_;
+passwordalert.background.rateLimitResetDate_;
 
 
 /**
@@ -103,7 +103,7 @@ passwordcatcher.background.rateLimitResetDate_;
  * @type {Object.<number, Object.<string, string|boolean>>}
  * @private
  */
-passwordcatcher.background.possiblePassword_ = {};
+passwordalert.background.possiblePassword_ = {};
 
 
 /**
@@ -112,7 +112,7 @@ passwordcatcher.background.possiblePassword_ = {};
  *                         otpTime: Date, typedChars: string, typedTime: Date}>}
  * @private
  */
-passwordcatcher.background.tabState_ = {};
+passwordalert.background.tabState_ = {};
 
 
 /**
@@ -121,7 +121,7 @@ passwordcatcher.background.tabState_ = {};
  * @type {Array.<boolean>}
  * @private
  */
-passwordcatcher.background.passwordLengths_;
+passwordalert.background.passwordLengths_;
 
 
 /**
@@ -130,7 +130,7 @@ passwordcatcher.background.passwordLengths_;
  * @private
  * @const
  */
-passwordcatcher.background.SECONDS_TO_CLEAR_ = 10;
+passwordalert.background.SECONDS_TO_CLEAR_ = 10;
 
 
 /**
@@ -139,7 +139,7 @@ passwordcatcher.background.SECONDS_TO_CLEAR_ = 10;
  * @private
  * @const
  */
-passwordcatcher.background.SECONDS_TO_CLEAR_OTP_ = 60;
+passwordalert.background.SECONDS_TO_CLEAR_OTP_ = 60;
 
 
 /**
@@ -147,7 +147,7 @@ passwordcatcher.background.SECONDS_TO_CLEAR_OTP_ = 60;
  * @type {number}
  * @private
  */
-passwordcatcher.background.OTP_LENGTH_ = 6;
+passwordalert.background.OTP_LENGTH_ = 6;
 
 
 /**
@@ -156,7 +156,7 @@ passwordcatcher.background.OTP_LENGTH_ = 6;
  * @private
  * @const
  */
-passwordcatcher.background.ENTER_ASCII_CODE_ = 13;
+passwordalert.background.ENTER_ASCII_CODE_ = 13;
 
 
 /**
@@ -166,7 +166,7 @@ passwordcatcher.background.ENTER_ASCII_CODE_ = 13;
  *            url: (string|undefined), looksLikeGoogle: (string|undefined)}}
  * @private
  */
-passwordcatcher.background.Request_;
+passwordalert.background.Request_;
 
 
 /**
@@ -175,16 +175,24 @@ passwordcatcher.background.Request_;
  * @private
  * @const
  */
-passwordcatcher.background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
+passwordalert.background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 
 
 /**
- * Is password catcher used in enterprise environment.  If false, then it's
+ * Is password alert used in enterprise environment.  If false, then it's
  * used by individual consumer.
  * @type {boolean}
  * @private
  */
-passwordcatcher.background.isEnterpriseUse_ = false;
+passwordalert.background.isEnterpriseUse_ = false;
+
+
+/**
+ * The corp email domain, e.g. "@company.com".
+ * @type {string}
+ * @private
+ */
+passwordalert.corp_email_domain_;
 
 
 /**
@@ -192,7 +200,7 @@ passwordcatcher.background.isEnterpriseUse_ = false;
  * @type {string}
  * @private
  */
-passwordcatcher.background.domain_auth_secret_ = '';
+passwordalert.background.domain_auth_secret_ = '';
 
 
 /**
@@ -202,7 +210,7 @@ passwordcatcher.background.domain_auth_secret_ = '';
  * @private
  * @const
  */
-passwordcatcher.background.NOTIFICATION_ID_ =
+passwordalert.background.NOTIFICATION_ID_ =
     'initialize_password_notification';
 
 
@@ -212,7 +220,7 @@ passwordcatcher.background.NOTIFICATION_ID_ =
  * @type {string}
  * @private
  */
-passwordcatcher.background.signed_in_email_ = '';
+passwordalert.background.signed_in_email_ = '';
 
 
 /**
@@ -220,7 +228,7 @@ passwordcatcher.background.signed_in_email_ = '';
  * @type {boolean}
  * @private
  */
-passwordcatcher.background.isNewInstall_ = false;
+passwordalert.background.isNewInstall_ = false;
 
 
 /**
@@ -228,16 +236,16 @@ passwordcatcher.background.isNewInstall_ = false;
  * @param {!Object} details Details of the onInstall event.
  * @private
  */
-passwordcatcher.background.handleNewInstall_ = function(details) {
+passwordalert.background.handleNewInstall_ = function(details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
-    passwordcatcher.background.isNewInstall_ = true;
+    passwordalert.background.isNewInstall_ = true;
 
     setTimeout(function() {
-      if (!localStorage.hasOwnProperty(passwordcatcher.background.SALT_KEY_)) {
+      if (!localStorage.hasOwnProperty(passwordalert.background.SALT_KEY_)) {
         console.log('Password still has not been initialized.  ' +
                     'Start the password initialization process again.');
-        passwordcatcher.background.initializePassword_();
+        passwordalert.background.initializePassword_();
       }
     }, 300000);  // 5 minutes
   }
@@ -249,18 +257,20 @@ passwordcatcher.background.handleNewInstall_ = function(details) {
  * @param {function()} callback Executed after policy values have been set.
  * @private
  */
-passwordcatcher.background.setManagedPolicyValuesIntoConfigurableVariables_ =
+passwordalert.background.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
     if (Object.keys(managedPolicy).length == 0) {
       console.log('No managed policy found. Consumer use.');
     } else {
       console.log('Managed policy found.  Enterprise use.');
-      passwordcatcher.background.isEnterpriseUse_ = true;
-      passwordcatcher.background.report_url_ = managedPolicy['report_url'];
-      passwordcatcher.background.shouldInitializePassword_ =
+      passwordalert.background.corp_email_domain_ =
+          managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
+      passwordalert.background.isEnterpriseUse_ = true;
+      passwordalert.background.report_url_ = managedPolicy['report_url'];
+      passwordalert.background.shouldInitializePassword_ =
           managedPolicy['should_initialize_password'];
-      passwordcatcher.background.domain_auth_secret_ =
+      passwordalert.background.domain_auth_secret_ =
           managedPolicy['domain_auth_secret'];
     }
     callback();
@@ -275,35 +285,39 @@ passwordcatcher.background.setManagedPolicyValuesIntoConfigurableVariables_ =
  *     For example:
  *     {
  *      report_url: {
- *        newValue: "https://passwordcatcher222.example.com/report/"
- *        oldValue: "https://passwordcatcher111.example.com/report/"
+ *        newValue: "https://passwordalert222.example.com/report/"
+ *        oldValue: "https://passwordalert111.example.com/report/"
  *        }
  *     }
  * @param {!string} storageNamespace The name of the storage area
  *     ("sync", "local" or "managed") the changes are for.
  * @private
  */
-passwordcatcher.background.handleManagedPolicyChanges_ =
+passwordalert.background.handleManagedPolicyChanges_ =
     function(changedPolicies, storageNamespace) {
   if (storageNamespace ==
-      passwordcatcher.background.MANAGED_STORAGE_NAMESPACE_) {
+      passwordalert.background.MANAGED_STORAGE_NAMESPACE_) {
     console.log('Handling changed policies.');
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
-      if (!passwordcatcher.background.isEnterpriseUse_) {
-        passwordcatcher.background.isEnterpriseUse_ = true;
+      if (!passwordalert.background.isEnterpriseUse_) {
+        passwordalert.background.isEnterpriseUse_ = true;
         console.log('Enterprise use via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       switch (changedPolicy) {
+        case 'corp_email_domain':
+          passwordalert.background.corp_email_domain_ =
+              newPolicyValue.replace(/@/g, '').toLowerCase();
+          break;
         case 'report_url':
-          passwordcatcher.background.report_url_ = newPolicyValue;
+          passwordalert.background.report_url_ = newPolicyValue;
           break;
         case 'should_initialize_password':
-          passwordcatcher.background.shouldInitializePassword_ = newPolicyValue;
+          passwordalert.background.shouldInitializePassword_ = newPolicyValue;
           break;
         case 'domain_auth_secret':
-          passwordcatcher.background.domain_auth_secret_ = newPolicyValue;
+          passwordalert.background.domain_auth_secret_ = newPolicyValue;
           break;
       }
     }
@@ -322,7 +336,7 @@ passwordcatcher.background.handleManagedPolicyChanges_ =
  *     injected, e.g. user to initialize password.
  * @private
  */
-passwordcatcher.background.injectContentScriptIntoAllTabs_ =
+passwordalert.background.injectContentScriptIntoAllTabs_ =
     function(callback) {
   chrome.tabs.query({}, function(tabs) {
     for (var i = 0; i < tabs.length; i++) {
@@ -351,11 +365,11 @@ passwordcatcher.background.injectContentScriptIntoAllTabs_ =
  * http://stackoverflow.com/a/26358154/2830207
  * @private
  */
-passwordcatcher.background.displayInitializePasswordNotification_ = function() {
+passwordalert.background.displayInitializePasswordNotification_ = function() {
   chrome.notifications.getAll(function(notifications) {
     console.log('Getting all created notifications: %O', notifications);
-    if (notifications[passwordcatcher.background.NOTIFICATION_ID_]) {
-      chrome.notifications.update(passwordcatcher.background.NOTIFICATION_ID_,
+    if (notifications[passwordalert.background.NOTIFICATION_ID_]) {
+      chrome.notifications.update(passwordalert.background.NOTIFICATION_ID_,
           {priority: 2}, function() {});
     } else {
       var options = {
@@ -363,17 +377,17 @@ passwordcatcher.background.displayInitializePasswordNotification_ = function() {
         priority: 1,
         title: chrome.i18n.getMessage('extension_name'),
         message: chrome.i18n.getMessage('initialization_message'),
-        iconUrl: chrome.extension.getURL('logo_password_catcher.png'),
+        iconUrl: chrome.extension.getURL('logo_password_alert.png'),
         buttons: [{
           title: chrome.i18n.getMessage('sign_in')
         }]
       };
-      chrome.notifications.create(passwordcatcher.background.NOTIFICATION_ID_,
+      chrome.notifications.create(passwordalert.background.NOTIFICATION_ID_,
           options, function() {});
       chrome.notifications.onButtonClicked.addListener(
           function(notificationId, buttonIndex) {
             if (notificationId ===
-                passwordcatcher.background.NOTIFICATION_ID_) {
+                passwordalert.background.NOTIFICATION_ID_) {
               chrome.tabs.create({'url':
                 'https://accounts.google.com/ServiceLogin?' +
                 'continue=https://www.google.com'});
@@ -389,9 +403,9 @@ passwordcatcher.background.displayInitializePasswordNotification_ = function() {
  * Prompts the user to initialize their password.
  * @private
  */
-passwordcatcher.background.initializePassword_ = function() {
-  if (passwordcatcher.background.isEnterpriseUse_ &&
-      !passwordcatcher.background.shouldInitializePassword_) {
+passwordalert.background.initializePassword_ = function() {
+  if (passwordalert.background.isEnterpriseUse_ &&
+      !passwordalert.background.shouldInitializePassword_) {
     console.log('Password should not be initialized.');
     return;
   }
@@ -403,10 +417,10 @@ passwordcatcher.background.initializePassword_ = function() {
   if (navigator.appVersion.indexOf('Macintosh') != -1) {
     console.log('Detected OS X.');
     setTimeout(
-        passwordcatcher.background.displayInitializePasswordNotification_,
+        passwordalert.background.displayInitializePasswordNotification_,
         10000);
   } else {
-    passwordcatcher.background.displayInitializePasswordNotification_();
+    passwordalert.background.displayInitializePasswordNotification_();
   }
 };
 
@@ -416,26 +430,26 @@ passwordcatcher.background.initializePassword_ = function() {
  * have been set.
  * @private
  */
-passwordcatcher.background.completePageInitialization_ = function() {
-  passwordcatcher.background.refreshPasswordLengths_();
+passwordalert.background.completePageInitialization_ = function() {
+  passwordalert.background.refreshPasswordLengths_();
   chrome.runtime.onMessage.addListener(
-      passwordcatcher.background.handleRequest_);
+      passwordalert.background.handleRequest_);
 
   // initializePassword_ is a callback because it should occur after
   // injectContentScriptIntoAllTabs_.  This way, the content script will be
   // available and ready to receive post-password initialization messages.
-  if (passwordcatcher.background.isNewInstall_) {
-    passwordcatcher.background.injectContentScriptIntoAllTabs_(
-        passwordcatcher.background.initializePassword_);
+  if (passwordalert.background.isNewInstall_) {
+    passwordalert.background.injectContentScriptIntoAllTabs_(
+        passwordalert.background.initializePassword_);
   }
 
   // Get the username from a signed in Chrome profile, which might be used
   // for reporting phishing sites (if the password store isn't initialized).
   chrome.identity.getProfileUserInfo(function(userInfo) {
     if (userInfo) {
-      passwordcatcher.background.signed_in_email_ = userInfo.email;
+      passwordalert.background.signed_in_email_ = userInfo.email;
       console.log('Retrieved user email from chrome profile: %s',
-                  passwordcatcher.background.signed_in_email_);
+                  passwordalert.background.signed_in_email_);
     }
   });
   console.log('Completed page initialization.');
@@ -446,43 +460,43 @@ passwordcatcher.background.completePageInitialization_ = function() {
  * Called when the extension loads.
  * @private
  */
-passwordcatcher.background.initializePage_ = function() {
-  passwordcatcher.background.setManagedPolicyValuesIntoConfigurableVariables_(
-      passwordcatcher.background.completePageInitialization_);
+passwordalert.background.initializePage_ = function() {
+  passwordalert.background.setManagedPolicyValuesIntoConfigurableVariables_(
+      passwordalert.background.completePageInitialization_);
 };
 
 
 /**
  * Receives requests from content_script.js and calls the appropriate function.
- * @param {passwordcatcher.background.Request_} request Request message from the
+ * @param {passwordalert.background.Request_} request Request message from the
  *     content_script.
  * @param {{tab: {id: number}}} sender Who sent this message.
  * @param {function(*)} sendResponse Callback with a response.
  * @private
  */
-passwordcatcher.background.handleRequest_ = function(
+passwordalert.background.handleRequest_ = function(
     request, sender, sendResponse) {
   if (sender.tab === undefined) {
     return;
   }
   switch (request.action) {
     case 'handleKeypress':
-      passwordcatcher.background.handleKeypress_(sender.tab.id, request);
+      passwordalert.background.handleKeypress_(sender.tab.id, request);
       break;
     case 'statusRequest':
-      passwordcatcher.background.pushToTab_(sender.tab.id);
+      passwordalert.background.pushToTab_(sender.tab.id);
       break;
     case 'looksLikeGoogle':
-      passwordcatcher.background.sendReportPage_(request);
+      passwordalert.background.sendReportPage_(request);
       break;
     case 'deletePossiblePassword':
-      delete passwordcatcher.background.possiblePassword_[sender.tab.id];
+      delete passwordalert.background.possiblePassword_[sender.tab.id];
       break;
     case 'setPossiblePassword':
-      passwordcatcher.background.setPossiblePassword_(sender.tab.id, request);
+      passwordalert.background.setPossiblePassword_(sender.tab.id, request);
       break;
     case 'savePossiblePassword':
-      passwordcatcher.background.savePossiblePassword_(sender.tab.id);
+      passwordalert.background.savePossiblePassword_(sender.tab.id);
       break;
   }
 };
@@ -493,10 +507,10 @@ passwordcatcher.background.handleRequest_ = function(
  * @param {number} tabId Id of the browser tab.
  * @private
  */
-passwordcatcher.background.clearOtpMode_ = function(tabId) {
-  passwordcatcher.background.tabState_[tabId]['otpMode'] = false;
-  passwordcatcher.background.tabState_[tabId]['otpCount'] = 0;
-  passwordcatcher.background.tabState_[tabId]['otpTime'] = '';
+passwordalert.background.clearOtpMode_ = function(tabId) {
+  passwordalert.background.tabState_[tabId]['otpMode'] = false;
+  passwordalert.background.tabState_[tabId]['otpCount'] = 0;
+  passwordalert.background.tabState_[tabId]['otpTime'] = null;
 
 };
 
@@ -504,75 +518,75 @@ passwordcatcher.background.clearOtpMode_ = function(tabId) {
 /**
  * Called on each key press. Checks the most recent possible characters.
  * @param {number} tabId Id of the browser tab.
- * @param {passwordcatcher.background.Request_} request Request object from
+ * @param {passwordalert.background.Request_} request Request object from
  *     content_script. Contains url and referer.
  * @private
  */
-passwordcatcher.background.handleKeypress_ = function(tabId, request) {
-  if (passwordcatcher.background.tabState_[tabId] === undefined) {
-    passwordcatcher.background.tabState_[tabId] = {'hash': '',
-                                                   'otpCount': 0,
-                                                   'otpMode': false,
-                                                   'otpTime': null,
-                                                   'typedChars': '',
-                                                   'typedTime': null};
+passwordalert.background.handleKeypress_ = function(tabId, request) {
+  if (passwordalert.background.tabState_[tabId] === undefined) {
+    passwordalert.background.tabState_[tabId] = {'hash': '',
+                                                 'otpCount': 0,
+                                                 'otpMode': false,
+                                                 'otpTime': null,
+                                                 'typedChars': '',
+                                                 'typedTime': null};
   }
 
-  if (passwordcatcher.background.tabState_[tabId]['otpMode']) {
+  if (passwordalert.background.tabState_[tabId]['otpMode']) {
     console.log('in otp mode');
     var now = new Date();
-    if (now - passwordcatcher.background.tabState_[tabId]['otpTime'] >
-        passwordcatcher.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
+    if (now - passwordalert.background.tabState_[tabId]['otpTime'] >
+        passwordalert.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
       console.log('reached time to clear otp; clearing otp');
-      passwordcatcher.background.clearOtpMode_(tabId);
+      passwordalert.background.clearOtpMode_(tabId);
     } else if (request.charCode >= 0x30 && request.charCode <= 0x39) {
       // is a digit
       console.log('digit typed');
-      passwordcatcher.background.tabState_[tabId]['otpCount']++;
+      passwordalert.background.tabState_[tabId]['otpCount']++;
     } else if (request.charCode > 0x20 ||
         // non-digit printable characters reset it
         // Non-printable only allowed at start:
-        passwordcatcher.background.tabState_[tabId]['otpCount'] > 0) {
+        passwordalert.background.tabState_[tabId]['otpCount'] > 0) {
       console.log('non-digit typed; clearing otp mode');
-      passwordcatcher.background.clearOtpMode_(tabId);
+      passwordalert.background.clearOtpMode_(tabId);
     }
-    if (passwordcatcher.background.tabState_[tabId]['otpCount'] >=
-        passwordcatcher.background.OTP_LENGTH_) {
+    if (passwordalert.background.tabState_[tabId]['otpCount'] >=
+        passwordalert.background.OTP_LENGTH_) {
       console.log('otp count is greater than otp length');
-      passwordcatcher.background.checkPassword_(tabId, request, true);
-      passwordcatcher.background.clearOtpMode_(tabId);
+      passwordalert.background.checkPassword_(tabId, request, true);
+      passwordalert.background.clearOtpMode_(tabId);
     }
   }
 
-  if (request.charCode == passwordcatcher.background.ENTER_ASCII_CODE_) {
-    passwordcatcher.background.tabState_[tabId]['typedChars'] = '';
+  if (request.charCode == passwordalert.background.ENTER_ASCII_CODE_) {
+    passwordalert.background.tabState_[tabId]['typedChars'] = '';
     return;
   }
 
-  var now = new Date();
-  if (now - passwordcatcher.background.tabState_[tabId]['typedTime'] >
-      passwordcatcher.background.SECONDS_TO_CLEAR_ * 1000) {
-    passwordcatcher.background.tabState_[tabId]['typedChars'] = '';
+  var typedTime = new Date(request.typedTimeStamp);
+  if (typedTime - passwordalert.background.tabState_[tabId]['typedTime'] >
+      passwordalert.background.SECONDS_TO_CLEAR_ * 1000) {
+    passwordalert.background.tabState_[tabId]['typedChars'] = '';
   }
 
-  passwordcatcher.background.tabState_[tabId]['typedChars'] +=
+  passwordalert.background.tabState_[tabId]['typedChars'] +=
       String.fromCharCode(request.charCode);
-  passwordcatcher.background.tabState_[tabId]['typedTime'] = now;
+  passwordalert.background.tabState_[tabId]['typedTime'] = typedTime;
 
   // trim the buffer when it's too big
-  if (passwordcatcher.background.tabState_[tabId]['typedChars'].length >
-      passwordcatcher.background.passwordLengths_.length) {
-    passwordcatcher.background.tabState_[tabId]['typedChars'] =
-        passwordcatcher.background.tabState_[tabId]['typedChars'].slice(
-        -1 * passwordcatcher.background.passwordLengths_.length);
+  if (passwordalert.background.tabState_[tabId]['typedChars'].length >
+      passwordalert.background.passwordLengths_.length) {
+    passwordalert.background.tabState_[tabId]['typedChars'] =
+        passwordalert.background.tabState_[tabId]['typedChars'].slice(
+        -1 * passwordalert.background.passwordLengths_.length);
   }
 
-  for (var i = 1; i < passwordcatcher.background.passwordLengths_.length; i++) {
-    if (passwordcatcher.background.passwordLengths_[i] &&
-        passwordcatcher.background.tabState_[tabId]['typedChars'].length >= i) {
-      request['password'] = passwordcatcher.background
+  for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
+    if (passwordalert.background.passwordLengths_[i] &&
+        passwordalert.background.tabState_[tabId]['typedChars'].length >= i) {
+      request.password = passwordalert.background
           .tabState_[tabId]['typedChars'].substr(-1 * i);
-      passwordcatcher.background.checkPassword_(tabId, request, false);
+      passwordalert.background.checkPassword_(tabId, request, false);
     }
   }
 };
@@ -582,23 +596,23 @@ passwordcatcher.background.handleKeypress_ = function(tabId, request) {
  * When password entered into a login page, temporarily save it here.
  * We do not yet know if the password is correct.
  * @param {number} tabId The tab that was used to log in.
- * @param {passwordcatcher.background.Request_} request Request object
+ * @param {passwordalert.background.Request_} request Request object
  *     containing email address and password.
  * @private
  */
-passwordcatcher.background.setPossiblePassword_ = function(tabId, request) {
+passwordalert.background.setPossiblePassword_ = function(tabId, request) {
   console.log('Start setting possible password for %s, password length of %s',
               request.email, request.password.length);
   if (!request.email ||
       !request.password ||
-      request.password.length < passwordcatcher.background.minimum_password_) {
+      request.password.length < passwordalert.background.minimum_password_) {
     return;
   }
   console.log('Setting possible password for %s, password length of %s',
               request.email, request.password.length);
-  passwordcatcher.background.possiblePassword_[tabId] = {
+  passwordalert.background.possiblePassword_[tabId] = {
     'email': request.email,
-    'password': passwordcatcher.background.hashPassword_(request.password),
+    'password': passwordalert.background.hashPassword_(request.password),
     'length': request.password.length
   };
 };
@@ -610,9 +624,9 @@ passwordcatcher.background.setPossiblePassword_ = function(tabId, request) {
  * @return {*} The item.
  * @private
  */
-passwordcatcher.background.getLocalStorageItem_ = function(index) {
+passwordalert.background.getLocalStorageItem_ = function(index) {
   var item;
-  if (localStorage.key(index) == passwordcatcher.background.SALT_KEY_) {
+  if (localStorage.key(index) == passwordalert.background.SALT_KEY_) {
     item = null;
   } else {
     item = JSON.parse(localStorage[localStorage.key(index)]);
@@ -626,9 +640,9 @@ passwordcatcher.background.getLocalStorageItem_ = function(index) {
  * @param {number} tabId The tab that was used to log in.
  * @private
  */
-passwordcatcher.background.savePossiblePassword_ = function(tabId) {
+passwordalert.background.savePossiblePassword_ = function(tabId) {
   console.log('Saving possible password.');
-  var possiblePassword_ = passwordcatcher.background.possiblePassword_[tabId];
+  var possiblePassword_ = passwordalert.background.possiblePassword_[tabId];
   if (!possiblePassword_) {
     console.log('No possible password.');
     return;
@@ -639,7 +653,7 @@ passwordcatcher.background.savePossiblePassword_ = function(tabId) {
 
   // Delete old email entries.
   for (var i = 0; i < localStorage.length; i++) {
-    var item = passwordcatcher.background.getLocalStorageItem_(i);
+    var item = passwordalert.background.getLocalStorageItem_(i);
     if (item && item['email'] == email) {
       delete item['email'];
       delete item['date'];
@@ -650,7 +664,7 @@ passwordcatcher.background.savePossiblePassword_ = function(tabId) {
   // Delete any entries that now have no emails.
   var keysToDelete = [];
   for (var i = 0; i < localStorage.length; i++) {
-    var item = passwordcatcher.background.getLocalStorageItem_(i);
+    var item = passwordalert.background.getLocalStorageItem_(i);
     if (item && !('email' in item)) {
       // Delete the item later.
       // We avoid modifying localStorage while iterating over it.
@@ -671,39 +685,39 @@ passwordcatcher.background.savePossiblePassword_ = function(tabId) {
   item['email'] = email;
   item['date'] = new Date();
 
-  if (passwordcatcher.background.isNewInstall_) {
+  if (passwordalert.background.isNewInstall_) {
     var options = {
       type: 'basic',
       title: chrome.i18n.getMessage('extension_name'),
       message: chrome.i18n.getMessage('initialization_thank_you_message'),
-      iconUrl: chrome.extension.getURL('logo_password_catcher.png')
+      iconUrl: chrome.extension.getURL('logo_password_alert.png')
     };
     chrome.notifications.create('thank_you_notification',
         options, function() {
-          passwordcatcher.background.isNewInstall_ = false;
+          passwordalert.background.isNewInstall_ = false;
         });
   }
 
   localStorage[password] = JSON.stringify(item);
-  delete passwordcatcher.background.possiblePassword_[tabId];
-  passwordcatcher.background.refreshPasswordLengths_();
+  delete passwordalert.background.possiblePassword_[tabId];
+  passwordalert.background.refreshPasswordLengths_();
 };
 
 
 /**
- * Updates the value of passwordcatcher.background.passwordLengths_ and pushes
+ * Updates the value of passwordalert.background.passwordLengths_ and pushes
  * new value to all content_script tabs.
  * @private
  */
-passwordcatcher.background.refreshPasswordLengths_ = function() {
-  passwordcatcher.background.passwordLengths_ = [];
+passwordalert.background.refreshPasswordLengths_ = function() {
+  passwordalert.background.passwordLengths_ = [];
   for (var i = 0; i < localStorage.length; i++) {
-    var item = passwordcatcher.background.getLocalStorageItem_(i);
+    var item = passwordalert.background.getLocalStorageItem_(i);
     if (item) {
-      passwordcatcher.background.passwordLengths_[item['length']] = true;
+      passwordalert.background.passwordLengths_[item['length']] = true;
     }
   }
-  passwordcatcher.background.pushToAllTabs_();
+  passwordalert.background.pushToAllTabs_();
 };
 
 
@@ -712,20 +726,20 @@ passwordcatcher.background.refreshPasswordLengths_ = function() {
  * @return {boolean} Whether we are below the maximum rate.
  * @private
  */
-passwordcatcher.background.checkRateLimit_ = function() {
+passwordalert.background.checkRateLimit_ = function() {
   var now = new Date();
-  if (!passwordcatcher.background.rateLimitResetDate_ ||  // initialization case
-      now >= passwordcatcher.background.rateLimitResetDate_) {
+  if (!passwordalert.background.rateLimitResetDate_ ||  // initialization case
+      now >= passwordalert.background.rateLimitResetDate_) {
     // setHours() handles wrapping correctly.
-    passwordcatcher.background.rateLimitResetDate_ =
+    passwordalert.background.rateLimitResetDate_ =
         now.setHours(now.getHours() + 1);
-    passwordcatcher.background.rateLimitCount_ = 0;
+    passwordalert.background.rateLimitCount_ = 0;
   }
 
-  passwordcatcher.background.rateLimitCount_++;
+  passwordalert.background.rateLimitCount_++;
 
-  if (passwordcatcher.background.rateLimitCount_ <=
-      passwordcatcher.background.MAX_RATE_PER_HOUR_) {
+  if (passwordalert.background.rateLimitCount_ <=
+      passwordalert.background.MAX_RATE_PER_HOUR_) {
     return true;
   } else {
     return false;  // rate exceeded
@@ -737,22 +751,22 @@ passwordcatcher.background.checkRateLimit_ = function() {
  * Determines if a password has been typed and if so creates alert. Also used
  * for sending OTP alerts.
  * @param {number} tabId The tab that sent this message.
- * @param {passwordcatcher.background.Request_} request Request object from
+ * @param {passwordalert.background.Request_} request Request object from
  *     content_script.
- * @param {boolean} otp If this is for an OTP alert.
+ * @param {boolean} otpAlert If this is for an OTP alert.
  * @private
  */
-passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
-  if (!passwordcatcher.background.checkRateLimit_()) {
+passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
+  if (!passwordalert.background.checkRateLimit_()) {
     return;  // This limits content_script brute-forcing the password.
   }
 
-  if (otp) {
-    console.log('is otp; getting hash from tabState');
-    var hash = passwordcatcher.background.tabState_[tabId].hash;
+  if (otpAlert) {
+    console.log('is otp alert; getting hash from tabState');
+    var hash = passwordalert.background.tabState_[tabId].hash;
   } else if (request.password) {
-    console.log('not otp; getting hash from request.password');
-    var hash = passwordcatcher.background.hashPassword_(request.password);
+    console.log('not otp alert; getting hash from request.password');
+    var hash = passwordalert.background.hashPassword_(request.password);
   } else {
     return; // Should never happen.
   }
@@ -763,25 +777,25 @@ passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
         date.getSeconds();
     console.log('PASSWORD and/or OTP TYPED! ' + formattedTime + '\n' +
         request.url);
-    passwordcatcher.background.tabState_[tabId]['hash'] = hash;
+    passwordalert.background.tabState_[tabId]['hash'] = hash;
 
     var item = JSON.parse(localStorage[hash]);
-    passwordcatcher.background.sendReportPassword_(
-        request, item['email'], item['date'], otp);
+    passwordalert.background.sendReportPassword_(
+        request, item['email'], item['date'], otpAlert);
 
     console.log('Password has been typed.');
-    passwordcatcher.background.tabState_[tabId]['otpCount'] = 0;
-    passwordcatcher.background.tabState_[tabId]['otpMode'] = true;
-    passwordcatcher.background.tabState_[tabId]['otpTime'] = new Date();
+    passwordalert.background.tabState_[tabId]['otpCount'] = 0;
+    passwordalert.background.tabState_[tabId]['otpMode'] = true;
+    passwordalert.background.tabState_[tabId]['otpTime'] = new Date();
 
-    chrome.tabs.sendMessage(tabId, 'injectPasswordWarning');
+    chrome.tabs.sendMessage(tabId, 'injectPasswordWarning:' + item['email']);
   }
 };
 
 
 /**
  * Sends a password typed alert to the server.
- * @param {passwordcatcher.background.Request_} request Request object from
+ * @param {passwordalert.background.Request_} request Request object from
  *     content_script. Contains url and referer.
  * @param {string} email The email to report.
  * @param {string} date The date when the correct password hash was saved.
@@ -789,9 +803,9 @@ passwordcatcher.background.checkPassword_ = function(tabId, request, otp) {
  * @param {boolean} otp True if this is for an OTP alert.
  * @private
  */
-passwordcatcher.background.sendReportPassword_ = function(
+passwordalert.background.sendReportPassword_ = function(
     request, email, date, otp) {
-  passwordcatcher.background.sendReport_(
+  passwordalert.background.sendReport_(
       request,
       email,
       date,
@@ -802,14 +816,14 @@ passwordcatcher.background.sendReportPassword_ = function(
 
 /**
  * Sends a phishing page alert to the server.
- * @param {passwordcatcher.background.Request_} request Request object from
+ * @param {passwordalert.background.Request_} request Request object from
  *     content_script. Contains url and referer.
  * @private
  */
-passwordcatcher.background.sendReportPage_ = function(request) {
-  passwordcatcher.background.sendReport_(
+passwordalert.background.sendReportPage_ = function(request) {
+  passwordalert.background.sendReport_(
       request,
-      passwordcatcher.background.guessUser_(),
+      passwordalert.background.guessUser_(),
       '',  // date not used.
       false, // not an OTP alert.
       'page/');
@@ -818,7 +832,7 @@ passwordcatcher.background.sendReportPage_ = function(request) {
 
 /**
  * Sends an alert to the server if in Enterprise mode.
- * @param {passwordcatcher.background.Request_} request Request object from
+ * @param {passwordalert.background.Request_} request Request object from
  *     content_script. Contains url and referer.
  * @param {string} email The email to report.
  * @param {string} date The date when the correct password hash was saved.
@@ -827,19 +841,25 @@ passwordcatcher.background.sendReportPage_ = function(request) {
  * @param {string} path Server path for report, such as "page/" or "password/".
  * @private
  */
-passwordcatcher.background.sendReport_ = function(
+passwordalert.background.sendReport_ = function(
     request, email, date, otp, path) {
-  if (!passwordcatcher.background.isEnterpriseUse_) {
+  if (!passwordalert.background.isEnterpriseUse_) {
     console.log('Not in enterprise mode, so not sending a report.');
     return;
   }
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', passwordcatcher.background.report_url_ + path, true);
+  xhr.open('POST', passwordalert.background.report_url_ + path, true);
   xhr.onreadystatechange = function() {};
   xhr.setRequestHeader('X-Same-Domain', 'true');
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+  // Turn 'example.com,1.example.com' into 'example.com'
+  var domain = passwordalert.background.corp_email_domain_.split(',')[0];
+  domain = domain.trim();
+
   var data = (
       'email=' + encodeURIComponent(email) +
+      '&domain=' + encodeURIComponent(domain) +
       '&referer=' + encodeURIComponent(request.referer || '') +
       '&url=' + encodeURIComponent(request.url || '') +
       '&version=' + chrome.runtime.getManifest().version);
@@ -853,9 +873,9 @@ passwordcatcher.background.sendReport_ = function(
   if (request.looksLikeGoogle) {
     data += '&looksLikeGoogle=true';
   }
-  if (passwordcatcher.background.domain_auth_secret_) {
+  if (passwordalert.background.domain_auth_secret_) {
     data += '&domain_auth_secret=' + encodeURIComponent(
-        passwordcatcher.background.domain_auth_secret_);
+        passwordalert.background.domain_auth_secret_);
   }
   chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
     console.log('oauth callback called.');
@@ -874,14 +894,14 @@ passwordcatcher.background.sendReport_ = function(
  * @return {string} email address for this user. '' if none found.
  * @private
  */
-passwordcatcher.background.guessUser_ = function() {
+passwordalert.background.guessUser_ = function() {
   for (var i = 0; i < localStorage.length; i++) {
-    var item = passwordcatcher.background.getLocalStorageItem_(i);
+    var item = passwordalert.background.getLocalStorageItem_(i);
     if (item && item['email']) {
       return item['email'];
     }
   }
-  return passwordcatcher.background.signed_in_email_;
+  return passwordalert.background.signed_in_email_;
 };
 
 
@@ -892,14 +912,14 @@ passwordcatcher.background.guessUser_ = function() {
  * @return {string} Hash as a string of hex characters.
  * @private
  */
-passwordcatcher.background.hashPassword_ = function(password) {
+passwordalert.background.hashPassword_ = function(password) {
   var sha1 = new goog.crypt.Sha1();
-  sha1.update(passwordcatcher.background.getHashSalt_());
+  sha1.update(passwordalert.background.getHashSalt_());
   sha1.update(goog.crypt.stringToUtf8ByteArray(password));
   var hash = sha1.digest();
 
   // Only keep HASH_BITS_ number of bits of the hash.
-  var bits = passwordcatcher.background.HASH_BITS_;
+  var bits = passwordalert.background.HASH_BITS_;
   for (var i = 0; i < hash.length; i++) {
     if (bits >= 8) {
       bits -= 8;
@@ -915,7 +935,7 @@ passwordcatcher.background.hashPassword_ = function(password) {
 
   // Do not return zeros at the end that were bit-masked out.
   return goog.crypt.byteArrayToHex(hash).substr(0,
-      Math.ceil(passwordcatcher.background.HASH_BITS_ / 4));
+      Math.ceil(passwordalert.background.HASH_BITS_ / 4));
 };
 
 
@@ -924,15 +944,15 @@ passwordcatcher.background.hashPassword_ = function(password) {
  * @return {string} Salt for the hash.
  * @private
  */
-passwordcatcher.background.getHashSalt_ = function() {
-  if (!(passwordcatcher.background.SALT_KEY_ in localStorage)) {
+passwordalert.background.getHashSalt_ = function() {
+  if (!(passwordalert.background.SALT_KEY_ in localStorage)) {
     // Generate a salt and save it.
     var salt = new Uint32Array(1);
     window.crypto.getRandomValues(salt);
-    localStorage[passwordcatcher.background.SALT_KEY_] = salt[0].toString();
+    localStorage[passwordalert.background.SALT_KEY_] = salt[0].toString();
   }
 
-  return localStorage[passwordcatcher.background.SALT_KEY_];
+  return localStorage[passwordalert.background.SALT_KEY_];
 };
 
 
@@ -940,10 +960,10 @@ passwordcatcher.background.getHashSalt_ = function() {
  * Posts status message to all tabs.
  * @private
  */
-passwordcatcher.background.pushToAllTabs_ = function() {
+passwordalert.background.pushToAllTabs_ = function() {
   chrome.tabs.query({}, function(tabs) {
     for (var i = 0; i < tabs.length; i++) {
-      passwordcatcher.background.pushToTab_(tabs[i].id);
+      passwordalert.background.pushToTab_(tabs[i].id);
     }
   });
 };
@@ -954,9 +974,9 @@ passwordcatcher.background.pushToAllTabs_ = function() {
  * @param {number} tabId Tab to receive the message.
  * @private
  */
-passwordcatcher.background.pushToTab_ = function(tabId) {
+passwordalert.background.pushToTab_ = function(tabId) {
   var state = {
-    passwordLengths: passwordcatcher.background.passwordLengths_
+    passwordLengths: passwordalert.background.passwordLengths_
   };
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
@@ -964,10 +984,10 @@ passwordcatcher.background.pushToTab_ = function(tabId) {
 
 // Set this early, or else the install event will not be picked up.
 chrome.runtime.onInstalled.addListener(
-    passwordcatcher.background.handleNewInstall_);
+    passwordalert.background.handleNewInstall_);
 
 // Set listener before initializePage_ which calls chrome.storage.managed.get.
 chrome.storage.onChanged.addListener(
-    passwordcatcher.background.handleManagedPolicyChanges_);
+    passwordalert.background.handleManagedPolicyChanges_);
 
-passwordcatcher.background.initializePage_();
+passwordalert.background.initializePage_();

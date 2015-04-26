@@ -1,7 +1,7 @@
-Password Catcher is covered by Google's bug bounty program as
+Password Alert is covered by Google's bug bounty program as
 described here: https://www.google.com/about/appsecurity/reward-program/
 
-For Password Catcher specifically, vulnerabilities that would be
+For Password Alert specifically, vulnerabilities that would be
 in-scope for the bug bounty program would be things such as:
 - unauthenticated access to user data on the server
 - a way for a malicious web page to get the password hash from the

@@ -19,6 +19,7 @@ __author__ = 'adhintz@google.com (Drew Hintz)'
 import logging
 import pickle
 
+from apiclient.errors import HttpError
 import config
 import google_directory_service
 from oauth2client import appengine
@@ -30,12 +31,16 @@ from google.appengine.api import memcache
 from google.appengine.api import users
 
 
-API_SERVICE_NAME = 'admin'
 API_SCOPES = (
     'https://www.googleapis.com/auth/admin.directory.user '
     'https://www.googleapis.com/auth/admin.directory.group.member.readonly')
-DIRECTORY_API_VERSION = 'directory_v1'
-MEMCACHE_ADMIN_KEY = 'admins'
+NO_ACCESS_MESSAGE = (
+    'Sorry, this website is only for Google for Work administrators.')
+ENABLE_API_MESSAGE = (
+    'You must first enable API access for your Google for Work domain.<br/>'
+    'Go to <a href="https://admin.google.com">https://admin.google.com</a> '
+    'and then under Security -> API Reference -> Enable API access. '
+    'Then please <a href="/">try Password Alert again</a>.')
 
 
 def _GetPrivateKey(private_key_filename):
@@ -51,14 +56,24 @@ def _GetPrivateKey(private_key_filename):
     return f.read()
 
 
+# Note that these Handlers do not have @auth.*_authorization_required decorators
+# so datastore.CURRENT_DOMAIN will not be configured. Instead we segment using
+# user.user_id().
+
+
 class SetupHandler(webapp2.RequestHandler):
-  """Display the list of allowed hosts."""
+  """Setup initial authentication credentials."""
 
   def get(self):
     if config.SERVICE_ACCOUNT:
       LoadCredentialsFromPem()
       self.redirect('/settings/')
     elif config.OAUTH_CLIENT_ID:
+      if (users.get_current_user().email().split('@')[1]
+          in ['gmail.com', 'googlemail.com']):
+        logging.info('rejecting gmail user %s',
+                     users.get_current_user().email())
+        return self.response.out.write(NO_ACCESS_MESSAGE)
       flow = OAuth2WebServerFlow(
           client_id=config.OAUTH_CLIENT_ID,
           client_secret=config.OAUTH_CLIENT_SECRET,
@@ -66,8 +81,8 @@ class SetupHandler(webapp2.RequestHandler):
           redirect_uri=config.OAUTH_REDIRECT_URI)
       flow.params.update({'approval_prompt': 'force'})
       # OAuth2WebServerFlow defaults to param 'access_type': 'offline'
-      user = users.get_current_user()
-      memcache.set('oauthflow:' + user.user_id(), pickle.dumps(flow))
+      memcache.set('oauthflow:' + users.get_current_user().user_id(),
+                   pickle.dumps(flow))
       auth_uri = flow.step1_get_authorize_url()
       self.redirect(auth_uri)
     else:
@@ -82,9 +97,17 @@ class RedirectHandler(webapp2.RequestHandler):
     flow = pickle.loads(memcache.get(
         'oauthflow:' + users.get_current_user().user_id()))
     credentials = flow.step2_exchange(self.request.get('code'))
-    user_info = google_directory_service.BuildService(
-        credentials).users().get(
-            userKey=users.get_current_user().email()).execute()
+    try:
+      user_info = google_directory_service.BuildService(
+          credentials).users().get(
+              userKey=users.get_current_user().email()).execute()
+    except HttpError as e:
+      logging.warning('rejecting due to HttpError: %s', e)
+      if 'Domain cannot use apis' in str(e):
+        return self.response.out.write(ENABLE_API_MESSAGE)
+      else:
+        return self.response.out.write(NO_ACCESS_MESSAGE)
+
     if not user_info['isAdmin']:
       logging.error('not admin in user object. Should not happen.')
       self.error(403)

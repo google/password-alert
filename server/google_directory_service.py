@@ -21,10 +21,10 @@ import config
 import datastore
 import httplib2
 from oauth2client import appengine
+from oauth2client.client import AccessTokenRefreshError
 import setup
 
 from google.appengine.api import memcache
-from google.appengine.api import users
 from google.appengine.ext import ndb
 
 
@@ -56,7 +56,7 @@ def _GetAuthorizedHttp(credentials=None):
   if not credentials:
     credential_storage = appengine.StorageByKeyName(
         appengine.CredentialsModel,
-        users.get_current_user().email().split('@')[1],
+        datastore.CURRENT_DOMAIN,
         'credentials')
     credentials = credential_storage.get()
     if credentials:
@@ -88,14 +88,7 @@ def BuildService(credentials=None):
         version=DIRECTORY_API_VERSION,
         http=_GetAuthorizedHttp(credentials))
   except NotImplementedError:
-    ndb.Key('CredentialsModel',
-            users.get_current_user().email().split('@')[1]).delete()
-    if memcache.flush_all():
-      logging.debug('Memcache flushed successfully due to invalid service '
-                    'account credentials.')
-    else:
-      logging.debug('Memcache not flushed successfully due to invalid service '
-                    'account credentials.')
+    ndb.Key('CredentialsModel', datastore.CURRENT_DOMAIN).delete()
     raise Exception('The service account credentials are invalid.  '
                     'Check to make sure you have a valid PEM file and you '
                     'have removed any extra data attributes that may have '
@@ -115,7 +108,8 @@ def _GetAdminEmails():
       groupKey=datastore.Setting.get('admin_group')).execute()
   for member in admin_group_info['members']:
     admin_emails.append(member['email'])
-  memcache.set(MEMCACHE_ADMIN_KEY, admin_emails,
+  memcache.set(datastore.CURRENT_DOMAIN + ':' + MEMCACHE_ADMIN_KEY,
+               admin_emails,
                MEMCACHE_EXPIRATION_TIME_IN_SECONDS)
   return admin_emails
 
@@ -134,8 +128,13 @@ def IsInAdminGroup(user):
 
   Raises:
     Exception: If ADMIN_GROUP is not configured in config.py
+    SetupNeeded: If oauth token no longer works.
   """
-  user_info = GetUserInfo(user.email())
+  try:
+    user_info = GetUserInfo(user.email())
+  except AccessTokenRefreshError:
+    ndb.Key('CredentialsModel', datastore.CURRENT_DOMAIN).delete()
+    raise SetupNeeded('oauth token no longer valid')
   # TODO(adhintz) memcache this isAdmin check.
   if user_info.get('isAdmin', ''):
     logging.info('user is a domain admin')
@@ -143,7 +142,8 @@ def IsInAdminGroup(user):
   logging.debug('Checking if %s is in admin group.', user.nickname())
   if not datastore.Setting.get('admin_group'):
     raise Exception('You must configure ADMIN_GROUP in config.py')
-  cached_admin_emails = memcache.get(MEMCACHE_ADMIN_KEY)
+  cached_admin_emails = memcache.get(
+      datastore.CURRENT_DOMAIN + ':' + MEMCACHE_ADMIN_KEY)
   if cached_admin_emails is not None:
     logging.debug('Admin info is found in memcache.')
     if user.email() in cached_admin_emails:

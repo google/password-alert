@@ -20,13 +20,21 @@ import logging
 import urlparse
 
 import config
-import webapp2
 from google.appengine.api import datastore_types
-from google.appengine.api import memcache
 from google.appengine.ext import db
 from google.appengine.ext import ndb
 
 MAX_STRING_LENGTH = datastore_types._MAX_STRING_LENGTH
+
+# Set on @*_authorization_required which is always the first code executed
+# on each incoming request.
+CURRENT_DOMAIN = ''
+# TODO(adhintz) This is a mutable global, refactor it out so that the state
+# is stored per-request, perhaps in the request object.
+
+HOSTED = False  # TODO(adhintz) Change this when we push to open-source?
+HOSTED_SERVER_URL = 'https://example.appspot.com'
+EMAIL_FROM = 'password-alert-noreply@google.com'
 
 # Report status
 NEW = 0  # also kept for hosts that do not have a status
@@ -37,6 +45,7 @@ ACTION_ERROR = 3  # Error while forcing password change.
 
 class Report(db.Model):
   """A report received from a browser that the user may have been phished."""
+  domain = db.StringProperty()  # The enterprise domain.
   url = db.StringProperty()
   host = db.StringProperty()  # such as http://example.com:123
   referer = db.StringProperty()
@@ -60,15 +69,17 @@ def GetReportStatus(status):
     return 'UNKNOWN'
 
 
-class User(db.Model):  # key is email address
+class User(db.Model):  # key is domain + ":" + email address
   """Information about an @google.com user."""
+  domain = db.StringProperty()  # The enterprise domain.
   email = db.StringProperty()
   date = db.DateTimeProperty(auto_now=True)  # date last forced
   count = db.IntegerProperty()  # times we've forced this user to change
 
 
-class Host(db.Model):  # key is host
+class Host(db.Model):  # key is domain + ":" + host
   """Hosts attributes, such as a status to not alert on this host."""
+  domain = db.StringProperty()  # The enterprise domain.
   host = db.StringProperty()  # such as http://example.com:123
   status = db.IntegerProperty()  # uses constants defined below
 
@@ -132,57 +143,45 @@ def NormalizeUrl(url):
   return normalized_url
 
 
-class Setting(ndb.Model):  # keyed by the setting name
+class Setting(ndb.Model):  # keyed by domain + ":" + the setting name
   """Key value pairs for the configuration settings."""
+  domain = ndb.StringProperty()  # The enterprise domain.
   value = ndb.TextProperty()
 
   @classmethod
   def set(cls, name, value):
-    entity = cls.get_or_insert(name)
+    if not CURRENT_DOMAIN:
+      raise Exception('CURRENT_DOMAIN undefined, but datastore.set() called')
+    entity = cls.get_or_insert(CURRENT_DOMAIN + ':' + name)
+    entity.domain = CURRENT_DOMAIN
     entity.value = value
     entity.put()
     return
 
   @classmethod
   def get(cls, name):
+    if not CURRENT_DOMAIN:
+      raise Exception('CURRENT_DOMAIN undefined, but datastore.get() called')
+
     if Setting.exists('initialized'):
       logging.info('using datastore for configuration data')
-      entity = ndb.Key(Setting, name).get()
-      return entity.value
+      entity = ndb.Key(Setting, CURRENT_DOMAIN + ':' + name).get()
+      if not entity:
+        return None
+      else:
+        return entity.value
     else:
       logging.info('using config.py for configuration data')
-      return getattr(config, name.upper(), '')
+      return str(getattr(config, name.upper(), ''))
 
   @classmethod
   def exists(cls, name):
-    entity = ndb.Key(Setting, name).get()
+    if not CURRENT_DOMAIN:
+      raise Exception('CURRENT_DOMAIN undefined, but datastore.exists() called')
+
+    entity = ndb.Key(Setting, CURRENT_DOMAIN + ':' + name).get()
     if entity:
       return True
     else:
       return False
 
-
-class UpdateHandler(webapp2.RequestHandler):
-  """Updates all Report entities with the new properties.
-
-  This function is an example of how to update existing entities to add
-  new non-null properties to them. It was used to add date_touched and status
-  to Report entities.
-  Should only be called by a cron job so there are no simultaneous requests.
-  """
-
-  def get(self):
-    query = Report.all()
-    start_cursor = memcache.get('report_start_cursor')
-    if start_cursor:
-      query.with_cursor(start_cursor=start_cursor)
-    results = query.fetch(100)  # 100 is arbitrary. Change as needed.
-    for result in results:
-      result.status = NEW  # set default value just in case
-      result.put()
-    memcache.set('report_start_cursor', query.cursor())
-
-
-application = webapp2.WSGIApplication([
-    ('/update/', UpdateHandler)
-])

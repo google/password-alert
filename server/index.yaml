@@ -12,22 +12,32 @@ indexes:
 
 - kind: Report
   properties:
+  - name: domain
   - name: host
   - name: date
     direction: desc
 
 - kind: Report
   properties:
+  - name: domain
   - name: email
   - name: date
     direction: desc
 
 - kind: Report
   properties:
+  - name: domain
   - name: status
   - name: date_touched
 
 - kind: Host
   properties:
+  - name: domain
   - name: status
   - name: host
+
+- kind: Report
+  properties:
+  - name: domain
+  - name: date
+    direction: desc

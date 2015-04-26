@@ -2,6 +2,7 @@ application: example
 version: 1
 runtime: python27
 api_version: 1
+# Do not enable threadsafe as we use a mutable global, datastore.CURRENT_DOMAIN.
 threadsafe: false
 
 libraries:
@@ -34,11 +35,6 @@ handlers:
   login: required
   secure: always
 
-- url: /(setup|oauth).*
-  script: setup.application
-  secure: always
-
-
 - url: /report/.*
   script: report.application
   # Login is intentionally not required here, but there are
@@ -51,15 +47,16 @@ handlers:
   login: required
   secure: always
 
-- url: /settings/
+- url: /download-chrome-settings/
   script: settings.application
   # login authentication handled per group by auth.py check.
   login: required
   secure: always
 
-- url: /update/.*
-  script: datastore.application
-  login: admin
+- url: /download-linux-settings/
+  script: settings.application
+  # login authentication handled per group by auth.py check.
+  login: required
   secure: always
 
 - url: /.*

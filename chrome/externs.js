@@ -82,10 +82,10 @@ var request;
 request.action;
 request.charCode;
 request.email;
-request.lastKeypressTimeStamp;
 request.looksLikeGoogle;
 request.password;
 request.referer;
+request.typedTimeStamp;
 request.url;
 
 var state;

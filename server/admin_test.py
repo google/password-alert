@@ -14,7 +14,7 @@
 
 from google3.apphosting.contrib.testing import testutil
 
-# from google3.third_party.javascript.password_catcher.server import admin
+# from google3.third_party.javascript.password_alert.server import admin
 
 
 class AdminTest(testutil.TestCase):

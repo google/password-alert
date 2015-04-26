@@ -13,7 +13,7 @@
 # // See the License for the specific language governing permissions and
 # // limitations under the License.
 # /**
-#  * @fileoverview Shell script to download Password Catcher build dependencies
+#  * @fileoverview Shell script to download Password Alert build dependencies
 #  *
 #  * @author koto@google.com (Krzysztof Kotowicz)
 #  */
