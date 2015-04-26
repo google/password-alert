@@ -33,7 +33,7 @@ CURRENT_DOMAIN = ''
 # is stored per-request, perhaps in the request object.
 
 HOSTED = False  # TODO(adhintz) Change this when we push to open-source?
-HOSTED_SERVER_URL = 'https://watchword-hosted.appspot.com'
+HOSTED_SERVER_URL = 'https://example.appspot.com'
 EMAIL_FROM = 'password-alert-noreply@google.com'
 
 # Report status
