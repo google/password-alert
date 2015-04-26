@@ -32,7 +32,7 @@ CURRENT_DOMAIN = ''
 # TODO(adhintz) This is a mutable global, refactor it out so that the state
 # is stored per-request, perhaps in the request object.
 
-HOSTED = True  # TODO(adhintz) Change this when we push to open-source?
+HOSTED = False  # TODO(adhintz) Change this when we push to open-source?
 HOSTED_SERVER_URL = 'https://watchword-hosted.appspot.com'
 EMAIL_FROM = 'password-alert-noreply@google.com'
 
