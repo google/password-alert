@@ -41,7 +41,8 @@ def ProcessReport(report, host):
     report.status = datastore.NO_ACTION_NEEDED
     report.put()
     return
-  user = datastore.User.get_by_key_name(report.email)
+  user = datastore.User.get_by_key_name(
+      datastore.CURRENT_DOMAIN + ':' + report.email)
   oldest = datetime.now() - timedelta(days=MAX_RESET_FREQUENCY)
   if user and user.date > oldest:
     logging.info('already recently forced change for %s', user.email)
@@ -49,18 +50,18 @@ def ProcessReport(report, host):
     report.put()
     return
   if report.password_date > datetime.now() + timedelta(days=1):
-    logging.warning('password saved by Password Catcher has a date 1+ day '
+    logging.warning('password saved by Password Alert has a date 1+ day '
                     'in the future: %s', report.password_date)
     report.status = datastore.NO_ACTION_NEEDED
     report.put()
     return
   if report.password_date < datetime.now() - timedelta(days=30):
-    logging.info('password saved by Password Catcher is too old: %s',
+    logging.info('password saved by Password Alert is too old: %s',
                  report.password_date)
     report.status = datastore.NO_ACTION_NEEDED
     report.put()
     return
-  if not datastore.Setting.get('enable_enforcement'):
+  if datastore.Setting.get('enable_enforcement').lower() != 'true':
     logging.info('Will not enforce password change for: %s', report.email)
     return
   _ExpireUser(report)
@@ -100,9 +101,13 @@ def _ExpireUser(report):
     report.put()
   SendPasswordEmail(report)
 
-  user = datastore.User.get_by_key_name(report.email)
+  user = datastore.User.get_by_key_name(
+      datastore.CURRENT_DOMAIN + ':' + report.email)
   if not user:
-    user = datastore.User(key=db.Key.from_path('User', report.email))
+    user = datastore.User(
+        key=db.Key.from_path(
+            'User', datastore.CURRENT_DOMAIN + ':' + report.email))
+    user.domain = datastore.CURRENT_DOMAIN
     user.count = 0
     user.email = report.email
   user.count += 1
@@ -113,7 +118,11 @@ def SendPasswordEmail(report):
   """Notifies a user that they must change their password."""
 
   message = mail.EmailMessage()
-  message.sender = datastore.Setting.get('email_sender')
+  if datastore.HOSTED:
+    message.sender = datastore.EMAIL_FROM
+    message.reply_to = datastore.Setting.get('email_sender')
+  else:
+    message.sender = datastore.Setting.get('email_sender')
   message.to = report.email
   message.subject = datastore.Setting.get('email_subject') % report.email
   message.body = datastore.Setting.get('email_body') % (report.host,

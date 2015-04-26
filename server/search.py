@@ -35,7 +35,9 @@ class SearchHandler(webapp2.RequestHandler):
   """Search for reports by email or by host."""
 
   def _CreateReportQuery(self):
-    return datastore.Report.all().order('-date')
+    query = datastore.Report.all().order('-date')
+    query.filter('domain =', datastore.CURRENT_DOMAIN)
+    return query
 
   def _ShouldSearchByEmail(self, search_query):
     if '://' in search_query:
@@ -88,7 +90,10 @@ class SearchHandler(webapp2.RequestHandler):
     return self._CreateReportQuery().filter('host =', host_query)
 
   def _GetHostStatusName(self, host):
-    host_entity = datastore.Host.all().filter('host =', host).get()
+    host_entity = (datastore.Host.all()
+                   .filter('domain =', datastore.CURRENT_DOMAIN)
+                   .filter('host =', host)
+                   .get())
     if host_entity:
       return datastore.GetStatusName(host_entity.status)
     return datastore.GetStatusName(datastore.UNKNOWN)
@@ -155,6 +160,7 @@ class SearchHandler(webapp2.RequestHandler):
         'reports': reports,
         'report_type': report_type,
         'search_query': normalized_query,
+        'current_domain': datastore.CURRENT_DOMAIN,
         'xsrf_token': xsrf.xsrf_token()
     }
     template = JINJA_ENVIRONMENT.get_template('templates/admin.html')

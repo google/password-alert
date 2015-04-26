@@ -32,7 +32,7 @@ DOMAIN_AUTH_SECRET = ''
 
 # Where to send alert emails, such as security@example.com
 # This recipient needs to be an admin of the App Engine application.
-PASSWORDCATCHER_ALERTS_EMAIL = ''
+ALERTS_EMAIL = ''
 
 # The email that sends alerts to admins and users.
 # The sender needs to be an admin of the App Engine application.
@@ -40,7 +40,7 @@ PASSWORDCATCHER_ALERTS_EMAIL = ''
 EMAIL_SENDER = ''
 
 # Such as https://example.appspot.com
-PASSWORDCATCHER_SERVER_URL = ''
+SERVER_URL = ''
 
 
 ##########
@@ -96,7 +96,7 @@ EMAIL_BODY = ('It appears that you have entered your corporate '
 
 ##########
 # In addition to the administrators for your App Engine app,
-# the Google Group that is allowed to access the Password Catcher data.
+# the Google Group that is allowed to access the Password Alert data.
 # Note that the earlier settings for SERVICE_ACCOUNT_ADMIN, SERVICE_ACCOUNT,
 # and PRIVATE_KEY_FILENAME must be configured for this group to have access.
 # Example: admins@example.com

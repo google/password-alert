@@ -42,7 +42,7 @@ chrome.storage.managed = {};
 chrome.storage.managed.get = function() {
   return {
     'sso_url': 'https://login.corp.google.com/',
-    'report_url': 'https://passwordcatcher.example.com/report/'
+    'report_url': 'https://passwordalert.example.com/report/'
   };
 };
 chrome.storage.onChanged = {};

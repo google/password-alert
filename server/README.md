@@ -7,7 +7,7 @@ which links to a [pre-built copy of the server](https://drive.google.com/corp/dr
 1. For your first time, run the script to download and install dependencies:
 
     ```shell
-    cd password_catcher/server/setup/
+    cd password_alert/server/setup/
     ./download_dependencies.sh
     ```
 
@@ -18,7 +18,7 @@ which links to a [pre-built copy of the server](https://drive.google.com/corp/dr
 4. Upload the server:
 
     ```shell
-    ~/google_appengine/appcfg.py update password_catcher/server/
+    ~/google_appengine/appcfg.py update password_alert/server/
 
     ```
 

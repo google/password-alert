@@ -1,5 +1,5 @@
 # To install the extension
-The extension is available [in the Chrome Web Store here](https://chrome.google.com/webstore/detail/password-catcher/noondiphcddnnabmjcihcjfbhfklnnep).
+The extension is available [in the Chrome Web Store here](https://chrome.google.com/webstore/detail/password-alert/noondiphcddnnabmjcihcjfbhfklnnep).
 
 Most users and organizations should
 be able to use the version in the Chrome Web Store without needing to compile

@@ -23,7 +23,7 @@
 
 'use strict';
 
-goog.provide('passwordcatcher');
+goog.provide('passwordalert');
 
 // These requires must also be added to content_script_test.html
 goog.require('goog.string');
@@ -35,7 +35,7 @@ goog.require('goog.uri.utils');
  * @type {string}
  * @private
  */
-passwordcatcher.sso_url_;
+passwordalert.sso_url_;
 
 
 /**
@@ -43,7 +43,7 @@ passwordcatcher.sso_url_;
  * @type {string}
  * @private
  */
-passwordcatcher.sso_form_selector_;
+passwordalert.sso_form_selector_;
 
 
 /**
@@ -51,7 +51,7 @@ passwordcatcher.sso_form_selector_;
  * @type {string}
  * @private
  */
-passwordcatcher.sso_password_selector_;
+passwordalert.sso_password_selector_;
 
 
 /**
@@ -59,15 +59,16 @@ passwordcatcher.sso_password_selector_;
  * @type {string}
  * @private
  */
-passwordcatcher.sso_username_selector_;
+passwordalert.sso_username_selector_;
 
 
 /**
- * The corp email domain, e.g. "@company.com".
+ * The corp email domain, e.g. "company.com".
+ * Can also be a list of domains, such as "1.example.com,2.example.com".
  * @type {string}
  * @private
  */
-passwordcatcher.corp_email_domain_;
+passwordalert.corp_email_domain_;
 
 
 /**
@@ -76,7 +77,7 @@ passwordcatcher.corp_email_domain_;
  * @private
  * @const
  */
-passwordcatcher.GAIA_URL_ = 'https://accounts.google.com/';
+passwordalert.GAIA_URL_ = 'https://accounts.google.com/';
 
 
 /**
@@ -85,7 +86,7 @@ passwordcatcher.GAIA_URL_ = 'https://accounts.google.com/';
  * @private
  * @const
  */
-passwordcatcher.GAIA_SECOND_FACTOR_ =
+passwordalert.GAIA_SECOND_FACTOR_ =
     'https://accounts.google.com/SecondFactor';
 
 
@@ -95,7 +96,7 @@ passwordcatcher.GAIA_SECOND_FACTOR_ =
  * @private
  * @const
  */
-passwordcatcher.YOUTUBE_CHECK_URL_ =
+passwordalert.YOUTUBE_CHECK_URL_ =
     'https://accounts.youtube.com/accounts/CheckConnection';
 
 
@@ -105,7 +106,7 @@ passwordcatcher.YOUTUBE_CHECK_URL_ =
  * @private
  * @const
  */
-passwordcatcher.MANAGED_STORAGE_NAMESPACE_ = 'managed';
+passwordalert.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 
 
 /**
@@ -113,7 +114,7 @@ passwordcatcher.MANAGED_STORAGE_NAMESPACE_ = 'managed';
  * @type {Array.<string>}
  * @private
  */
-passwordcatcher.corp_html_ = [
+passwordalert.corp_html_ = [
   'One account. All of Google.',
   'Sign in with your Google Account',
   '<title>Sign in - Google Accounts',
@@ -128,7 +129,7 @@ passwordcatcher.corp_html_ = [
  * @type {Array.<string>}
  * @private
  */
-passwordcatcher.corp_html_tight_ = [
+passwordalert.corp_html_tight_ = [
   // From https://accounts.google.com/ServiceLogin
   ('<form novalidate="" method="post" ' +
    'action="https://accounts.google.com/ServiceLoginAuth" ' +
@@ -149,7 +150,7 @@ passwordcatcher.corp_html_tight_ = [
  * @type {boolean}
  * @private
  */
-passwordcatcher.looks_like_google;
+passwordalert.looks_like_google;
 
 
 /**
@@ -157,16 +158,16 @@ passwordcatcher.looks_like_google;
  * @type {string}
  * @private
  */
-passwordcatcher.security_email_address_;
+passwordalert.security_email_address_;
 
 
 /**
- * Whitelist of domain suffixes that are not phishing.  Default
- * values are for consumers.
+ * Whitelist of domain suffixes that are not phishing or checked for password.
+ * Default values are for consumers.
  * @type {Array.<string>}
  * @private
  */
-passwordcatcher.whitelist_top_domains_ = [
+passwordalert.whitelist_top_domains_ = [
   'accounts.google.com'
 ];
 
@@ -176,15 +177,15 @@ passwordcatcher.whitelist_top_domains_ = [
  * @private
  * @type {string}
  */
-passwordcatcher.url_ = location.href.toString();
+passwordalert.url_ = location.href.toString();
 
 
 /**
- * If Password Catcher is running on the current page.
+ * If Password Alert is running on the current page.
  * @private
  * @type {boolean}
  */
-passwordcatcher.isRunning_ = false;
+passwordalert.isRunning_ = false;
 
 
 /**
@@ -192,7 +193,7 @@ passwordcatcher.isRunning_ = false;
  * @private
  * @type {number}
  */
-passwordcatcher.lastKeypressTimeStamp_;
+passwordalert.lastKeypressTimeStamp_;
 
 
 /**
@@ -202,16 +203,16 @@ passwordcatcher.lastKeypressTimeStamp_;
  * @private
  * @type {Array.<boolean>}
  */
-passwordcatcher.passwordLengths_;
+passwordalert.passwordLengths_;
 
 
 /**
- * Is password catcher used in enterprise environment.  If false, then it's
+ * Is password alert used in enterprise environment.  If false, then it's
  * used by individual consumer.
  * @type {boolean}
  * @private
  */
-passwordcatcher.isEnterpriseUse_ = false;
+passwordalert.isEnterpriseUse_ = false;
 
 
 /**
@@ -220,12 +221,12 @@ passwordcatcher.isEnterpriseUse_ = false;
  * @private
  * @const
  */
-passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_ =
+passwordalert.PASSWORD_WARNING_BANNER_TEXT_ =
     '<span id="warning_banner_header">' +
     chrome.i18n.getMessage('password_warning_banner_header') + '</span>' +
     '<span id="warning_banner_body">' +
     chrome.i18n.getMessage('password_warning_banner_body') + '&nbsp;' +
-    '<a href="https://support.googe.com/accounts/?p=passwordcatcher" ' +
+    '<a href="https://support.google.com/accounts/?p=passwordalert" ' +
     'class="warning_banner_link">' +
     chrome.i18n.getMessage('learn_more') + '</a></span>';
 
@@ -236,7 +237,7 @@ passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_ =
  * @private
  * @const
  */
-passwordcatcher.VISIT_THIS_SITE_LINK_ =
+passwordalert.VISIT_THIS_SITE_LINK_ =
     '<a href="javascript:void(0)" style="background-color: black; ' +
     'color: white; text-decoration: underline;" ' +
     'onclick="javascript:document.getElementById(\'warning_banner\')' +
@@ -249,7 +250,7 @@ passwordcatcher.VISIT_THIS_SITE_LINK_ =
  * @private
  * @const
  */
-passwordcatcher.PHISHING_WARNING_BANNER_TEXT_ =
+passwordalert.PHISHING_WARNING_BANNER_TEXT_ =
     '<span id="warning_banner_header">' +
     chrome.i18n.getMessage('phishing_warning_banner_header') + '</span>' +
     '<span id="warning_banner_body">' +
@@ -262,7 +263,7 @@ passwordcatcher.PHISHING_WARNING_BANNER_TEXT_ =
  * @private
  * @const
  */
-passwordcatcher.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
+passwordalert.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
 
 
 /**
@@ -270,38 +271,39 @@ passwordcatcher.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
  * @param {function()} callback Executed after policy values have been set.
  * @private
  */
-passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
+passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
     console.log('Setting managed policy.');
     if (Object.keys(managedPolicy).length == 0) {
       console.log('No managed policy found. Consumer use.');
-      passwordcatcher.isEnterpriseUse_ = false;
+      passwordalert.isEnterpriseUse_ = false;
     } else {
       console.log('Managed policy found.  Enterprise use.');
-      passwordcatcher.isEnterpriseUse_ = true;
-      passwordcatcher.corp_email_domain_ = managedPolicy['corp_email_domain'];
-      passwordcatcher.security_email_address_ =
+      passwordalert.isEnterpriseUse_ = true;
+      passwordalert.corp_email_domain_ =
+          managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
+      passwordalert.security_email_address_ =
           managedPolicy['security_email_address'];
-      passwordcatcher.sso_form_selector_ = managedPolicy['sso_form_selector'];
-      passwordcatcher.sso_password_selector_ =
+      passwordalert.sso_form_selector_ = managedPolicy['sso_form_selector'];
+      passwordalert.sso_password_selector_ =
           managedPolicy['sso_password_selector'];
-      passwordcatcher.sso_url_ = managedPolicy['sso_url'];
-      passwordcatcher.sso_username_selector_ =
+      passwordalert.sso_url_ = managedPolicy['sso_url'];
+      passwordalert.sso_username_selector_ =
           managedPolicy['sso_username_selector'];
-      passwordcatcher.whitelist_top_domains_ =
+      passwordalert.whitelist_top_domains_ =
           managedPolicy['whitelist_top_domains'];
 
       // Append policy html to the extension-provided Google login page html
       if (managedPolicy['corp_html']) {
         Array.prototype.push.apply(
-            passwordcatcher.corp_html_,
+            passwordalert.corp_html_,
             managedPolicy['corp_html']
         );
       }
       if (managedPolicy['corp_html_tight']) {
         Array.prototype.push.apply(
-            passwordcatcher.corp_html_tight_,
+            passwordalert.corp_html_tight_,
             managedPolicy['corp_html_tight']
         );
       }
@@ -315,7 +317,7 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
 // This switch style is a bit verbose with lots of properties. Perhaps it
 // would be cleaner to have a list of allowed properties and do something like
 // if (changedPolicy in listOfPolicies)
-//   passwordcatcher[changedPolicy + '_'] = newPolicyValue;
+//   passwordalert[changedPolicy + '_'] = newPolicyValue;
 /**
  * Handle managed policy changes by updating the configurable variables.
  * @param {!Object} changedPolicies Object mapping each policy to its
@@ -323,17 +325,17 @@ passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_ =
  *     For example:
  *     {
  *      report_url: {
- *        newValue: "https://passwordcatcher222.example.com/report/"
- *        oldValue: "https://passwordcatcher111.example.com/report/"
+ *        newValue: "https://passwordalert222.example.com/report/"
+ *        oldValue: "https://passwordalert111.example.com/report/"
  *        }
  *     }
  * @param {!string} storageNamespace The name of the storage area
  *     ("sync", "local" or "managed") the changes are for.
  * @private
  */
-passwordcatcher.handleManagedPolicyChanges_ =
+passwordalert.handleManagedPolicyChanges_ =
     function(changedPolicies, storageNamespace) {
-  if (storageNamespace == passwordcatcher.MANAGED_STORAGE_NAMESPACE_) {
+  if (storageNamespace == passwordalert.MANAGED_STORAGE_NAMESPACE_) {
     console.log('Handling changed policies.');
 
     var subtractArray = function(currentPolicyArray, oldPolicyArray) {
@@ -344,50 +346,51 @@ passwordcatcher.handleManagedPolicyChanges_ =
 
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
-      if (!passwordcatcher.isEnterpriseUse_) {
-        passwordcatcher.isEnterpriseUse_ = true;
+      if (!passwordalert.isEnterpriseUse_) {
+        passwordalert.isEnterpriseUse_ = true;
         console.log('Enterprise use via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       var oldPolicyValue = changedPolicies[changedPolicy]['oldValue'];
       switch (changedPolicy) {
         case 'corp_email_domain':
-          passwordcatcher.corp_email_domain_ = newPolicyValue;
+          passwordalert.corp_email_domain_ =
+              newPolicyValue.replace(/@/g, '').toLowerCase();
           break;
         case 'corp_html':
           // Remove the old values before appending new ones.
-          passwordcatcher.corp_html_ = subtractArray(
-              passwordcatcher.corp_html_,
+          passwordalert.corp_html_ = subtractArray(
+              passwordalert.corp_html_,
               oldPolicyValue);
           Array.prototype.push.apply(
-              passwordcatcher.corp_html_,
+              passwordalert.corp_html_,
               newPolicyValue);
           break;
         case 'corp_html_tight':
-          passwordcatcher.corp_html_tight_ = subtractArray(
-              passwordcatcher.corp_html_tight_,
+          passwordalert.corp_html_tight_ = subtractArray(
+              passwordalert.corp_html_tight_,
               oldPolicyValue);
           Array.prototype.push.apply(
-              passwordcatcher.corp_html_tight_,
+              passwordalert.corp_html_tight_,
               newPolicyValue);
           break;
         case 'security_email_address':
-          passwordcatcher.security_email_address_ = newPolicyValue;
+          passwordalert.security_email_address_ = newPolicyValue;
           break;
         case 'sso_form_selector':
-          passwordcatcher.sso_form_selector_ = newPolicyValue;
+          passwordalert.sso_form_selector_ = newPolicyValue;
           break;
         case 'sso_password_selector':
-          passwordcatcher.sso_password_selector_ = newPolicyValue;
+          passwordalert.sso_password_selector_ = newPolicyValue;
           break;
         case 'sso_url':
-          passwordcatcher.sso_url_ = newPolicyValue;
+          passwordalert.sso_url_ = newPolicyValue;
           break;
         case 'sso_username_selector':
-          passwordcatcher.sso_username_selector_ = newPolicyValue;
+          passwordalert.sso_username_selector_ = newPolicyValue;
           break;
         case 'whitelist_top_domains':
-          passwordcatcher.whitelist_top_domains_ = newPolicyValue;
+          passwordalert.whitelist_top_domains_ = newPolicyValue;
           break;
       }
     }
@@ -403,34 +406,36 @@ passwordcatcher.handleManagedPolicyChanges_ =
  * corporate login pages.
  * @private
  */
-passwordcatcher.completePageInitialization_ = function() {
+passwordalert.completePageInitialization_ = function() {
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
-  if (goog.string.startsWith(passwordcatcher.url_,
-                             passwordcatcher.YOUTUBE_CHECK_URL_)) {
-    console.log('YouTube login url detected: ' + passwordcatcher.url_);
+  if (goog.string.startsWith(passwordalert.url_,
+                             passwordalert.YOUTUBE_CHECK_URL_)) {
+    console.log('YouTube login url detected: ' + passwordalert.url_);
     return;
   }
-  if (passwordcatcher.sso_url_ &&
-      goog.string.startsWith(passwordcatcher.url_,
-                             passwordcatcher.sso_url_)) {
-    console.log('SSO login url is detected: ' + passwordcatcher.url_);
-    chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
-    var loginForm = document.querySelector(passwordcatcher.sso_form_selector_);
+  if (passwordalert.sso_url_ &&
+      goog.string.startsWith(passwordalert.url_,
+                             passwordalert.sso_url_)) {
+    console.log('SSO login url is detected: ' + passwordalert.url_);
+    var loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
+      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
       loginForm.addEventListener(
-          'submit', passwordcatcher.saveSsoPassword_, true);
+          'submit', passwordalert.saveSsoPassword_, true);
+    } else {
+      console.log('No login form found on SSO page.');
     }
-  } else if (goog.string.startsWith(passwordcatcher.url_,
-                                    passwordcatcher.GAIA_URL_)) {
-    console.log('Google login url is detected: ' + passwordcatcher.url_);
-    if (goog.string.startsWith(passwordcatcher.url_,
-                               passwordcatcher.GAIA_SECOND_FACTOR_)) {
+  } else if (goog.string.startsWith(passwordalert.url_,
+                                    passwordalert.GAIA_URL_)) {
+    console.log('Google login url is detected: ' + passwordalert.url_);
+    if (goog.string.startsWith(passwordalert.url_,
+                               passwordalert.GAIA_SECOND_FACTOR_)) {
       console.log('Second factor url is detected.');
       // Second factor page is only displayed when the password is correct.
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     } else {
-      console.log('Second factor url is not detected: ' + passwordcatcher.url_);
+      console.log('Second factor url is not detected: ' + passwordalert.url_);
       // Delete any previously considered password in case this is a re-prompt
       // when an incorrect password is entered, such as a ServiceLoginAuth page.
       chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
@@ -439,21 +444,21 @@ passwordcatcher.completePageInitialization_ = function() {
       // entry page.
       if (loginForm && document.getElementById('Email')) {
         loginForm.addEventListener(
-            'submit', passwordcatcher.saveGaiaPassword_, true);
+            'submit', passwordalert.saveGaiaPassword_, true);
       }
     }
   } else {  // Not a Google login URL.
     console.log('Detected URL that is not one of the accepted login URLs: ' +
-        passwordcatcher.url_);
-    if (!passwordcatcher.whitelistUrl_() &&
-        passwordcatcher.looksLikeGooglePageTight_()) {
+        passwordalert.url_);
+    if (!passwordalert.whitelistUrl_() &&
+        passwordalert.looksLikeGooglePageTight_()) {
       console.log('Detected possible phishing page.');
       chrome.runtime.sendMessage({action: 'looksLikeGoogle',
-        url: passwordcatcher.url_,
+        url: passwordalert.url_,
         referer: document.referrer.toString()});
-      passwordcatcher.injectWarningBanner_(
-          passwordcatcher.PHISHING_WARNING_BANNER_TEXT_,
-          passwordcatcher.createButtonsForPhishingWarningBanner_());
+      passwordalert.injectWarningBanner_(
+          passwordalert.PHISHING_WARNING_BANNER_TEXT_,
+          passwordalert.createButtonsForPhishingWarningBanner_());
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     console.log('Completed page initialization.');
@@ -464,15 +469,16 @@ passwordcatcher.completePageInitialization_ = function() {
        * @param {string} msg JSON object containing valid password lengths.
        */
       function(msg) {
-        if (msg == 'injectPasswordWarning') {
-          passwordcatcher.injectPasswordWarningIfNeeded_();
+        if (goog.string.startsWith(msg, 'injectPasswordWarning:')) {
+          var email = msg.split('injectPasswordWarning:')[1];
+          passwordalert.injectPasswordWarningIfNeeded_(email);
           return;
         }
-        passwordcatcher.stop_();
-        passwordcatcher.start_(msg);
+        passwordalert.stop_();
+        passwordalert.start_(msg);
       });
   chrome.runtime.sendMessage({action: 'statusRequest'});
-  window.addEventListener('keypress', passwordcatcher.handleKeypress_, true);
+  window.addEventListener('keypress', passwordalert.handleKeypress_, true);
 };
 
 
@@ -480,9 +486,9 @@ passwordcatcher.completePageInitialization_ = function() {
  * Called when the page loads.
  * @private
  */
-passwordcatcher.initializePage_ = function() {
-  passwordcatcher.setManagedPolicyValuesIntoConfigurableVariables_(
-      passwordcatcher.completePageInitialization_);
+passwordalert.initializePage_ = function() {
+  passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(
+      passwordalert.completePageInitialization_);
 };
 
 
@@ -492,27 +498,28 @@ passwordcatcher.initializePage_ = function() {
  * @param {string} msg JSON object containing password lengths and OTP mode.
  * @private
  */
-passwordcatcher.start_ = function(msg) {
+passwordalert.start_ = function(msg) {
   var state = JSON.parse(msg);
   // TODO(henryc): Content_script is now only using passwordLengths_ to tell
   // if passwordLengths_length == 0. So, do not store passwordLengths,
   // just have the message from background page tell it to start or stop.
-  passwordcatcher.passwordLengths_ = state.passwordLengths;
-  if (passwordcatcher.passwordLengths_.length == 0) {
-    passwordcatcher.stop_(); // no passwords, so no need to watch
+  passwordalert.passwordLengths_ = state.passwordLengths;
+  if (passwordalert.passwordLengths_.length == 0) {
+    passwordalert.stop_(); // no passwords, so no need to watch
     return;
   }
 
-  if ((passwordcatcher.sso_url_ &&
-      goog.string.startsWith(passwordcatcher.url_,
-                             passwordcatcher.sso_url_)) ||
-      goog.string.startsWith(passwordcatcher.url_, passwordcatcher.GAIA_URL_)) {
-    passwordcatcher.stop_(); // safe URL, so no need to watch it
+  if ((passwordalert.sso_url_ &&
+      goog.string.startsWith(passwordalert.url_,
+                             passwordalert.sso_url_)) ||
+      goog.string.startsWith(passwordalert.url_, passwordalert.GAIA_URL_) ||
+      passwordalert.whitelistUrl_()) {
+    passwordalert.stop_(); // safe URL, so no need to watch it
     return;
   }
 
-  passwordcatcher.isRunning_ = true;
-  console.log('Password catcher is running.');
+  passwordalert.isRunning_ = true;
+  console.log('Password alert is running.');
 };
 
 
@@ -520,8 +527,8 @@ passwordcatcher.start_ = function(msg) {
  * Disables watching on the current page.
  * @private
  */
-passwordcatcher.stop_ = function() {
-  passwordcatcher.isRunning_ = false;
+passwordalert.stop_ = function() {
+  passwordalert.isRunning_ = false;
 };
 
 
@@ -530,8 +537,8 @@ passwordcatcher.stop_ = function() {
  * @param {Event} evt Key press event.
  * @private
  */
-passwordcatcher.handleKeypress_ = function(evt) {
-  if (!passwordcatcher.isRunning_) return;
+passwordalert.handleKeypress_ = function(evt) {
+  if (!passwordalert.isRunning_) return;
 
   // Legitimate keypress events should have the view set.
   if (evt.view == null) {
@@ -539,18 +546,18 @@ passwordcatcher.handleKeypress_ = function(evt) {
   }
 
   // Legitimate keypress events should have increasing timeStamps.
-  if (evt.timeStamp <= passwordcatcher.lastKeypressTimeStamp_) {
+  if (evt.timeStamp <= passwordalert.lastKeypressTimeStamp_) {
     return;
   }
-  passwordcatcher.lastKeypressTimeStamp_ = evt.timeStamp;
+  passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
 
   chrome.runtime.sendMessage({
     action: 'handleKeypress',
     charCode: evt.charCode,
-    lastKeypressTimeStamp: evt.timeStamp,
-    url: passwordcatcher.url_,
+    typedTimeStamp: evt.timeStamp,
+    url: passwordalert.url_,
     referer: document.referrer.toString(),
-    looksLikeGoogle: passwordcatcher.looksLikeGooglePage_()
+    looksLikeGoogle: passwordalert.looksLikeGooglePage_()
   });
 };
 
@@ -561,15 +568,15 @@ passwordcatcher.handleKeypress_ = function(evt) {
  * @param {Event} evt Form submit event that triggered this. Not used.
  * @private
  */
-passwordcatcher.saveSsoPassword_ = function(evt) {
+passwordalert.saveSsoPassword_ = function(evt) {
   console.log('Saving SSO password.');
-  if (passwordcatcher.validateSso_()) {
+  if (passwordalert.validateSso_()) {
     var username =
-        document.querySelector(passwordcatcher.sso_username_selector_).value;
+        document.querySelector(passwordalert.sso_username_selector_).value;
     var password =
-        document.querySelector(passwordcatcher.sso_password_selector_).value;
+        document.querySelector(passwordalert.sso_password_selector_).value;
     if (username.indexOf('@') == -1) {
-      username += passwordcatcher.corp_email_domain_.split(',')[0];
+      username += '@' + passwordalert.corp_email_domain_.split(',')[0].trim();
     }
     chrome.runtime.sendMessage({
       action: 'setPossiblePassword',
@@ -586,14 +593,14 @@ passwordcatcher.saveSsoPassword_ = function(evt) {
  * @param {Event} evt Form submit event that triggered this. Not used.
  * @private
  */
-passwordcatcher.saveGaiaPassword_ = function(evt) {
+passwordalert.saveGaiaPassword_ = function(evt) {
   console.log('Saving gaia password.');
   //TODO(adhintz) Should we do any validation here?
   var email = document.getElementById('Email').value;
   email = goog.string.trim(email.toLowerCase());
   var password = document.getElementById('Passwd').value;
-  if (passwordcatcher.isEnterpriseUse_ &&
-      !passwordcatcher.isEmailInDomain_(email)) {
+  if (passwordalert.isEnterpriseUse_ &&
+      !passwordalert.isEmailInDomain_(email)) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage({
@@ -611,10 +618,10 @@ passwordcatcher.saveGaiaPassword_ = function(evt) {
  * @return {boolean} True if email address is for a configured corporate domain.
  * @private
  */
-passwordcatcher.isEmailInDomain_ = function(email) {
-  var domains = passwordcatcher.corp_email_domain_.split(',');
+passwordalert.isEmailInDomain_ = function(email) {
+  var domains = passwordalert.corp_email_domain_.split(',');
   for (var i in domains) {
-    if (goog.string.endsWith(email, domains[i].trim().toLowerCase())) {
+    if (goog.string.endsWith(email, '@' + domains[i].trim())) {
       return true;
     }
   }
@@ -627,9 +634,9 @@ passwordcatcher.isEmailInDomain_ = function(email) {
  * @return {boolean} Whether the sso login page is filled in.
  * @private
  */
-passwordcatcher.validateSso_ = function() {
-  var username = document.querySelector(passwordcatcher.sso_username_selector_);
-  var password = document.querySelector(passwordcatcher.sso_password_selector_);
+passwordalert.validateSso_ = function() {
+  var username = document.querySelector(passwordalert.sso_username_selector_);
+  var password = document.querySelector(passwordalert.sso_password_selector_);
   if ((username && !username.value) ||
       (password && !password.value)) {
     console.log('SSO data is not filled in.');
@@ -647,21 +654,21 @@ passwordcatcher.validateSso_ = function() {
  * @return {boolean} True if this page looks like a Google login page.
  * @private
  */
-passwordcatcher.looksLikeGooglePage_ = function() {
-  if (passwordcatcher.looks_like_google_ == true ||
-      passwordcatcher.looks_like_google_ == false) {
-    return passwordcatcher.looks_like_google_;
+passwordalert.looksLikeGooglePage_ = function() {
+  if (passwordalert.looks_like_google_ == true ||
+      passwordalert.looks_like_google_ == false) {
+    return passwordalert.looks_like_google_;
   }
   var allHtml = document.documentElement.innerHTML.slice(0, 100000);
-  for (var i in passwordcatcher.corp_html_) {
-    if (allHtml.indexOf(passwordcatcher.corp_html_[i]) >= 0) {
+  for (var i in passwordalert.corp_html_) {
+    if (allHtml.indexOf(passwordalert.corp_html_[i]) >= 0) {
       console.log('Looks like login page.');
-      passwordcatcher.looks_like_google_ = true;
+      passwordalert.looks_like_google_ = true;
       return true;
     }
   }
   console.log('Does not look like login page.');
-  passwordcatcher.looks_like_google_ = false;
+  passwordalert.looks_like_google_ = false;
   return false;
 };
 
@@ -673,13 +680,13 @@ passwordcatcher.looksLikeGooglePage_ = function() {
  * @return {boolean} True if this page looks like a Google login page.
  * @private
  */
-passwordcatcher.looksLikeGooglePageTight_ = function() {
+passwordalert.looksLikeGooglePageTight_ = function() {
   // Only look in the first 100,000 characters of a page to avoid
   // impacting performance for large pages. Although an attacker could use this
   // to avoid detection, they could obfuscate the HTML just as easily.
   var allHtml = document.documentElement.innerHTML.slice(0, 100000);
-  for (var i in passwordcatcher.corp_html_tight_) {
-    if (allHtml.indexOf(passwordcatcher.corp_html_tight_[i]) >= 0) {
+  for (var i in passwordalert.corp_html_tight_) {
+    if (allHtml.indexOf(passwordalert.corp_html_tight_[i]) >= 0) {
       console.log('Looks like (tight) login page.');
       return true;
     }
@@ -690,15 +697,16 @@ passwordcatcher.looksLikeGooglePageTight_ = function() {
 
 
 /**
- * Detects if the page is whitelisted as not a phishing page.
+ * Detects if the page is whitelisted as not a phishing page or for password
+ * typing.
  * @return {boolean} True if this page is whitelisted.
  * @private
  */
-passwordcatcher.whitelistUrl_ = function() {
-  var domain = goog.uri.utils.getDomain(passwordcatcher.url_) || '';
-  for (var i in passwordcatcher.whitelist_top_domains_) {
+passwordalert.whitelistUrl_ = function() {
+  var domain = goog.uri.utils.getDomain(passwordalert.url_) || '';
+  for (var i in passwordalert.whitelist_top_domains_) {
     if (goog.string.endsWith(domain,
-                             passwordcatcher.whitelist_top_domains_[i])) {
+                             passwordalert.whitelist_top_domains_[i])) {
       console.log('Whitelisted domain detected: ' + domain);
       return true;
     }
@@ -712,10 +720,10 @@ passwordcatcher.whitelistUrl_ = function() {
  * Create the email to notify about about phishing warning.
  * @private
  */
-passwordcatcher.createPhishingWarningEmail_ = function() {
-  window.open('mailto:' + passwordcatcher.security_email_address_ + '?' +
+passwordalert.createPhishingWarningEmail_ = function() {
+  window.open('mailto:' + passwordalert.security_email_address_ + '?' +
       'subject=User has detected possible phishing site.&' +
-      'body=I have visited ' + encodeURIComponent(passwordcatcher.url_) +
+      'body=I have visited ' + encodeURIComponent(passwordalert.url_) +
       ' and a phishing warning ' +
       'was triggered. Please see if this is indeed a phishing attempt and ' +
       'requires further action.');
@@ -726,9 +734,9 @@ passwordcatcher.createPhishingWarningEmail_ = function() {
  * Navigates to the page for reporting a phishing page to Google Safe Browsing.
  * @private
  */
-passwordcatcher.reportToSafeBrowsing_ = function() {
+passwordalert.reportToSafeBrowsing_ = function() {
   window.location = 'https://www.google.com/safebrowsing/report_phish/?url=' +
-      encodeURIComponent(passwordcatcher.url_);
+      encodeURIComponent(passwordalert.url_);
 };
 
 
@@ -736,18 +744,21 @@ passwordcatcher.reportToSafeBrowsing_ = function() {
  * Browser's back functionality.
  * @private
  */
-passwordcatcher.back_ = function() {
+passwordalert.back_ = function() {
   window.history.back();
 };
 
 
 /**
  * Opens the change password page where users can reset their password.
+ * @param {string} email Email address to change password for.
  * @private
  */
-passwordcatcher.openChangePasswordPage_ = function() {
-  window.open('https://accounts.google.com/b/0/EditPasswd', '_blank',
-              'resizable=yes');
+passwordalert.openChangePasswordPage_ = function(email) {
+  window.open(
+      'https://accounts.google.com/b/' + email + '/EditPasswd',
+      '_blank',
+      'resizable=yes');
 };
 
 
@@ -755,7 +766,7 @@ passwordcatcher.openChangePasswordPage_ = function() {
  * Remove the warning banner.
  * @private
  */
-passwordcatcher.removeWarningBanner_ = function() {
+passwordalert.removeWarningBanner_ = function() {
   document.getElementById('warning_banner').remove();
 };
 
@@ -774,7 +785,7 @@ passwordcatcher.removeWarningBanner_ = function() {
  * @return {Element} button The html that represents the button.
  * @private
  */
-passwordcatcher.createButton_ = function(buttonText, buttonLeftPosition,
+passwordalert.createButton_ = function(buttonText, buttonLeftPosition,
     buttonFunction, isPrimaryButton) {
   var button = document.createElement('button');
   button.setAttribute('class', 'warning_banner_button');
@@ -790,16 +801,17 @@ passwordcatcher.createButton_ = function(buttonText, buttonLeftPosition,
 
 /**
  * Create the set of buttons for the password warning banner.
+ * @param {string} email Email address of the account triggering the warning.
  * @return {Array} The set of buttons for the password warning banner.
  * @private
  */
-passwordcatcher.createButtonsForPasswordWarningBanner_ = function() {
-  var resetPasswordButton = passwordcatcher.createButton_(
+passwordalert.createButtonsForPasswordWarningBanner_ = function(email) {
+  var resetPasswordButton = passwordalert.createButton_(
       chrome.i18n.getMessage('reset_password'), '7%',
-      passwordcatcher.openChangePasswordPage_, true);
-  var ignoreButton = passwordcatcher.createButton_(
+      passwordalert.openChangePasswordPage_.bind(null, email), true);
+  var ignoreButton = passwordalert.createButton_(
       chrome.i18n.getMessage('ignore'), '33%',
-      passwordcatcher.removeWarningBanner_, false);
+      passwordalert.removeWarningBanner_, false);
   return [resetPasswordButton, ignoreButton];
 };
 
@@ -809,22 +821,22 @@ passwordcatcher.createButtonsForPasswordWarningBanner_ = function() {
  * @return {Array} The set of buttons for the phishing warning banner.
  * @private
  */
-passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
+passwordalert.createButtonsForPhishingWarningBanner_ = function() {
   var contactSecurityButton;
-  if (passwordcatcher.isEnterpriseUse_) {
-    contactSecurityButton = passwordcatcher.createButton_(
+  if (passwordalert.isEnterpriseUse_) {
+    contactSecurityButton = passwordalert.createButton_(
         chrome.i18n.getMessage('contact_security'), '7%',
-        passwordcatcher.createPhishingWarningEmail_, true);
+        passwordalert.createPhishingWarningEmail_, true);
   } else { // Consumer mode.
-    contactSecurityButton = passwordcatcher.createButton_(
+    contactSecurityButton = passwordalert.createButton_(
         chrome.i18n.getMessage('report_phishing'), '7%',
-        passwordcatcher.reportToSafeBrowsing_, true);
+        passwordalert.reportToSafeBrowsing_, true);
   }
-  var backButton = passwordcatcher.createButton_(
-      chrome.i18n.getMessage('back'), '33%', passwordcatcher.back_, false);
-  var visitThisSiteButton = passwordcatcher.createButton_(
+  var backButton = passwordalert.createButton_(
+      chrome.i18n.getMessage('back'), '33%', passwordalert.back_, false);
+  var visitThisSiteButton = passwordalert.createButton_(
       chrome.i18n.getMessage('visit_this_site'), '59%',
-      passwordcatcher.removeWarningBanner_, false);
+      passwordalert.removeWarningBanner_, false);
   return [contactSecurityButton, backButton, visitThisSiteButton];
 };
 
@@ -842,10 +854,10 @@ passwordcatcher.createButtonsForPhishingWarningBanner_ = function() {
  *
  * @private
  */
-passwordcatcher.saveAllowedHost_ = function() {
+passwordalert.saveAllowedHost_ = function() {
   if (confirm(chrome.i18n.getMessage('always_ignore_confirmation'))) {
     chrome.storage.local.get(
-        passwordcatcher.ALLOWED_HOSTS_KEY_,
+        passwordalert.ALLOWED_HOSTS_KEY_,
         function(allowedHosts) {
           console.log('Allowed hosts in chrome storage:');
           console.log(allowedHosts);
@@ -853,16 +865,16 @@ passwordcatcher.saveAllowedHost_ = function() {
           console.log('Current host is: ' + currentHost);
           if (Object.keys(allowedHosts).length == 0) {
             console.log('No allowed hosts in local storage.');
-            allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_] = {};
+            allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_] = {};
           }
-          allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_][currentHost] = true;
+          allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost] = true;
           console.log('Updated allowed hosts:');
           console.log(allowedHosts);
           chrome.storage.local.set(
               allowedHosts,
               function() {
                 console.log('Finished setting allowed hosts.');
-                passwordcatcher.removeWarningBanner_();
+                passwordalert.removeWarningBanner_();
               });
         });
   }
@@ -875,46 +887,47 @@ passwordcatcher.saveAllowedHost_ = function() {
  * @return {!Element} The always ignore link.
  * @private
  */
-passwordcatcher.createAlwaysIgnoreLink_ = function() {
+passwordalert.createAlwaysIgnoreLink_ = function() {
   var alwaysIgnoreLink = document.createElement('span');
   alwaysIgnoreLink.setAttribute('id', 'always_ignore');
   alwaysIgnoreLink.innerText = chrome.i18n.getMessage('always_ignore');
-  alwaysIgnoreLink.onclick = passwordcatcher.saveAllowedHost_;
+  alwaysIgnoreLink.onclick = passwordalert.saveAllowedHost_;
   return alwaysIgnoreLink;
 };
 
 
 /**
  * Check if the password warning banner should be injected.
+ * @param {string} email Email address that triggered this warning.
  *
  * TODO(henryc): Instead of this function, we could instead check in
- * passwordcatcher.start_() similar to the existing
- * if ((passwordcatcher.sso_url_  check that sees if the pwc content_script
+ * passwordalert.start_() similar to the existing
+ * if ((passwordalert.sso_url_  check that sees if the pwc content_script
  * should do anything for that URL. That way pwc won't even bother to hash
  * keypresses on an ignored site.
  *
  * @private
  */
-passwordcatcher.injectPasswordWarningIfNeeded_ = function() {
+passwordalert.injectPasswordWarningIfNeeded_ = function(email) {
   console.log('Check if the password warning banner should be injected.');
-  if (passwordcatcher.isEnterpriseUse_) {
+  if (passwordalert.isEnterpriseUse_) {
     return;
   }
   chrome.storage.local.get(
-      passwordcatcher.ALLOWED_HOSTS_KEY_,
+      passwordalert.ALLOWED_HOSTS_KEY_,
       function(allowedHosts) {
         console.log('Allowed hosts in chrome storage:');
         console.log(allowedHosts);
         var currentHost = window.location.origin;
         if (Object.keys(allowedHosts).length > 0 &&
-            allowedHosts[passwordcatcher.ALLOWED_HOSTS_KEY_][currentHost]) {
+            allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost]) {
           console.log('Current host is allowed. So will not display warning.');
           return;
         }
-        passwordcatcher.injectWarningBanner_(
-            passwordcatcher.PASSWORD_WARNING_BANNER_TEXT_,
-            passwordcatcher.createButtonsForPasswordWarningBanner_(),
-            passwordcatcher.createAlwaysIgnoreLink_());
+        passwordalert.injectWarningBanner_(
+            passwordalert.PASSWORD_WARNING_BANNER_TEXT_,
+            passwordalert.createButtonsForPasswordWarningBanner_(email),
+            passwordalert.createAlwaysIgnoreLink_());
       });
 };
 
@@ -926,7 +939,7 @@ passwordcatcher.injectPasswordWarningIfNeeded_ = function() {
  * @param {!Element=} opt_alwaysIgnoreLink The always ignore link (optional).
  * @private
  */
-passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
+passwordalert.injectWarningBanner_ = function(bannerText, bannerButtons,
     opt_alwaysIgnoreLink) {
   var style = document.createElement('link');
   style.rel = 'stylesheet';
@@ -940,7 +953,7 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
   var blockIcon = document.createElement('img');
   blockIcon.setAttribute('id', 'warning_banner_icon');
   blockIcon.setAttribute('src',
-                         chrome.extension.getURL('logo_password_catcher.png'));
+                         chrome.extension.getURL('logo_password_alert.png'));
 
   // A fixed-size inner container is the key to make the banner content
   // look good across different screen sizes.
@@ -967,6 +980,6 @@ passwordcatcher.injectWarningBanner_ = function(bannerText, bannerButtons,
 
 // Set listener before initializePage_ which calls chrome.storage.managed.get.
 chrome.storage.onChanged.addListener(
-    passwordcatcher.handleManagedPolicyChanges_);
+    passwordalert.handleManagedPolicyChanges_);
 
-passwordcatcher.initializePage_();
+passwordalert.initializePage_();

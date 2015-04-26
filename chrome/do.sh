@@ -13,7 +13,7 @@
 # // See the License for the specific language governing permissions and
 # // limitations under the License.
 # /**
-#  * @fileoverview Shell script to facilitate build-related tasks for Password Catcher.
+#  * @fileoverview Shell script to facilitate build-related tasks for Password Alert.
 #  * Based on https://github.com/google/end-to-end/blob/master/do.sh
 #  *
 #  * @author koto@google.com (Krzysztof Kotowicz)
@@ -78,8 +78,8 @@ pc_build_extension() {
   if [ "$1" == "debug" ]; then
     jscompile_pc+=" --debug --formatting=PRETTY_PRINT"
   fi
-  echo -n "." && $jscompile_pc --closure_entry_point "passwordcatcher.background" --js_output_file "$BUILD_EXT_DIR/background_compiled.js"
-  echo -n "." && $jscompile_pc --closure_entry_point "passwordcatcher" --js_output_file "$BUILD_EXT_DIR/content_script_compiled.js"
+  echo -n "." && $jscompile_pc --closure_entry_point "passwordalert.background" --js_output_file "$BUILD_EXT_DIR/background_compiled.js"
+  echo -n "." && $jscompile_pc --closure_entry_point "passwordalert" --js_output_file "$BUILD_EXT_DIR/content_script_compiled.js"
   echo ""
 
   echo "Copying extension files..."

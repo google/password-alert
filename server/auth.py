@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Authorization module for Password Catcher."""
+"""Authorization module for Password Alert."""
 
 import json
 import logging
@@ -29,7 +29,7 @@ AUTH_SERVER_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
 
 # The client_id here matches what's defined in the manifest.json, oauth section.
 # https://developer.chrome.com/apps/identity#method-getAuthToken
-CHROME_EXTENSION_CLIENT_ID = ('894133746257-ci014prch1u46rn7lfbm9neg9ppn9a8a'
+CHROME_EXTENSION_CLIENT_ID = ('897749729682-2j2fjtnfde4kgi40fvjrp7ude48ooh4n'
                               '.apps.googleusercontent.com')
 
 
@@ -37,7 +37,7 @@ def admin_authorization_required(handler_method):
   """A decorator to require a user is authorized as admin to access a handler.
 
   To use it, add authorized users in the appropriate google group,
-  e.g. passwordcatcher-admins@example.com, and decorate your methods like this:
+  e.g. passwordalert-admins@example.com, and decorate your methods like this:
 
   @admin_authorization_required
   def get(self):
@@ -53,13 +53,11 @@ def admin_authorization_required(handler_method):
   def decorate(self, *args, **kwargs):
     """Check if user is authorized as admin."""
     current_user = users.GetCurrentUser()
+    datastore.CURRENT_DOMAIN = current_user.email().split('@')[1]
+    logging.info('set CURRENT_DOMAIN to %s', datastore.CURRENT_DOMAIN)
 
     try:
-      if users.is_current_user_admin():
-        logging.debug('User is an App Engine app admin, so allowing access.')
-        handler_method(self, *args, **kwargs)
-      # Check if the user is in the configured admin group.
-      elif google_directory_service.IsInAdminGroup(current_user):
+      if google_directory_service.IsInAdminGroup(current_user):
         logging.debug('User is in configured admin group, so allowing access.')
         handler_method(self, *args, **kwargs)
       else:
@@ -92,12 +90,20 @@ def user_authorization_required(handler_method):
 
     oauth_token = self.request.get('oauth_token', None)
     email = self.request.get('email', None)
+    domain = self.request.get('domain', None)
     if not email:
       logging.warning('Request is missing email.')
       self.abort(403)
+    if not domain:
+      logging.warning('enterprise domain not included in report')
+      self.abort(403)
+    datastore.CURRENT_DOMAIN = domain
+    logging.info('set CURRENT_DOMAIN to %s', datastore.CURRENT_DOMAIN)
+
     if not _is_email_in_domain(email):
       logging.warning('Email %s in request does not match domain %s in '
-                      'config.py.', email, datastore.Setting.get('domain'))
+                      'config.py.', email,
+                      datastore.Setting.get('corp_email_domain'))
       self.abort(403)
 
     if is_oauth_valid(oauth_token, email):
@@ -110,7 +116,8 @@ def user_authorization_required(handler_method):
         logging.warning('domain_auth_secret is set, but does NOT match')
         self.abort(403)
     else:
-      logging.info('oauth not valid, but no secret configured, so allowing')
+      logging.info('oauth not valid, and no secret configured, so denying')
+      self.abort(403)
 
     handler_method(self, *args, **kwargs)
 
@@ -169,7 +176,7 @@ def is_oauth_valid(oauth_token, email):
 
 
 def _is_email_in_domain(email):
-  domains = datastore.Setting.get('domain').split(',')
+  domains = datastore.Setting.get('corp_email_domain').split(',')
   for domain in domains:
     if email.endswith('@' + domain.strip().lower()):
       return True
