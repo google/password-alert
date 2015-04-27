@@ -31,7 +31,6 @@ DOMAIN_AUTH_SECRET = ''
 # App Engine app's web interface, then please configure this section.
 
 # Where to send alert emails, such as security@example.com
-# This recipient needs to be an admin of the App Engine application.
 ALERTS_EMAIL = ''
 
 # The email that sends alerts to admins and users.
@@ -115,3 +114,5 @@ DOMAIN = os.getenv('AUTH_DOMAIN')
 OAUTH_CLIENT_ID = ''
 OAUTH_CLIENT_SECRET = ''
 OAUTH_REDIRECT_URI = ''
+
+CORP_EMAIL_DOMAIN = DOMAIN  # For working around Chrome vs server setting names.
