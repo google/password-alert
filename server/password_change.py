@@ -20,6 +20,7 @@ __author__ = 'adhintz@google.com (Drew Hintz)'
 from datetime import datetime
 from datetime import timedelta
 import logging
+import traceback
 
 import datastore
 import google_directory_service
@@ -82,6 +83,7 @@ def ChangePasswordAtNextLogin(email):
     google_directory_service.UpdateUserInfo(email, user_info)
     return {'result': 'OK'}
   except Exception as e:  # pylint: disable=broad-except
+    logging.warning(traceback.format_exc())
     return {'result': 'OTHER_ERROR', 'error_message': e}
 
 

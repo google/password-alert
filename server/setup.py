@@ -21,6 +21,7 @@ import pickle
 
 from apiclient.errors import HttpError
 import config
+import datastore
 import google_directory_service
 from oauth2client import appengine
 from oauth2client import client
@@ -130,9 +131,13 @@ def LoadCredentialsFromPem():
 
 
 def _StoreCredentials(credentials):
+  if datastore.HOSTED:
+    domain = users.get_current_user().email().split('@')[1]
+  else:  # In non-hosted, the user will not be logged in on /report/ requests.
+    domain = config.DOMAIN.split(',')[0]
   credential_storage = appengine.StorageByKeyName(
       appengine.CredentialsModel,
-      users.get_current_user().email().split('@')[1],
+      domain,
       'credentials')
   credential_storage.put(credentials)
 

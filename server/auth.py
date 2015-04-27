@@ -57,7 +57,10 @@ def admin_authorization_required(handler_method):
     logging.info('set CURRENT_DOMAIN to %s', datastore.CURRENT_DOMAIN)
 
     try:
-      if google_directory_service.IsInAdminGroup(current_user):
+      if not datastore.HOSTED and users.is_current_user_admin():
+        logging.debug('User is an App Engine app admin, so allowing access.')
+        handler_method(self, *args, **kwargs)
+      elif google_directory_service.IsInAdminGroup(current_user):
         logging.debug('User is in configured admin group, so allowing access.')
         handler_method(self, *args, **kwargs)
       else:
@@ -65,7 +68,13 @@ def admin_authorization_required(handler_method):
         self.abort(403)
     except google_directory_service.SetupNeeded:
       logging.warning('credentials not set up, so configuring')
-      self.redirect('/setup/')
+      if datastore.HOSTED:
+        self.redirect('/setup/')
+      else:
+        logging.warning(
+            'Only App Engine admins are allowed access. To allow another group '
+            ', configure a service account in config.py')
+        self.abort(403)
 
   return decorate
 
