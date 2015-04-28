@@ -1,6 +1,6 @@
 Note that if you don't need to build from source, you can follow
-[the deployment guide](https://docs.google.com/document/d/1Rz5NLa4chL5LL1rOhbQRicFetSWeCFmQS8MM5CcP7VM/edit#)
-which links to a [pre-built copy of the server](https://drive.google.com/corp/drive/folders/0B2KF7pBZBW7ifmxuQ3pBajVsWmlYMnYzdE1DWXBEMW1MU2o2WGh5ZG9HOW54bXlWbHNWQ00).
+[the deployment guide](http://goo.gl/7AIw1S)
+which links to a [pre-built copy of the server](https://github.com/google/password-alert/releases/latest).
 
 # Steps to deploy the server from source
 
@@ -13,9 +13,11 @@ which links to a [pre-built copy of the server](https://drive.google.com/corp/dr
 
 2. Edit server/app.yaml so that the application setting points to your App Engine app.
 
-3. If needed, download the [Google App Engine SDK for Python](https://cloud.google.com/appengine/downloads).
+3. Edit server/config.py with your settings. [The deployment guide](http://goo.gl/7AIw1S) describes how to generate the certificate.
 
-4. Upload the server:
+4. If needed, download the [Google App Engine SDK for Python](https://cloud.google.com/appengine/downloads).
+
+5. Upload the server:
 
     ```shell
     ~/google_appengine/appcfg.py update password_alert/server/
