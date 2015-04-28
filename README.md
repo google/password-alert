@@ -11,4 +11,4 @@ Install the Chrome extension from [the Chrome Web Store to try it yourself](http
 
 To deploy it in your Google for Work enterprise, please follow [the deployment guide](http://goo.gl/7AIw1S).
 
-If you'd like to build it from source, please see the [chrome/](chrome/) directory for instructions to build the Chrome Extension. For instructions on building the Password Alert server for enterprise use, please see the [server/](server/) directory.
+If you'd like to build it from source, please see [chrome/README.md](chrome/README.md) for instructions to build the Chrome Extension. For instructions on building the Password Alert server for enterprise use, please see [server/README.md](server/README.md).
