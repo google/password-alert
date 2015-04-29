@@ -3,7 +3,7 @@ The extension is available [in the Chrome Web Store here](https://chrome.google.
 
 Most users and organizations should
 be able to use the version in the Chrome Web Store without needing to compile
-it themselves. Google for Work enterprises can configure settings using maganged
+it themselves. Google for Work enterprises can configure settings using managed
 storage as described in
 [the deployment guide](http://goo.gl/7AIw1S).
 
