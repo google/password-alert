@@ -5,7 +5,7 @@ Password Alert helps detect and protect against phishing attacks. If you enter y
 
 Separately, Password Alert also tries to detect fake Google login pages to alert you before you’ve typed in your password. To do so, Password Alert checks the HTML of each page you visit to ascertain whether it appears to be impersonating a Google login page. Google for Work enterprises can configure it to protect their own custom single sign-on (SSO) pages.
 
-The Chrome extension currenly only protects Google accounts; other account passwords are not affected because the extension only compares your keystrokes to the stored fingerprint of your Google account password. The extension also does not operate in Incognito windows. When Google for Work administrators deploy Password Alert across all Chrome clients in their domains, the administrators can receive alerts when Password Alert triggers.
+The Chrome extension currently only protects Google accounts; other account passwords are not affected because the extension only compares your keystrokes to the stored fingerprint of your Google account password. The extension also does not operate in Incognito windows. When Google for Work administrators deploy Password Alert across all Chrome clients in their domains, the administrators can receive alerts when Password Alert triggers.
 
 Install the Chrome extension from [the Chrome Web Store to try it yourself](https://chrome.google.com/webstore/detail/password-alert/noondiphcddnnabmjcihcjfbhfklnnep).
 
