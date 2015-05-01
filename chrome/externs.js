@@ -43,6 +43,8 @@ chrome.notifications.create;
 chrome.notifications.getAll;
 chrome.notifications.onButtonClicked;
 chrome.notifications.onButtonClicked.addListener;
+chrome.notifications.onClicked;
+chrome.notifications.onClicked.addListener;
 
 chrome.storage;
 chrome.storage.managed;
@@ -62,6 +64,10 @@ chrome.tabs.create;
 chrome.tabs.executeScript;
 chrome.tabs.query;
 chrome.tabs.sendMessage;
+
+var loginForm;
+loginForm.Email;
+loginForm.Passwd;
 
 var sender;
 sender.tab;
@@ -89,9 +95,14 @@ request.typedTimeStamp;
 request.url;
 
 var state;
-state.passwordLengths;
 state.otpMode;
 state.otpTime;
+state.passwordLengths;
+state.removeWarningBanner;
+
+var toParse;
+toParse.href;
+toParse.origin;
 
 var options;
 options.priority;

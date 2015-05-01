@@ -32,32 +32,28 @@ goog.require('goog.uri.utils');
 
 /**
  * URL prefix for the SSO/login page.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.sso_url_;
 
 
 /**
  * Selector for the form element on the SSO login page.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.sso_form_selector_;
 
 
 /**
  * Selector for the password input element on the SSO login page.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.sso_password_selector_;
 
 
 /**
  * Selector for the username input element on the SSO login page.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.sso_username_selector_;
 
@@ -65,16 +61,14 @@ passwordalert.sso_username_selector_;
 /**
  * The corp email domain, e.g. "company.com".
  * Can also be a list of domains, such as "1.example.com,2.example.com".
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.corp_email_domain_;
 
 
 /**
  * URL prefix for the GAIA login page.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.GAIA_URL_ = 'https://accounts.google.com/';
@@ -82,8 +76,7 @@ passwordalert.GAIA_URL_ = 'https://accounts.google.com/';
 
 /**
  * URL prefix for second factor prompt. Happens on correct password.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.GAIA_SECOND_FACTOR_ =
@@ -92,8 +85,7 @@ passwordalert.GAIA_SECOND_FACTOR_ =
 
 /**
  * YouTube check connection page.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.YOUTUBE_CHECK_URL_ =
@@ -102,8 +94,7 @@ passwordalert.YOUTUBE_CHECK_URL_ =
 
 /**
  * Namespace for chrome's managed storage.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.MANAGED_STORAGE_NAMESPACE_ = 'managed';
@@ -111,8 +102,7 @@ passwordalert.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 
 /**
  * HTML snippets from corp login pages.  Default values are for consumers.
- * @type {Array.<string>}
- * @private
+ * @private {Array.<string>}
  */
 passwordalert.corp_html_ = [
   'One account. All of Google.',
@@ -126,8 +116,7 @@ passwordalert.corp_html_ = [
  * HTML snippets from corp login pages that are more specific.  Default
  * values are for consumers.
  * TODO(henryc): Add a tap test so that we will know when these changes.
- * @type {Array.<string>}
- * @private
+ * @private {Array.<string>}
  */
 passwordalert.corp_html_tight_ = [
   // From https://accounts.google.com/ServiceLogin
@@ -147,16 +136,14 @@ passwordalert.corp_html_tight_ = [
 
 /**
  * If the current page looks like corp_html_. undefined means not checked yet.
- * @type {boolean}
- * @private
+ * @private {boolean}
  */
 passwordalert.looks_like_google;
 
 
 /**
  * Email address of the security admin.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.security_email_address_;
 
@@ -164,8 +151,7 @@ passwordalert.security_email_address_;
 /**
  * Whitelist of domain suffixes that are not phishing or checked for password.
  * Default values are for consumers.
- * @type {Array.<string>}
- * @private
+ * @private {Array.<string>}
  */
 passwordalert.whitelist_top_domains_ = [
   'accounts.google.com'
@@ -174,24 +160,21 @@ passwordalert.whitelist_top_domains_ = [
 
 /**
  * The URL for the current page.
- * @private
- * @type {string}
+ * @private {string}
  */
 passwordalert.url_ = location.href.toString();
 
 
 /**
  * If Password Alert is running on the current page.
- * @private
- * @type {boolean}
+ * @private {boolean}
  */
 passwordalert.isRunning_ = false;
 
 
 /**
  * The timeStamp from the most recent keypress event.
- * @private
- * @type {number}
+ * @private {number}
  */
 passwordalert.lastKeypressTimeStamp_;
 
@@ -200,8 +183,7 @@ passwordalert.lastKeypressTimeStamp_;
  * Password lengths for passwords that are being watched.
  * If an array offset is true, then that password length is watched.
  * Value comes from background.js.
- * @private
- * @type {Array.<boolean>}
+ * @private {Array.<boolean>}
  */
 passwordalert.passwordLengths_;
 
@@ -209,16 +191,14 @@ passwordalert.passwordLengths_;
 /**
  * Is password alert used in enterprise environment.  If false, then it's
  * used by individual consumer.
- * @type {boolean}
- * @private
+ * @private {boolean}
  */
 passwordalert.isEnterpriseUse_ = false;
 
 
 /**
  * The text to display in the password warning banner.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.PASSWORD_WARNING_BANNER_TEXT_ =
@@ -233,8 +213,7 @@ passwordalert.PASSWORD_WARNING_BANNER_TEXT_ =
 
 /**
  * The link to allow the user to visit the current site.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.VISIT_THIS_SITE_LINK_ =
@@ -246,8 +225,7 @@ passwordalert.VISIT_THIS_SITE_LINK_ =
 
 /**
  * The text to display in the phishing warning banner.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.PHISHING_WARNING_BANNER_TEXT_ =
@@ -259,8 +237,7 @@ passwordalert.PHISHING_WARNING_BANNER_TEXT_ =
 
 /**
  * Key for the allowed hosts object in chrome storage.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
@@ -274,12 +251,9 @@ passwordalert.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
 passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
-    console.log('Setting managed policy.');
     if (Object.keys(managedPolicy).length == 0) {
-      console.log('No managed policy found. Consumer use.');
       passwordalert.isEnterpriseUse_ = false;
     } else {
-      console.log('Managed policy found.  Enterprise use.');
       passwordalert.isEnterpriseUse_ = true;
       passwordalert.corp_email_domain_ =
           managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
@@ -336,8 +310,6 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
 passwordalert.handleManagedPolicyChanges_ =
     function(changedPolicies, storageNamespace) {
   if (storageNamespace == passwordalert.MANAGED_STORAGE_NAMESPACE_) {
-    console.log('Handling changed policies.');
-
     var subtractArray = function(currentPolicyArray, oldPolicyArray) {
       return currentPolicyArray.filter(
           function(val) { return oldPolicyArray.indexOf(val) < 0; }
@@ -348,7 +320,6 @@ passwordalert.handleManagedPolicyChanges_ =
     for (changedPolicy in changedPolicies) {
       if (!passwordalert.isEnterpriseUse_) {
         passwordalert.isEnterpriseUse_ = true;
-        console.log('Enterprise use via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       var oldPolicyValue = changedPolicies[changedPolicy]['oldValue'];
@@ -411,7 +382,6 @@ passwordalert.completePageInitialization_ = function() {
   // to it, but that does not mean the user has successfully authenticated.
   if (goog.string.startsWith(passwordalert.url_,
                              passwordalert.YOUTUBE_CHECK_URL_)) {
-    console.log('YouTube login url detected: ' + passwordalert.url_);
     return;
   }
   if (passwordalert.sso_url_ &&
@@ -448,8 +418,6 @@ passwordalert.completePageInitialization_ = function() {
       }
     }
   } else {  // Not a Google login URL.
-    console.log('Detected URL that is not one of the accepted login URLs: ' +
-        passwordalert.url_);
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
       console.log('Detected possible phishing page.');
@@ -461,7 +429,6 @@ passwordalert.completePageInitialization_ = function() {
           passwordalert.createButtonsForPhishingWarningBanner_());
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
-    console.log('Completed page initialization.');
   }
 
   chrome.runtime.onMessage.addListener(
@@ -500,13 +467,18 @@ passwordalert.initializePage_ = function() {
  */
 passwordalert.start_ = function(msg) {
   var state = JSON.parse(msg);
-  // TODO(henryc): Content_script is now only using passwordLengths_ to tell
-  // if passwordLengths_length == 0. So, do not store passwordLengths,
-  // just have the message from background page tell it to start or stop.
-  passwordalert.passwordLengths_ = state.passwordLengths;
-  if (passwordalert.passwordLengths_.length == 0) {
-    passwordalert.stop_(); // no passwords, so no need to watch
-    return;
+  if (state.passwordLengths) {
+    // TODO(henryc): Content_script is now only using passwordLengths_ to tell
+    // if passwordLengths_length == 0. So, do not store passwordLengths,
+    // just have the message from background page tell it to start or stop.
+    passwordalert.passwordLengths_ = state.passwordLengths;
+    if (passwordalert.passwordLengths_.length == 0) {
+      passwordalert.stop_(); // no passwords, so no need to watch
+      return;
+    }
+  }
+  if (state.removeWarningBanner) {
+    passwordalert.removeWarningBanner_();
   }
 
   if ((passwordalert.sso_url_ &&
@@ -519,7 +491,19 @@ passwordalert.start_ = function(msg) {
   }
 
   passwordalert.isRunning_ = true;
-  console.log('Password alert is running.');
+
+  // If the current site is marked as Always Ignore, then passwordalert.stop_().
+  if (!passwordalert.isEnterpriseUse_) {
+    chrome.storage.local.get(
+        passwordalert.ALLOWED_HOSTS_KEY_,
+        function(allowedHosts) {
+          var currentHost = window.location.origin;
+          if (Object.keys(allowedHosts).length > 0 &&
+              allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost]) {
+            passwordalert.stop_();
+          }
+        });
+  }
 };
 
 
@@ -540,8 +524,8 @@ passwordalert.stop_ = function() {
 passwordalert.handleKeypress_ = function(evt) {
   if (!passwordalert.isRunning_) return;
 
-  // Legitimate keypress events should have the view set.
-  if (evt.view == null) {
+  // Legitimate keypress events should have the view set and valid charCode.
+  if (evt.view == null || evt.charCode == 0) {
     return;
   }
 
@@ -594,13 +578,15 @@ passwordalert.saveSsoPassword_ = function(evt) {
  * @private
  */
 passwordalert.saveGaiaPassword_ = function(evt) {
-  console.log('Saving gaia password.');
+  console.log('Saving Google login password.');
   //TODO(adhintz) Should we do any validation here?
-  var email = document.getElementById('Email').value;
-  email = goog.string.trim(email.toLowerCase());
-  var password = document.getElementById('Passwd').value;
-  if (passwordalert.isEnterpriseUse_ &&
-      !passwordalert.isEmailInDomain_(email)) {
+  var loginForm = document.getElementById('gaia_loginform');
+  var email = loginForm.Email ?
+      goog.string.trim(loginForm.Email.value.toLowerCase()) : '';
+  var password = loginForm.Passwd ? loginForm.Passwd.value : '';
+  if ((passwordalert.isEnterpriseUse_ &&
+      !passwordalert.isEmailInDomain_(email)) ||
+      goog.string.isEmptyString(goog.string.makeSafe(password))) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage({
@@ -662,12 +648,10 @@ passwordalert.looksLikeGooglePage_ = function() {
   var allHtml = document.documentElement.innerHTML.slice(0, 100000);
   for (var i in passwordalert.corp_html_) {
     if (allHtml.indexOf(passwordalert.corp_html_[i]) >= 0) {
-      console.log('Looks like login page.');
       passwordalert.looks_like_google_ = true;
       return true;
     }
   }
-  console.log('Does not look like login page.');
   passwordalert.looks_like_google_ = false;
   return false;
 };
@@ -691,7 +675,6 @@ passwordalert.looksLikeGooglePageTight_ = function() {
       return true;
     }
   }
-  console.log('Does not look like (tight) login page.');
   return false;
 };
 
@@ -711,7 +694,6 @@ passwordalert.whitelistUrl_ = function() {
       return true;
     }
   }
-  console.log('Non-whitelisted url detected: ' + domain);
   return false;
 };
 
@@ -772,6 +754,15 @@ passwordalert.removeWarningBanner_ = function() {
 
 
 /**
+ * Send message to remove the warning banner.
+ * @private
+ */
+passwordalert.sendMessageToRemoveWarningBanner_ = function() {
+  chrome.runtime.sendMessage({action: 'removeWarningBanner'});
+};
+
+
+/**
  * Create buttons for the phishing warning banner.
  * @param {string} buttonText Text label of the button.
  * @param {string} buttonLeftPosition Position for the button from the left
@@ -811,7 +802,7 @@ passwordalert.createButtonsForPasswordWarningBanner_ = function(email) {
       passwordalert.openChangePasswordPage_.bind(null, email), true);
   var ignoreButton = passwordalert.createButton_(
       chrome.i18n.getMessage('ignore'), '33%',
-      passwordalert.removeWarningBanner_, false);
+      passwordalert.sendMessageToRemoveWarningBanner_, false);
   return [resetPasswordButton, ignoreButton];
 };
 
@@ -836,7 +827,7 @@ passwordalert.createButtonsForPhishingWarningBanner_ = function() {
       chrome.i18n.getMessage('back'), '33%', passwordalert.back_, false);
   var visitThisSiteButton = passwordalert.createButton_(
       chrome.i18n.getMessage('visit_this_site'), '59%',
-      passwordalert.removeWarningBanner_, false);
+      passwordalert.sendMessageToRemoveWarningBanner_, false);
   return [contactSecurityButton, backButton, visitThisSiteButton];
 };
 
@@ -859,23 +850,14 @@ passwordalert.saveAllowedHost_ = function() {
     chrome.storage.local.get(
         passwordalert.ALLOWED_HOSTS_KEY_,
         function(allowedHosts) {
-          console.log('Allowed hosts in chrome storage:');
-          console.log(allowedHosts);
           var currentHost = window.location.origin;
-          console.log('Current host is: ' + currentHost);
           if (Object.keys(allowedHosts).length == 0) {
-            console.log('No allowed hosts in local storage.');
             allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_] = {};
           }
           allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost] = true;
-          console.log('Updated allowed hosts:');
-          console.log(allowedHosts);
           chrome.storage.local.set(
               allowedHosts,
-              function() {
-                console.log('Finished setting allowed hosts.');
-                passwordalert.removeWarningBanner_();
-              });
+              passwordalert.sendMessageToRemoveWarningBanner_);
         });
   }
 };
@@ -909,19 +891,15 @@ passwordalert.createAlwaysIgnoreLink_ = function() {
  * @private
  */
 passwordalert.injectPasswordWarningIfNeeded_ = function(email) {
-  console.log('Check if the password warning banner should be injected.');
   if (passwordalert.isEnterpriseUse_) {
     return;
   }
   chrome.storage.local.get(
       passwordalert.ALLOWED_HOSTS_KEY_,
       function(allowedHosts) {
-        console.log('Allowed hosts in chrome storage:');
-        console.log(allowedHosts);
         var currentHost = window.location.origin;
         if (Object.keys(allowedHosts).length > 0 &&
             allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost]) {
-          console.log('Current host is allowed. So will not display warning.');
           return;
         }
         passwordalert.injectWarningBanner_(
