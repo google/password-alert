@@ -533,7 +533,6 @@ passwordalert.handleKeypress_ = function(evt) {
   if (evt.timeStamp <= passwordalert.lastKeypressTimeStamp_) {
     return;
   }
-  passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
 
   chrome.runtime.sendMessage({
     action: 'handleKeypress',
@@ -542,6 +541,10 @@ passwordalert.handleKeypress_ = function(evt) {
     url: passwordalert.url_,
     referer: document.referrer.toString(),
     looksLikeGoogle: passwordalert.looksLikeGooglePage_()
+  }, function (response) {
+    if (response.success) {
+      passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
+    }
   });
 };
 

@@ -453,11 +453,17 @@ passwordalert.background.initializePage_ = function() {
 passwordalert.background.handleRequest_ = function(
     request, sender, sendResponse) {
   if (sender.tab === undefined) {
+    sendResponse({success: false});
     return;
   }
+  var success = true;
   switch (request.action) {
     case 'handleKeypress':
-      passwordalert.background.handleKeypress_(sender.tab.id, request);
+      if (request.charCode == 0) {
+        success = false;
+      } else {
+        passwordalert.background.handleKeypress_(sender.tab.id, request);
+      }
       break;
     case 'statusRequest':
       passwordalert.background.pushToTab_(sender.tab.id);
@@ -478,6 +484,7 @@ passwordalert.background.handleRequest_ = function(
       passwordalert.background.pushRemoveWarningBannerToTab_(sender.tab.id);
       break;
   }
+  sendResponse({success: success});
 };
 
 
