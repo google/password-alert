@@ -39,6 +39,12 @@ chrome.tabs.sendMessage = function() {};
 
 chrome.storage = {};
 chrome.storage.managed = {};
+chrome.storage.local = {};
+chrome.storage.local.get = function() {
+  return {
+    'allowed_hosts': {'alwaysignore.example.com': true}
+  };
+};
 chrome.storage.managed.get = function() {
   return {
     'sso_url': 'https://login.corp.google.com/',

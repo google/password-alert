@@ -32,8 +32,7 @@ goog.require('goog.crypt.Sha1');
 
 /**
  * Key for localStorage to store salt value.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.background.SALT_KEY_ = 'salt';
@@ -41,8 +40,7 @@ passwordalert.background.SALT_KEY_ = 'salt';
 
 /**
  * Number of bits of the hash to use.
- * @type {number}
- * @private
+ * @private {number}
  * @const
  */
 passwordalert.background.HASH_BITS_ = 37;
@@ -50,24 +48,21 @@ passwordalert.background.HASH_BITS_ = 37;
 
 /**
  * Where password use reports are sent.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.background.report_url_;
 
 
 /**
  * Whether the user should be prompted to initialize their password.
- * @type {boolean}
- * @private
+ * @private {boolean}
  */
 passwordalert.background.shouldInitializePassword_;
 
 
 /**
  * Minimum length of passwords.
- * @type {number}
- * @private
+ * @private {number}
  */
 passwordalert.background.minimum_password_ = 8;
 
@@ -75,8 +70,7 @@ passwordalert.background.minimum_password_ = 8;
 /**
  * Maximum character typing rate to protect against abuse.
  * Calculated for 60 wpm at 5 cpm for one hour.
- * @type {number}
- * @private
+ * @private {number}
  * @const
  */
 passwordalert.background.MAX_RATE_PER_HOUR_ = 18000;
@@ -84,33 +78,29 @@ passwordalert.background.MAX_RATE_PER_HOUR_ = 18000;
 
 /**
  * How many passwords have been checked in the past hour.
- * @type {number}
- * @private
+ * @private {number}
  */
 passwordalert.background.rateLimitCount_ = 0;
 
 
 /**
  * The time when the rateLimitCount_ will be reset.
- * @type {Date}
- * @private
+ * @private {Date}
  */
 passwordalert.background.rateLimitResetDate_;
 
 
 /**
  * Associative array of possible passwords. Keyed by tab id.
- * @type {Object.<number, Object.<string, string|boolean>>}
- * @private
+ * @private {Object.<number, Object.<string, string|boolean>>}
  */
 passwordalert.background.possiblePassword_ = {};
 
 
 /**
  * Associative array of tab state. Keyed by tab id.
- * @type {Object.<number, {hash: string, otpCount: number, otpMode: boolean,
+ * @private {Object.<number, {hash: string, otpCount: number, otpMode: boolean,
  *                         otpTime: Date, typedChars: string, typedTime: Date}>}
- * @private
  */
 passwordalert.background.tabState_ = {};
 
@@ -118,16 +108,14 @@ passwordalert.background.tabState_ = {};
 /**
  * Password lengths for passwords that are being watched.
  * If an array offset is true, then that password length is watched.
- * @type {Array.<boolean>}
- * @private
+ * @private {Array.<boolean>}
  */
 passwordalert.background.passwordLengths_;
 
 
 /**
  * If no key presses for this many seconds, flush buffer.
- * @type {number}
- * @private
+ * @private {number}
  * @const
  */
 passwordalert.background.SECONDS_TO_CLEAR_ = 10;
@@ -135,8 +123,7 @@ passwordalert.background.SECONDS_TO_CLEAR_ = 10;
 
 /**
  * OTP must be typed within this time since the password was typed.
- * @type {number}
- * @private
+ * @private {number}
  * @const
  */
 passwordalert.background.SECONDS_TO_CLEAR_OTP_ = 60;
@@ -144,16 +131,14 @@ passwordalert.background.SECONDS_TO_CLEAR_OTP_ = 60;
 
 /**
  * Number of digits in a valid OTP.
- * @type {number}
- * @private
+ * @private {number}
  */
 passwordalert.background.OTP_LENGTH_ = 6;
 
 
 /**
  * ASCII code for enter character.
- * @type {number}
- * @private
+ * @private {number}
  * @const
  */
 passwordalert.background.ENTER_ASCII_CODE_ = 13;
@@ -171,8 +156,7 @@ passwordalert.background.Request_;
 
 /**
  * Namespace for chrome's managed storage.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
@@ -181,24 +165,21 @@ passwordalert.background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 /**
  * Is password alert used in enterprise environment.  If false, then it's
  * used by individual consumer.
- * @type {boolean}
- * @private
+ * @private {boolean}
  */
 passwordalert.background.isEnterpriseUse_ = false;
 
 
 /**
  * The corp email domain, e.g. "@company.com".
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.corp_email_domain_;
 
 
 /**
  * Domain-specific shared auth secret for enterprise when oauth token fails.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.background.domain_auth_secret_ = '';
 
@@ -206,8 +187,7 @@ passwordalert.background.domain_auth_secret_ = '';
 /**
  * The id of the chrome notification that prompts the user to initialize
  * their password.
- * @type {string}
- * @private
+ * @private {string}
  * @const
  */
 passwordalert.background.NOTIFICATION_ID_ =
@@ -215,18 +195,24 @@ passwordalert.background.NOTIFICATION_ID_ =
 
 
 /**
+ * Key for the allowed hosts object in chrome storage.
+ * @private {string}
+ * @const
+ */
+passwordalert.background.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
+
+
+/**
  * The email of the user signed in to Chrome (which could be empty if there's
  * no signed in user). Only updates when the background page first loads.
- * @type {string}
- * @private
+ * @private {string}
  */
 passwordalert.background.signed_in_email_ = '';
 
 
 /**
  * Whether the extension was newly installed.
- * @type {boolean}
- * @private
+ * @private {boolean}
  */
 passwordalert.background.isNewInstall_ = false;
 
@@ -240,6 +226,12 @@ passwordalert.background.handleNewInstall_ = function(details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
     passwordalert.background.isNewInstall_ = true;
+
+    // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
+    // This way, the content script will be ready to receive
+    // post-password initialization messages.
+    passwordalert.background.injectContentScriptIntoAllTabs_(
+        passwordalert.background.initializePassword_);
 
     setTimeout(function() {
       if (!localStorage.hasOwnProperty(passwordalert.background.SALT_KEY_)) {
@@ -341,11 +333,8 @@ passwordalert.background.injectContentScriptIntoAllTabs_ =
   chrome.tabs.query({}, function(tabs) {
     for (var i = 0; i < tabs.length; i++) {
       var tabIdentifier = tabs[i].id + ' - ' + tabs[i].url;
-      console.log('Checking if content script should be injected: ' +
-                  tabIdentifier);
       // Skip chrome:// and chrome-devtools:// pages
       if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
-        console.log('Injecting content script into tab: ' + tabIdentifier);
         chrome.tabs.executeScript(tabs[i].id,
                                   {file: 'content_script_compiled.js'});
       }
@@ -367,7 +356,6 @@ passwordalert.background.injectContentScriptIntoAllTabs_ =
  */
 passwordalert.background.displayInitializePasswordNotification_ = function() {
   chrome.notifications.getAll(function(notifications) {
-    console.log('Getting all created notifications: %O', notifications);
     if (notifications[passwordalert.background.NOTIFICATION_ID_]) {
       chrome.notifications.update(passwordalert.background.NOTIFICATION_ID_,
           {priority: 2}, function() {});
@@ -384,16 +372,18 @@ passwordalert.background.displayInitializePasswordNotification_ = function() {
       };
       chrome.notifications.create(passwordalert.background.NOTIFICATION_ID_,
           options, function() {});
-      chrome.notifications.onButtonClicked.addListener(
-          function(notificationId, buttonIndex) {
-            if (notificationId ===
-                passwordalert.background.NOTIFICATION_ID_) {
-              chrome.tabs.create({'url':
+      var openLoginPage_ = function(notificationId) {
+        if (notificationId === passwordalert.background.NOTIFICATION_ID_) {
+          chrome.tabs.create({'url':
                 'https://accounts.google.com/ServiceLogin?' +
                 'continue=https://www.google.com'});
-            }
-          }
-      );
+        }
+      };
+      // If a user clicks on the non-button area of the notification,
+      // they should still have the chance to go the login page to
+      // initialize their password.
+      chrome.notifications.onClicked.addListener(openLoginPage_);
+      chrome.notifications.onButtonClicked.addListener(openLoginPage_);
     }
   });
 };
@@ -406,19 +396,16 @@ passwordalert.background.displayInitializePasswordNotification_ = function() {
 passwordalert.background.initializePassword_ = function() {
   if (passwordalert.background.isEnterpriseUse_ &&
       !passwordalert.background.shouldInitializePassword_) {
-    console.log('Password should not be initialized.');
     return;
   }
-  console.log('Start initializing password.');
   // For OS X, we add a delay that will give the user a chance to dismiss
   // the webstore's post-install popup.  Otherwise, there will be an overlap
   // between this popup and the chrome.notification message.
   // TODO(henryc): Find a more robust way to overcome this overlap issue.
   if (navigator.appVersion.indexOf('Macintosh') != -1) {
-    console.log('Detected OS X.');
     setTimeout(
         passwordalert.background.displayInitializePasswordNotification_,
-        10000);
+        5000);  // 5 seconds
   } else {
     passwordalert.background.displayInitializePasswordNotification_();
   }
@@ -435,24 +422,13 @@ passwordalert.background.completePageInitialization_ = function() {
   chrome.runtime.onMessage.addListener(
       passwordalert.background.handleRequest_);
 
-  // initializePassword_ is a callback because it should occur after
-  // injectContentScriptIntoAllTabs_.  This way, the content script will be
-  // available and ready to receive post-password initialization messages.
-  if (passwordalert.background.isNewInstall_) {
-    passwordalert.background.injectContentScriptIntoAllTabs_(
-        passwordalert.background.initializePassword_);
-  }
-
   // Get the username from a signed in Chrome profile, which might be used
   // for reporting phishing sites (if the password store isn't initialized).
   chrome.identity.getProfileUserInfo(function(userInfo) {
     if (userInfo) {
       passwordalert.background.signed_in_email_ = userInfo.email;
-      console.log('Retrieved user email from chrome profile: %s',
-                  passwordalert.background.signed_in_email_);
     }
   });
-  console.log('Completed page initialization.');
 };
 
 
@@ -498,6 +474,9 @@ passwordalert.background.handleRequest_ = function(
     case 'savePossiblePassword':
       passwordalert.background.savePossiblePassword_(sender.tab.id);
       break;
+    case 'removeWarningBanner':
+      passwordalert.background.pushRemoveWarningBannerToTab_(sender.tab.id);
+      break;
   }
 };
 
@@ -533,26 +512,21 @@ passwordalert.background.handleKeypress_ = function(tabId, request) {
   }
 
   if (passwordalert.background.tabState_[tabId]['otpMode']) {
-    console.log('in otp mode');
     var now = new Date();
     if (now - passwordalert.background.tabState_[tabId]['otpTime'] >
         passwordalert.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
-      console.log('reached time to clear otp; clearing otp');
       passwordalert.background.clearOtpMode_(tabId);
     } else if (request.charCode >= 0x30 && request.charCode <= 0x39) {
       // is a digit
-      console.log('digit typed');
       passwordalert.background.tabState_[tabId]['otpCount']++;
     } else if (request.charCode > 0x20 ||
         // non-digit printable characters reset it
         // Non-printable only allowed at start:
         passwordalert.background.tabState_[tabId]['otpCount'] > 0) {
-      console.log('non-digit typed; clearing otp mode');
       passwordalert.background.clearOtpMode_(tabId);
     }
     if (passwordalert.background.tabState_[tabId]['otpCount'] >=
         passwordalert.background.OTP_LENGTH_) {
-      console.log('otp count is greater than otp length');
       passwordalert.background.checkPassword_(tabId, request, true);
       passwordalert.background.clearOtpMode_(tabId);
     }
@@ -601,13 +575,15 @@ passwordalert.background.handleKeypress_ = function(tabId, request) {
  * @private
  */
 passwordalert.background.setPossiblePassword_ = function(tabId, request) {
-  console.log('Start setting possible password for %s, password length of %s',
-              request.email, request.password.length);
-  if (!request.email ||
-      !request.password ||
-      request.password.length < passwordalert.background.minimum_password_) {
+  if (!request.email || !request.password) {
     return;
   }
+  if (request.password.length < passwordalert.background.minimum_password_) {
+    console.log('password length is shorter than the minimum of ' +
+        passwordalert.background.minimum_password_);
+    return;
+  }
+
   console.log('Setting possible password for %s, password length of %s',
               request.email, request.password.length);
   passwordalert.background.possiblePassword_[tabId] = {
@@ -641,10 +617,8 @@ passwordalert.background.getLocalStorageItem_ = function(index) {
  * @private
  */
 passwordalert.background.savePossiblePassword_ = function(tabId) {
-  console.log('Saving possible password.');
   var possiblePassword_ = passwordalert.background.possiblePassword_[tabId];
   if (!possiblePassword_) {
-    console.log('No possible password.');
     return;
   }
   var email = possiblePassword_['email'];
@@ -762,10 +736,8 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
   }
 
   if (otpAlert) {
-    console.log('is otp alert; getting hash from tabState');
     var hash = passwordalert.background.tabState_[tabId].hash;
   } else if (request.password) {
-    console.log('not otp alert; getting hash from request.password');
     var hash = passwordalert.background.hashPassword_(request.password);
   } else {
     return; // Should never happen.
@@ -783,13 +755,48 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
     passwordalert.background.sendReportPassword_(
         request, item['email'], item['date'], otpAlert);
 
-    console.log('Password has been typed.');
     passwordalert.background.tabState_[tabId]['otpCount'] = 0;
     passwordalert.background.tabState_[tabId]['otpMode'] = true;
     passwordalert.background.tabState_[tabId]['otpTime'] = new Date();
 
-    chrome.tabs.sendMessage(tabId, 'injectPasswordWarning:' + item['email']);
+    // TODO(adhintz) Clean up the code for handling this now disabled message:
+    // chrome.tabs.sendMessage(tabId, 'injectPasswordWarning:' + item['email']);
+
+    passwordalert.background.injectPasswordWarningIfNeeded_(
+        request.url, item['email']);
   }
+};
+
+
+/**
+ * Check if the password warning banner should be injected and inject it.
+ * @param {string|undefined} url URI that triggered this warning.
+ * @param {string} email Email address that triggered this warning.
+ *
+ * @private
+ */
+passwordalert.background.injectPasswordWarningIfNeeded_ = function(url, email) {
+  if (passwordalert.background.isEnterpriseUse_) {
+    return;
+  }
+
+  chrome.storage.local.get(
+      passwordalert.background.ALLOWED_HOSTS_KEY_,
+      function(allowedHosts) {
+        var toParse = document.createElement('a');
+        toParse.href = url;
+        var currentHost = toParse.origin;
+        if (Object.keys(allowedHosts).length > 0 && allowedHosts[
+            passwordalert.background.ALLOWED_HOSTS_KEY_][currentHost]) {
+          return;
+        }
+        // TODO(adhintz) Change to named parameters.
+        var warning_url = chrome.extension.getURL('warning_banner.html') +
+            '?' + encodeURIComponent(currentHost) +
+            '&' + encodeURIComponent(email);
+        chrome.tabs.create({'url': warning_url});
+      });
+
 };
 
 
@@ -878,7 +885,6 @@ passwordalert.background.sendReport_ = function(
         passwordalert.background.domain_auth_secret_);
   }
   chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
-    console.log('oauth callback called.');
     if (oauthToken) {
       console.log('Successfully retrieved oauth token.');
       data += '&oauth_token=' + encodeURIComponent(oauthToken);
@@ -977,6 +983,23 @@ passwordalert.background.pushToAllTabs_ = function() {
 passwordalert.background.pushToTab_ = function(tabId) {
   var state = {
     passwordLengths: passwordalert.background.passwordLengths_
+  };
+  chrome.tabs.sendMessage(tabId, JSON.stringify(state));
+};
+
+
+/**
+ * Sends a message to the content_script to remove the warning banner on a tab.
+ * This essentially removes the warning banner from all the iframes in the tab.
+ * @param {number} tabId Tab to receive the message.
+ * @private
+ *
+ * TODO(henryc): Consider refactoring pushToTab_ and the injectPasswordWarning
+ * so that the state can be passed in.
+ */
+passwordalert.background.pushRemoveWarningBannerToTab_ = function(tabId) {
+  var state = {
+    removeWarningBanner: true
   };
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
