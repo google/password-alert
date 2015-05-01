@@ -477,6 +477,7 @@ passwordalert.background.initializePage_ = function() {
 passwordalert.background.handleRequest_ = function(
     request, sender, sendResponse) {
   if (sender.tab === undefined) {
+    sendResponse({success: false});
     return;
   }
   switch (request.action) {
@@ -499,6 +500,7 @@ passwordalert.background.handleRequest_ = function(
       passwordalert.background.savePossiblePassword_(sender.tab.id);
       break;
   }
+  sendResponse({success: true});
 };
 
 
