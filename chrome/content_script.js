@@ -445,7 +445,6 @@ passwordalert.completePageInitialization_ = function() {
         passwordalert.start_(msg);
       });
   chrome.runtime.sendMessage({action: 'statusRequest'});
-  window.addEventListener('keypress', passwordalert.handleKeypress_, true);
 };
 
 
@@ -961,3 +960,5 @@ chrome.storage.onChanged.addListener(
     passwordalert.handleManagedPolicyChanges_);
 
 passwordalert.initializePage_();
+
+window.addEventListener('keypress', passwordalert.handleKeypress_, true);
