@@ -744,29 +744,31 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
   }
 
   if (localStorage[hash]) {
-    var date = new Date();
-    var formattedTime = date.getHours() + ':' + date.getMinutes() + ':' +
-        date.getSeconds();
-    console.log('PASSWORD and/or OTP TYPED! ' + formattedTime + '\n' +
-        request.url);
-    passwordalert.background.tabState_[tabId]['hash'] = hash;
-
     var item = JSON.parse(localStorage[hash]);
-    passwordalert.background.sendReportPassword_(
-        request, item['email'], item['date'], otpAlert);
 
-    passwordalert.background.tabState_[tabId]['otpCount'] = 0;
-    passwordalert.background.tabState_[tabId]['otpMode'] = true;
-    passwordalert.background.tabState_[tabId]['otpTime'] = new Date();
+    if (item['length'] == request.password.length) {
+      var date = new Date();
+      var formattedTime = date.getHours() + ':' + date.getMinutes() + ':' +
+          date.getSeconds();
+      console.log('PASSWORD and/or OTP TYPED! ' + formattedTime + '\n' +
+          request.url);
+      passwordalert.background.tabState_[tabId]['hash'] = hash;
 
-    // TODO(adhintz) Clean up the code for handling this now disabled message:
-    // chrome.tabs.sendMessage(tabId, 'injectPasswordWarning:' + item['email']);
+      passwordalert.background.sendReportPassword_(
+          request, item['email'], item['date'], otpAlert);
 
-    passwordalert.background.injectPasswordWarningIfNeeded_(
-        request.url, item['email']);
+      console.log('Password has been typed.');
+      passwordalert.background.tabState_[tabId]['otpCount'] = 0;
+      passwordalert.background.tabState_[tabId]['otpMode'] = true;
+      passwordalert.background.tabState_[tabId]['otpTime'] = new Date();
+
+      // TODO(adhintz) Clean up the code for handling this now disabled message:
+      // chrome.tabs.sendMessage(tabId, 'injectPasswordWarning:'
+      passwordalert.background.injectPasswordWarningIfNeeded_(
+          request.url, item['email']);
+    }
   }
 };
-
 
 /**
  * Check if the password warning banner should be injected and inject it.
