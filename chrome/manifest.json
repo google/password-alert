@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
-  "version": "1.5",
+  "version": "1.6",
   "default_locale": "en",
   "minimum_chrome_version": "33",
   "icons": { "128": "icon128.png" },
@@ -17,7 +17,6 @@
   "web_accessible_resources": [
     "logo_password_alert.png",
     "warning_banner.css",
-    "warning_banner.html",
     "warning_banner.js"
   ],
 
