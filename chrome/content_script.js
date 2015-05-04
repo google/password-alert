@@ -197,21 +197,6 @@ passwordalert.isEnterpriseUse_ = false;
 
 
 /**
- * The text to display in the password warning banner.
- * @private {string}
- * @const
- */
-passwordalert.PASSWORD_WARNING_BANNER_TEXT_ =
-    '<span id="warning_banner_header">' +
-    chrome.i18n.getMessage('password_warning_banner_header') + '</span>' +
-    '<span id="warning_banner_body">' +
-    chrome.i18n.getMessage('password_warning_banner_body') + '&nbsp;' +
-    '<a href="https://support.google.com/accounts/?p=passwordalert" ' +
-    'class="warning_banner_link">' +
-    chrome.i18n.getMessage('learn_more') + '</a></span>';
-
-
-/**
  * The link to allow the user to visit the current site.
  * @private {string}
  * @const
@@ -436,11 +421,6 @@ passwordalert.completePageInitialization_ = function() {
        * @param {string} msg JSON object containing valid password lengths.
        */
       function(msg) {
-        if (goog.string.startsWith(msg, 'injectPasswordWarning:')) {
-          var email = msg.split('injectPasswordWarning:')[1];
-          passwordalert.injectPasswordWarningIfNeeded_(email);
-          return;
-        }
         passwordalert.stop_();
         passwordalert.start_(msg);
       });
@@ -731,19 +711,6 @@ passwordalert.back_ = function() {
 
 
 /**
- * Opens the change password page where users can reset their password.
- * @param {string} email Email address to change password for.
- * @private
- */
-passwordalert.openChangePasswordPage_ = function(email) {
-  window.open(
-      'https://accounts.google.com/b/' + email + '/EditPasswd',
-      '_blank',
-      'resizable=yes');
-};
-
-
-/**
  * Remove the warning banner.
  * @private
  */
@@ -790,23 +757,6 @@ passwordalert.createButton_ = function(buttonText, buttonLeftPosition,
 
 
 /**
- * Create the set of buttons for the password warning banner.
- * @param {string} email Email address of the account triggering the warning.
- * @return {Array} The set of buttons for the password warning banner.
- * @private
- */
-passwordalert.createButtonsForPasswordWarningBanner_ = function(email) {
-  var resetPasswordButton = passwordalert.createButton_(
-      chrome.i18n.getMessage('reset_password'), '7%',
-      passwordalert.openChangePasswordPage_.bind(null, email), true);
-  var ignoreButton = passwordalert.createButton_(
-      chrome.i18n.getMessage('ignore'), '33%',
-      passwordalert.sendMessageToRemoveWarningBanner_, false);
-  return [resetPasswordButton, ignoreButton];
-};
-
-
-/**
  * Create the set of buttons for the phishing warning banner.
  * @return {Array} The set of buttons for the phishing warning banner.
  * @private
@@ -828,84 +778,6 @@ passwordalert.createButtonsForPhishingWarningBanner_ = function() {
       chrome.i18n.getMessage('visit_this_site'), '59%',
       passwordalert.sendMessageToRemoveWarningBanner_, false);
   return [contactSecurityButton, backButton, visitThisSiteButton];
-};
-
-
-/**
- * Save the allowed host into chrome storage.  The saved object
- * in chrome storage has the below structure. The top-level key is used
- * as the argument for StorageArea get(), and the associated value will be
- * an inner object that has all the host details.
- *
- * {allowed_hosts:
- *     {https://www.example1.com: true,
- *      https://www.example2.com: true}
- * }
- *
- * @private
- */
-passwordalert.saveAllowedHost_ = function() {
-  if (confirm(chrome.i18n.getMessage('always_ignore_confirmation'))) {
-    chrome.storage.local.get(
-        passwordalert.ALLOWED_HOSTS_KEY_,
-        function(allowedHosts) {
-          var currentHost = window.location.origin;
-          if (Object.keys(allowedHosts).length == 0) {
-            allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_] = {};
-          }
-          allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost] = true;
-          chrome.storage.local.set(
-              allowedHosts,
-              passwordalert.sendMessageToRemoveWarningBanner_);
-        });
-  }
-};
-
-
-/**
- * Create the link on the warning banner that allows the url host to be always
- * ignored in the future, i.e. save the host as allowed.
- * @return {!Element} The always ignore link.
- * @private
- */
-passwordalert.createAlwaysIgnoreLink_ = function() {
-  var alwaysIgnoreLink = document.createElement('span');
-  alwaysIgnoreLink.setAttribute('id', 'always_ignore');
-  alwaysIgnoreLink.innerText = chrome.i18n.getMessage('always_ignore');
-  alwaysIgnoreLink.onclick = passwordalert.saveAllowedHost_;
-  return alwaysIgnoreLink;
-};
-
-
-/**
- * Check if the password warning banner should be injected.
- * @param {string} email Email address that triggered this warning.
- *
- * TODO(henryc): Instead of this function, we could instead check in
- * passwordalert.start_() similar to the existing
- * if ((passwordalert.sso_url_  check that sees if the pwc content_script
- * should do anything for that URL. That way pwc won't even bother to hash
- * keypresses on an ignored site.
- *
- * @private
- */
-passwordalert.injectPasswordWarningIfNeeded_ = function(email) {
-  if (passwordalert.isEnterpriseUse_) {
-    return;
-  }
-  chrome.storage.local.get(
-      passwordalert.ALLOWED_HOSTS_KEY_,
-      function(allowedHosts) {
-        var currentHost = window.location.origin;
-        if (Object.keys(allowedHosts).length > 0 &&
-            allowedHosts[passwordalert.ALLOWED_HOSTS_KEY_][currentHost]) {
-          return;
-        }
-        passwordalert.injectWarningBanner_(
-            passwordalert.PASSWORD_WARNING_BANNER_TEXT_,
-            passwordalert.createButtonsForPasswordWarningBanner_(email),
-            passwordalert.createAlwaysIgnoreLink_());
-      });
 };
 
 
@@ -960,5 +832,4 @@ chrome.storage.onChanged.addListener(
     passwordalert.handleManagedPolicyChanges_);
 
 passwordalert.initializePage_();
-
 window.addEventListener('keypress', passwordalert.handleKeypress_, true);
