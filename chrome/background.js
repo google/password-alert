@@ -63,8 +63,9 @@ passwordalert.background.shouldInitializePassword_;
 /**
  * Minimum length of passwords.
  * @private {number}
+ * @const
  */
-passwordalert.background.minimum_password_ = 8;
+passwordalert.background.MINIMUM_PASSWORD_ = 8;
 
 
 /**
@@ -555,12 +556,17 @@ passwordalert.background.handleKeypress_ = function(tabId, request) {
         -1 * passwordalert.background.passwordLengths_.length);
   }
 
-  for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
-    if (passwordalert.background.passwordLengths_[i] &&
-        passwordalert.background.tabState_[tabId]['typedChars'].length >= i) {
-      request.password = passwordalert.background
-          .tabState_[tabId]['typedChars'].substr(-1 * i);
-      passwordalert.background.checkPassword_(tabId, request, false);
+  if (passwordalert.background.tabState_[tabId]['typedChars'].length >=
+      passwordalert.background.MINIMUM_PASSWORD_) {
+    for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
+      // Perform a check on every length, even if we don't have enough
+      // typedChars, to avoid timing attacks.
+      if (passwordalert.background.passwordLengths_[i]) {
+        request.password = passwordalert.background
+            .tabState_[tabId]['typedChars'].substr(-1 * i);
+        request.password += '\0'.repeat(i - request.password.length);
+        passwordalert.background.checkPassword_(tabId, request, false);
+      }
     }
   }
 };
@@ -578,9 +584,9 @@ passwordalert.background.setPossiblePassword_ = function(tabId, request) {
   if (!request.email || !request.password) {
     return;
   }
-  if (request.password.length < passwordalert.background.minimum_password_) {
+  if (request.password.length < passwordalert.background.MINIMUM_PASSWORD_) {
     console.log('password length is shorter than the minimum of ' +
-        passwordalert.background.minimum_password_);
+        passwordalert.background.MINIMUM_PASSWORD_);
     return;
   }
 
