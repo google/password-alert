@@ -762,13 +762,12 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
       passwordalert.background.tabState_[tabId]['otpMode'] = true;
       passwordalert.background.tabState_[tabId]['otpTime'] = new Date();
 
-      // TODO(adhintz) Clean up the code for handling this now disabled message:
-      // chrome.tabs.sendMessage(tabId, 'injectPasswordWarning:'
       passwordalert.background.injectPasswordWarningIfNeeded_(
           request.url, item['email']);
     }
   }
 };
+
 
 /**
  * Check if the password warning banner should be injected and inject it.
