@@ -48,6 +48,7 @@ function sendKeypressRequest(tabId, char, typedTime) {
 
 
 function testPasswordSaving() {
+  passwordalert.background.MINIMUM_PASSWORD_ = 8;
   var password = 'foopassword';
   var email = 'adhintz@google.com';
   var requestSet = {
@@ -272,6 +273,7 @@ function testTimeGapWillClearTypedCharsBuffer() {
 function testTypedCharsBufferTrimming() {
   // pw len = 2 & 4
   passwordalert.background.passwordLengths_ = [null, null, true, null, true];
+  passwordalert.background.MINIMUM_PASSWORD_ = 2;
   var now = new Date();
 
   passwordalert.background.tabState_[TAB_ID1] = {
@@ -336,6 +338,7 @@ function testTypedCharsBufferTrimming() {
 function testOtpMode() {
   // pw len = 2
   passwordalert.background.passwordLengths_ = [null, null, true];
+  passwordalert.background.MINIMUM_PASSWORD_ = 2;
 
   alertCalled = false;
   passwordalert.background.checkPassword_ =
