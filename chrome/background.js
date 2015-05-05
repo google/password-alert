@@ -556,8 +556,7 @@ passwordalert.background.handleKeypress_ = function(tabId, request) {
   }
 
   for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
-    if (passwordalert.background.passwordLengths_[i] &&
-        passwordalert.background.tabState_[tabId]['typedChars'].length >= i) {
+    if (passwordalert.background.passwordLengths_[i]) {
       request.password = passwordalert.background
           .tabState_[tabId]['typedChars'].substr(-1 * i);
       passwordalert.background.checkPassword_(tabId, request, false);
