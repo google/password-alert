@@ -62,6 +62,8 @@ chrome.runtime.sendMessage;
 chrome.tabs;
 chrome.tabs.create;
 chrome.tabs.executeScript;
+chrome.tabs.get;
+chrome.tabs.highlight;
 chrome.tabs.query;
 chrome.tabs.sendMessage;
 

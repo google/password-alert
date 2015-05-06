@@ -768,7 +768,7 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
       passwordalert.background.tabState_[tabId]['otpTime'] = new Date();
 
       passwordalert.background.injectPasswordWarningIfNeeded_(
-          request.url, item['email']);
+          request.url, item['email'], tabId);
     }
   }
 };
@@ -778,10 +778,12 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
  * Check if the password warning banner should be injected and inject it.
  * @param {string|undefined} url URI that triggered this warning.
  * @param {string} email Email address that triggered this warning.
+ * @param {number} tabId The tab that sent this message.
  *
  * @private
  */
-passwordalert.background.injectPasswordWarningIfNeeded_ = function(url, email) {
+passwordalert.background.injectPasswordWarningIfNeeded_ =
+    function(url, email, tabId) {
   if (passwordalert.background.isEnterpriseUse_) {
     return;
   }
@@ -799,7 +801,8 @@ passwordalert.background.injectPasswordWarningIfNeeded_ = function(url, email) {
         // TODO(adhintz) Change to named parameters.
         var warning_url = chrome.extension.getURL('warning_banner.html') +
             '?' + encodeURIComponent(currentHost) +
-            '&' + encodeURIComponent(email);
+            '&' + encodeURIComponent(email) +
+            '&' + tabId;
         chrome.tabs.create({'url': warning_url});
       });
 

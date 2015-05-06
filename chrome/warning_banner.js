@@ -21,7 +21,7 @@
  */
 
 
-// URI encoded parameters from the URL. [currentHost, email]
+// URI encoded parameters from the URL. [currentHost, email, tabId]
 var parameters = window.location.search.substr(1).split('&');
 
 document.getElementById('warning_banner_header').textContent =
@@ -47,8 +47,10 @@ document.getElementById('reset').onclick = function() {
 
 
 document.getElementById('ignore').onclick = function() {
-  // TODO(adhintz) Instead of just closing, go back to the triggering tab.
-  window.close();
+  chrome.tabs.get(parseInt(parameters[2]), function(tab) {
+    chrome.tabs.highlight({'tabs': tab.index}, function() {});
+    window.close();
+  });
 };
 
 
