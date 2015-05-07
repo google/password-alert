@@ -227,20 +227,6 @@ passwordalert.background.handleNewInstall_ = function(details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
     passwordalert.background.isNewInstall_ = true;
-
-    // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
-    // This way, the content script will be ready to receive
-    // post-password initialization messages.
-    passwordalert.background.injectContentScriptIntoAllTabs_(
-        passwordalert.background.initializePassword_);
-
-    setTimeout(function() {
-      if (!localStorage.hasOwnProperty(passwordalert.background.SALT_KEY_)) {
-        console.log('Password still has not been initialized.  ' +
-                    'Start the password initialization process again.');
-        passwordalert.background.initializePassword_();
-      }
-    }, 300000);  // 5 minutes
   }
 };
 
@@ -410,6 +396,14 @@ passwordalert.background.initializePassword_ = function() {
   } else {
     passwordalert.background.displayInitializePasswordNotification_();
   }
+
+  setTimeout(function() {
+    if (!localStorage.hasOwnProperty(passwordalert.background.SALT_KEY_)) {
+      console.log('Password still has not been initialized.  ' +
+                  'Start the password initialization process again.');
+      passwordalert.background.initializePassword_();
+    }
+  }, 300000);  // 5 minutes
 };
 
 
@@ -419,6 +413,14 @@ passwordalert.background.initializePassword_ = function() {
  * @private
  */
 passwordalert.background.completePageInitialization_ = function() {
+  if (passwordalert.background.isNewInstall_) {
+    // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
+    // This way, the content script will be ready to receive
+    // post-password initialization messages.
+    passwordalert.background.injectContentScriptIntoAllTabs_(
+        passwordalert.background.initializePassword_);
+  }
+
   passwordalert.background.refreshPasswordLengths_();
   chrome.runtime.onMessage.addListener(
       passwordalert.background.handleRequest_);
@@ -665,16 +667,22 @@ passwordalert.background.savePossiblePassword_ = function(tabId) {
   item['date'] = new Date();
 
   if (passwordalert.background.isNewInstall_) {
-    var options = {
-      type: 'basic',
-      title: chrome.i18n.getMessage('extension_name'),
-      message: chrome.i18n.getMessage('initialization_thank_you_message'),
-      iconUrl: chrome.extension.getURL('logo_password_alert.png')
-    };
-    chrome.notifications.create('thank_you_notification',
-        options, function() {
-          passwordalert.background.isNewInstall_ = false;
-        });
+    if (passwordalert.background.isEnterpriseUse_ &&
+        !passwordalert.background.shouldInitializePassword_) {
+      // If enterprise policy says not to prompt, then don't prompt.
+      passwordalert.background.isNewInstall_ = false;
+    } else {
+      var options = {
+        type: 'basic',
+        title: chrome.i18n.getMessage('extension_name'),
+        message: chrome.i18n.getMessage('initialization_thank_you_message'),
+        iconUrl: chrome.extension.getURL('logo_password_alert.png')
+      };
+      chrome.notifications.create('thank_you_notification',
+          options, function() {
+            passwordalert.background.isNewInstall_ = false;
+          });
+    }
   }
 
   localStorage[password] = JSON.stringify(item);
