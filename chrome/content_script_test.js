@@ -88,14 +88,15 @@ function testStart() {
   msg = '{"passwordLengths":[null,null,true,null,true]}';
 
   // passwordalert.sso_url_ is undefined by default.
-  passwordalert.url_ = 'https://login.corp.google.com/request?' +
+  passwordalert.url_ = 'https://login.example.com/request?' +
       'd=https%3A%2F%2Fcookieserver';
   passwordalert.start_(msg);
   assertTrue(passwordalert.isRunning_);
 
+  // chrome.storage.managed.get is stubbed for testing in chrome_api_stubs.js.
   passwordalert.sso_url_ = chrome.storage.managed.get()['sso_url'];
 
-  passwordalert.url_ = 'https://login.corp.google.com/request?' +
+  passwordalert.url_ = 'https://login.example.com/request?' +
       'd=https%3A%2F%2Fcookieserver';
   passwordalert.start_(msg);
   assertFalse(passwordalert.isRunning_);

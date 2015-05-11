@@ -150,11 +150,13 @@ passwordalert.security_email_address_;
 
 /**
  * Whitelist of domain suffixes that are not phishing or checked for password.
- * Default values are for consumers.
+ * Default values are for Google login pages. https is not specified, however
+ * these default domains are preloaded HSTS in Chrome.
  * @private {Array.<string>}
  */
 passwordalert.whitelist_top_domains_ = [
-  'accounts.google.com'
+  'accounts.google.com',
+  'login.corp.google.com'
 ];
 
 
