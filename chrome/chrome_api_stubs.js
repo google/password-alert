@@ -47,7 +47,7 @@ chrome.storage.local.get = function() {
 };
 chrome.storage.managed.get = function() {
   return {
-    'sso_url': 'https://login.corp.google.com/',
+    'sso_url': 'https://login.example.com/',
     'report_url': 'https://passwordalert.example.com/report/'
   };
 };
