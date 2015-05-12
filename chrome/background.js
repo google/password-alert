@@ -28,6 +28,7 @@ goog.provide('passwordalert.background');
 
 goog.require('goog.crypt');
 goog.require('goog.crypt.Sha1');
+goog.require('passwordalert.keydown');
 
 
 /**
@@ -101,7 +102,7 @@ passwordalert.background.possiblePassword_ = {};
 /**
  * Associative array of tab state. Keyed by tab id.
  * @private {Object.<number, {hash: string, otpCount: number, otpMode: boolean,
- *                         otpTime: Date, typedChars: string, typedTime: Date}>}
+ *                         otpTime: Date, typed: Object, typedTime: Date}>}
  */
 passwordalert.background.tabState_ = {};
 
@@ -459,8 +460,8 @@ passwordalert.background.handleRequest_ = function(
     return;
   }
   switch (request.action) {
-    case 'handleKeypress':
-      passwordalert.background.handleKeypress_(sender.tab.id, request);
+    case 'handleKeydown':
+      passwordalert.background.handleKeydown_(sender.tab.id, request);
       break;
     case 'statusRequest':
       passwordalert.background.pushToTab_(sender.tab.id);
@@ -498,20 +499,21 @@ passwordalert.background.clearOtpMode_ = function(tabId) {
 
 
 /**
- * Called on each key press. Checks the most recent possible characters.
+ * Called on each key down. Checks the most recent possible characters.
  * @param {number} tabId Id of the browser tab.
  * @param {passwordalert.background.Request_} request Request object from
  *     content_script. Contains url and referer.
  * @private
  */
-passwordalert.background.handleKeypress_ = function(tabId, request) {
+passwordalert.background.handleKeydown_ = function(tabId, request) {
   if (passwordalert.background.tabState_[tabId] === undefined) {
-    passwordalert.background.tabState_[tabId] = {'hash': '',
-                                                 'otpCount': 0,
-                                                 'otpMode': false,
-                                                 'otpTime': null,
-                                                 'typedChars': '',
-                                                 'typedTime': null};
+    passwordalert.background.tabState_[tabId] = {
+      'hash': '',
+      'otpCount': 0,
+      'otpMode': false,
+      'otpTime': null,
+      'typed': new passwordalert.keydown.Typed(),
+      'typedTime': null};
   }
 
   if (passwordalert.background.tabState_[tabId]['otpMode']) {
@@ -519,10 +521,10 @@ passwordalert.background.handleKeypress_ = function(tabId, request) {
     if (now - passwordalert.background.tabState_[tabId]['otpTime'] >
         passwordalert.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
       passwordalert.background.clearOtpMode_(tabId);
-    } else if (request.charCode >= 0x30 && request.charCode <= 0x39) {
+    } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
       // is a digit
       passwordalert.background.tabState_[tabId]['otpCount']++;
-    } else if (request.charCode > 0x20 ||
+    } else if (request.keyCode > 0x20 ||
         // non-digit printable characters reset it
         // Non-printable only allowed at start:
         passwordalert.background.tabState_[tabId]['otpCount'] > 0) {
@@ -535,37 +537,32 @@ passwordalert.background.handleKeypress_ = function(tabId, request) {
     }
   }
 
-  if (request.charCode == passwordalert.background.ENTER_ASCII_CODE_) {
-    passwordalert.background.tabState_[tabId]['typedChars'] = '';
+  if (request.keyCode == passwordalert.background.ENTER_ASCII_CODE_) {
+    passwordalert.background.tabState_[tabId]['typed'].clear();
     return;
   }
 
   var typedTime = new Date(request.typedTimeStamp);
   if (typedTime - passwordalert.background.tabState_[tabId]['typedTime'] >
       passwordalert.background.SECONDS_TO_CLEAR_ * 1000) {
-    passwordalert.background.tabState_[tabId]['typedChars'] = '';
+    passwordalert.background.tabState_[tabId]['typed'].clear();
   }
 
-  passwordalert.background.tabState_[tabId]['typedChars'] +=
-      String.fromCharCode(request.charCode);
+  passwordalert.background.tabState_[tabId]['typed'].event(
+      request.keyCode, request.shiftKey);
   passwordalert.background.tabState_[tabId]['typedTime'] = typedTime;
 
-  // trim the buffer when it's too big
-  if (passwordalert.background.tabState_[tabId]['typedChars'].length >
-      passwordalert.background.passwordLengths_.length) {
-    passwordalert.background.tabState_[tabId]['typedChars'] =
-        passwordalert.background.tabState_[tabId]['typedChars'].slice(
-        -1 * passwordalert.background.passwordLengths_.length);
-  }
+  passwordalert.background.tabState_[tabId]['typed'].trim(
+      passwordalert.background.passwordLengths_.length);
 
-  if (passwordalert.background.tabState_[tabId]['typedChars'].length >=
+  if (passwordalert.background.tabState_[tabId]['typed'].length() >=
       passwordalert.background.MINIMUM_PASSWORD_) {
     for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
       // Perform a check on every length, even if we don't have enough
-      // typedChars, to avoid timing attacks.
+      // typed characters, to avoid timing attacks.
       if (passwordalert.background.passwordLengths_[i]) {
         request.password = passwordalert.background
-            .tabState_[tabId]['typedChars'].substr(-1 * i);
+            .tabState_[tabId]['typed'].substr(-1 * i);
         passwordalert.background.checkPassword_(tabId, request, false);
       }
     }

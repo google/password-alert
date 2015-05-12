@@ -16,7 +16,7 @@
  */
 
 /**
- * @fileoverview Watches keypress events and sends potential passwords to
+ * @fileoverview Receives keyboard events and sends keyboard events to
  * background.js via sendMessage.
  * @author adhintz@google.com (Drew Hintz)
  */
@@ -485,6 +485,8 @@ passwordalert.start_ = function(msg) {
           }
         });
   }
+
+  passwordalert.looksLikeGooglePage_();  // Run here so that it's cached.
 };
 
 
@@ -502,11 +504,11 @@ passwordalert.stop_ = function() {
  * @param {Event} evt Key press event.
  * @private
  */
-passwordalert.handleKeypress_ = function(evt) {
+passwordalert.handleKeydown_ = function(evt) {
   if (!passwordalert.isRunning_) return;
 
   // Legitimate keypress events should have the view set and valid charCode.
-  if (evt.view == null || evt.charCode == 0) {
+  if (evt.view == null || evt.keyCode == 0) {
     return;
   }
 
@@ -517,8 +519,9 @@ passwordalert.handleKeypress_ = function(evt) {
   passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
 
   chrome.runtime.sendMessage({
-    action: 'handleKeypress',
-    charCode: evt.charCode,
+    action: 'handleKeydown',
+    keyCode: evt.keyCode,
+    shiftKey: evt.shiftKey,
     typedTimeStamp: evt.timeStamp,
     url: passwordalert.url_,
     referer: document.referrer.toString(),
@@ -834,4 +837,6 @@ chrome.storage.onChanged.addListener(
     passwordalert.handleManagedPolicyChanges_);
 
 passwordalert.initializePage_();
-window.addEventListener('keypress', passwordalert.handleKeypress_, true);
+// TODO(adhintz) Also handle keypress to detect capslock state.
+//window.addEventListener('keypress', passwordalert.handleKeypress_, true);
+window.addEventListener('keydown', passwordalert.handleKeydown_, true);

@@ -33,6 +33,7 @@ goog.provide('passwordalert.keydown.Typed');
  * @const
  */
 passwordalert.keydown.MAP_SHIFT_ = {
+  32: ' ',
   48: ')',
   49: '!',
   50: '@',
@@ -52,7 +53,7 @@ passwordalert.keydown.MAP_SHIFT_ = {
   219: '{',
   220: '\\',
   221: ']',
-  222: '"',
+  222: '"'
 };
 
 
@@ -62,6 +63,7 @@ passwordalert.keydown.MAP_SHIFT_ = {
  * @const
  */
 passwordalert.keydown.MAP_ = {
+  32: ' ',
   96: '0',  // Number pad values.
   97: '1',  // Does not handle num lock state, but could with changes.
   98: '2',
@@ -86,18 +88,19 @@ passwordalert.keydown.MAP_ = {
   219: '[',
   220: '|',
   221: '}',
-  222: '\'',
+  222: '\''
 };
 
 
 
 /**
  * Class to keep track of typed keycodes and characters.
+ * @param {string=} opt_chars Initial characters, used for testing.
  * @constructor
  */
-passwordalert.keydown.Typed = function() {
+passwordalert.keydown.Typed = function(opt_chars) {
   this.caps_lock_ = false;  // Caps lock state.
-  this.chars_ = '';
+  this.chars_ = opt_chars || '';
 };
 
 
@@ -164,4 +167,34 @@ passwordalert.keydown.Typed.prototype.keypress = function(keyCode) {
  */
 passwordalert.keydown.Typed.prototype.clear = function() {
   this.chars_ = '';
+};
+
+
+/**
+ * Trims character buffer to a maxiumum length.
+ * @param {number} max Maximum length of character buffer.
+ */
+passwordalert.keydown.Typed.prototype.trim = function(max) {
+  if (this.chars_.length > max) {
+    this.chars_ = this.chars_.slice(-1 * max);
+  }
+};
+
+
+/**
+ * Length of characters that have been typed.
+ * @return {number} Length of character string.
+ */
+passwordalert.keydown.Typed.prototype.length = function() {
+  return this.chars_.length;
+};
+
+
+/**
+ * Proxy for substr, used so we avoid making a copy of the string.
+ * @param {number} i Argument to substr.
+ * @return {string} Substring result.
+ */
+passwordalert.keydown.Typed.prototype.substr = function(i) {
+  return this.chars_.substr(i);
 };
