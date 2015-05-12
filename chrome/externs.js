@@ -90,9 +90,11 @@ var request;
 request.action;
 request.charCode;
 request.email;
+request.keyCode;
 request.looksLikeGoogle;
 request.password;
 request.referer;
+request.shiftKey;
 request.typedTimeStamp;
 request.url;
 

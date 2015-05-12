@@ -21,21 +21,23 @@
  * @author adhintz@google.com (Drew Hintz)
  */
 
-var timeStamp;  // To ensure keypress timestamps are increasing.
+var timeStamp;  // To ensure event timestamps are increasing.
 
 function setUpPage() {  // Only run once.
   timeStamp = Date.now();
 }
 
-function sendKeypress(char) {
+function sendKeydown(char) {
   var evt = {};
-  evt.charCode = char.charCodeAt(0);
+  // charCode to keyCode but doesn't handle all characters:
+  evt.keyCode = char.toUpperCase().charCodeAt(0);
+  evt.shiftKey = false;
   evt.timeStamp = timeStamp++;
   evt.view = Window;
-  passwordalert.handleKeypress_(evt);
+  passwordalert.handleKeydown_(evt);
 }
 
-function testOnKeypress() {
+function testOnKeydown() {
   passwordalert.isRunning_ = true;
   passwordalert.url_ = 'https://example.com';
   passwordalert.looksLikeGooglePage_ = function() {
@@ -48,19 +50,19 @@ function testOnKeypress() {
     requests.push(request);
   };
 
-  sendKeypress('a');
-  sendKeypress('b');
-  sendKeypress('c');
-  assertEquals('a', String.fromCharCode(requests[0].charCode));
-  assertEquals('b', String.fromCharCode(requests[1].charCode));
-  assertEquals('c', String.fromCharCode(requests[2].charCode));
+  sendKeydown('a');
+  sendKeydown('b');
+  sendKeydown('c');
+  assertEquals(65, requests[0].keyCode);  // keyCode for A
+  assertEquals(66, requests[1].keyCode);  // keyCode for B
+  assertEquals(67, requests[2].keyCode);  // keyCode for C
 
   // TODO(henryc): Find a way to mock document.referrer or its method
   // so that we can assert on it.  Possibly change the method signature
   // to allow document to be a parameter, which would allow a mock object
   // to be passed in.
   for (var i = 0; i < requests.length; i++) {
-    assertEquals('handleKeypress', requests[i].action);
+    assertEquals('handleKeydown', requests[i].action);
     assertEquals('https://example.com', requests[i].url);
     assertTrue(requests[i].looksLikeGoogle);
     if (i < (requests.length - 1)) {
@@ -71,7 +73,7 @@ function testOnKeypress() {
 
 // TODO(henryc): Write a similar test case for when evt.view is null.
 // This will need evt.view to be set-able.
-function testKeypressWillNotBeHandledIfPasswordAlertIsNotRunning() {
+function testKeydownWillNotBeHandledIfPasswordAlertIsNotRunning() {
   passwordalert.isRunning_ = false;
 
   var requests = [];
@@ -80,7 +82,7 @@ function testKeypressWillNotBeHandledIfPasswordAlertIsNotRunning() {
     requests.push(request);
   };
 
-  sendKeypress('a');
+  sendKeydown('a');
   assertEquals(0, requests.length);
 }
 
