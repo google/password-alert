@@ -156,7 +156,8 @@ passwordalert.security_email_address_;
  */
 passwordalert.whitelist_top_domains_ = [
   'accounts.google.com',
-  'login.corp.google.com'
+  'login.corp.google.com',
+  'myaccount.google.com'
 ];
 
 
