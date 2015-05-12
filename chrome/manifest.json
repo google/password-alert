@@ -29,7 +29,8 @@
       "matches": ["<all_urls>"],
       "js": ["content_script_compiled.js"],
       "all_frames": true,
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "match_about_blank": true
     }
   ],
 
