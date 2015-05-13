@@ -178,6 +178,11 @@ passwordalert.background.isEnterpriseUse_ = false;
  */
 passwordalert.corp_email_domain_;
 
+/**
+ * Display the consumer mode alert even in enterprise mode.
+ * @private {boolean}
+ */
+passwordalert.background.displayUserAlert_ = false;
 
 /**
  * Domain-specific shared auth secret for enterprise when oauth token fails.
@@ -246,6 +251,8 @@ passwordalert.background.setManagedPolicyValuesIntoConfigurableVariables_ =
       console.log('Managed policy found.  Enterprise use.');
       passwordalert.background.corp_email_domain_ =
           managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
+      passwordalert.background.displayUserAlert_ =
+          managedPolicy['display_user_alert'];
       passwordalert.background.isEnterpriseUse_ = true;
       passwordalert.background.report_url_ = managedPolicy['report_url'];
       passwordalert.background.shouldInitializePassword_ =
@@ -789,7 +796,7 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
  */
 passwordalert.background.injectPasswordWarningIfNeeded_ =
     function(url, email, tabId) {
-  if (passwordalert.background.isEnterpriseUse_) {
+  if (passwordalert.background.isEnterpriseUse_ && !passwordalert.displayUserAlert_) {
     return;
   }
 
