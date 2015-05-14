@@ -26,6 +26,7 @@
 goog.provide('passwordalert');
 
 // These requires must also be added to content_script_test.html
+goog.require('goog.format.EmailAddress');
 goog.require('goog.string');
 goog.require('goog.uri.utils');
 
@@ -81,6 +82,15 @@ passwordalert.GAIA_URL_ = 'https://accounts.google.com/';
  */
 passwordalert.GAIA_SECOND_FACTOR_ =
     'https://accounts.google.com/SecondFactor';
+
+
+/**
+ * URL prefix for changing GAIA password.
+ * @private {string}
+ * @const
+ */
+passwordalert.CHANGE_PASSWORD_URL_ =
+    'https://myaccount.google.com/security/signinoptions/password';
 
 
 /**
@@ -405,6 +415,32 @@ passwordalert.completePageInitialization_ = function() {
             'submit', passwordalert.saveGaiaPassword_, true);
       }
     }
+  } else if (goog.string.startsWith(passwordalert.url_,
+                                    passwordalert.CHANGE_PASSWORD_URL_)) {
+    console.log('Change password url is detected: ' + passwordalert.url_);
+    chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+    // Need to wait until the change password page has finished loading
+    // before listener can be added.
+    window.onload = function() {
+      var allButtons = document.querySelectorAll('div[role=button]');
+      var changePasswordButton = allButtons[allButtons.length - 1];
+      changePasswordButton.addEventListener(
+          'click', passwordalert.saveChangedPassword_, true);
+      // Pressing spacebar on the change password button will trigger save.
+      changePasswordButton.addEventListener(
+          'keydown', function(evt) {
+            if (evt.keyCode == 32) {
+              passwordalert.saveChangedPassword_();
+            }
+          }, true);
+      // Pressing enter anywhere on the change password page will trigger save.
+      document.addEventListener(
+          'keydown', function(evt) {
+            if (evt.keyCode == 13) {
+              passwordalert.saveChangedPassword_();
+            }
+          }, true);
+    };
   } else {  // Not a Google login URL.
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
@@ -579,6 +615,42 @@ passwordalert.saveGaiaPassword_ = function(evt) {
     email: email,
     password: password
   });
+};
+
+
+/**
+ * Called when GAIA password is changed. Sends possible password to
+ * background.js.
+ * @private
+ */
+passwordalert.saveChangedPassword_ = function() {
+  // To ensure that only a valid password is saved, wait and see if we
+  // navigate away from the change password page.  If we stay on the
+  // same page, then the password is not valid and should not be saved.
+  var passwordChangeStartTime = Date.now();
+  window.onbeforeunload = function() {
+    if ((Date.now() - passwordChangeStartTime) > 1000) {
+      return;
+    }
+    console.log('Saving changed Google password.');
+    var dataConfig =
+        document.querySelector('div[data-config]').getAttribute('data-config');
+    var start = dataConfig.indexOf('",["') + 4;
+    var end = dataConfig.indexOf('"', start);
+    var email = dataConfig.substring(start, end);
+
+    if (goog.format.EmailAddress.isValidAddress(email)) {
+      console.log('Parsed email on change password page is valid: %s', email);
+      chrome.runtime.sendMessage({
+        action: 'setPossiblePassword',
+        email: email,
+        password:
+            document.querySelector('input[aria-label="New password"]').value
+      });
+      return;
+    }
+    console.log('Parsed email on change password page is not valid: %s', email);
+  };
 };
 
 
