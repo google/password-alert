@@ -297,6 +297,9 @@ passwordalert.background.handleManagedPolicyChanges_ =
           passwordalert.background.corp_email_domain_ =
               newPolicyValue.replace(/@/g, '').toLowerCase();
           break;
+        case 'display_user_alert':
+          passwordalert.background.displayUserAlert_ = newPolicyValue;
+          break;
         case 'report_url':
           passwordalert.background.report_url_ = newPolicyValue;
           break;

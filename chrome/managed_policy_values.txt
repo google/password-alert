@@ -4,7 +4,7 @@
   },
   "display_user_alert": {
     "Value": false
-  }.
+  },
   "corp_html": {
     "Value": ["CHANGE ME Your Example Company Name",
               "CHANGE ME Some text from your SSO Page"]
