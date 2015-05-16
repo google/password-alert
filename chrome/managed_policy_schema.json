@@ -2,6 +2,7 @@
   "type": "object",
   "properties": {
     "corp_email_domain": {"type": "string"},
+    "display_user_alert": {"type": "boolean"},
     "corp_html": {
       "type": "array",
       "items": {"type": "string"}
