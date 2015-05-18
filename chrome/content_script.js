@@ -94,6 +94,15 @@ passwordalert.CHANGE_PASSWORD_URL_ =
 
 
 /**
+ * URL prefix for enforced changing GAIA password.
+ * @private {string}
+ * @const
+ */
+passwordalert.ENFORCED_CHANGE_PASSWORD_URL_ =
+    'https://accounts.google.com/ChangePassword';
+
+
+/**
  * YouTube check connection page.
  * @private {string}
  * @const
@@ -394,6 +403,25 @@ passwordalert.completePageInitialization_ = function() {
     } else {
       console.log('No login form found on SSO page.');
     }
+  } else if (goog.string.startsWith(passwordalert.url_,
+      passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
+    console.log('Enforced change password url is detected.');
+    // This change password page does not have any email information.
+    // So we fallback to the email already set in background.js because users
+    // will be prompted to login before arriving here.
+    var email;
+    chrome.runtime.sendMessage({action: 'getEmail'}, function(response) {
+      email = response;
+    });
+    var changePasswordForm = document.getElementById('gaia_changepasswordform');
+    changePasswordForm.addEventListener(
+        'submit', function() {
+          chrome.runtime.sendMessage({
+            action: 'setPossiblePassword',
+            email: email,
+            password: changePasswordForm.Passwd.value
+          });
+        }, true);
   } else if (goog.string.startsWith(passwordalert.url_,
                                     passwordalert.GAIA_URL_)) {
     console.log('Google login url is detected: ' + passwordalert.url_);

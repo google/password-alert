@@ -185,11 +185,13 @@ passwordalert.background.isEnterpriseUse_ = false;
  */
 passwordalert.corp_email_domain_;
 
+
 /**
  * Display the consumer mode alert even in enterprise mode.
  * @private {boolean}
  */
 passwordalert.background.displayUserAlert_ = false;
+
 
 /**
  * Domain-specific shared auth secret for enterprise when oauth token fails.
@@ -495,6 +497,10 @@ passwordalert.background.handleRequest_ = function(
     case 'savePossiblePassword':
       passwordalert.background.savePossiblePassword_(sender.tab.id);
       break;
+    case 'getEmail':
+      sendResponse(
+          passwordalert.background.possiblePassword_[sender.tab.id]['email']);
+      break;
     case 'removeWarningBanner':
       passwordalert.background.pushRemoveWarningBannerToTab_(sender.tab.id);
       break;
@@ -794,7 +800,8 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
  */
 passwordalert.background.injectPasswordWarningIfNeeded_ =
     function(url, email, tabId) {
-  if (passwordalert.background.isEnterpriseUse_ && !passwordalert.displayUserAlert_) {
+  if (passwordalert.background.isEnterpriseUse_ &&
+      !passwordalert.displayUserAlert_) {
     return;
   }
 
