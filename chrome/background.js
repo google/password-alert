@@ -801,7 +801,7 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
 passwordalert.background.injectPasswordWarningIfNeeded_ =
     function(url, email, tabId) {
   if (passwordalert.background.isEnterpriseUse_ &&
-      !passwordalert.displayUserAlert_) {
+      !passwordalert.background.displayUserAlert_) {
     return;
   }
 
