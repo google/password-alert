@@ -26,14 +26,14 @@ if [ -d ../wtforms ]; then rm -rf ../wtforms ; fi
 if [ -d ../uritemplate ]; then rm -rf ../uritemplate ;fi
 
 # Download Google API Python Client
-curl http://google-api-python-client.googlecode.com/files/google-api-python-client-1.2.zip >google-api-python-client-1.2.zip
+curl https://google-api-python-client.googlecode.com/files/google-api-python-client-1.2.zip >google-api-python-client-1.2.zip
 unzip google-api-python-client-1.2.zip
 if [ -f google-api-python-client-1.2.zip ]; then rm  google-api-python-client-1.2.zip ; fi
 mv google-api-python-client-1.2/apiclient ../
 if [ -d google-api-python-client-1.2 ]; then rm -rf google-api-python-client-1.2 ;fi
 
 # Download Google OAuth 2 Client
-curl http://google-api-python-client.googlecode.com/files/oauth2client-1.2.zip >oauth2client-1.2.zip
+curl https://google-api-python-client.googlecode.com/files/oauth2client-1.2.zip >oauth2client-1.2.zip
 unzip oauth2client-1.2.zip
 if [ -f oauth2client-1.2.zip ]; then rm oauth2client-1.2.zip ;fi
 mv ./oauth2client-1.2/oauth2client ../
@@ -55,8 +55,8 @@ if [ -f v2.1.0.zip ]; then rm v2.1.0.zip ;fi
 rm -rf noty-2.1.0
 
 # Download JQuery
-curl http://code.jquery.com/jquery-1.10.2.min.js >jquery-1.10.2.min.js
-curl http://code.jquery.com/jquery-1.10.2.min.map > jquery-1.10.2.min.map
+curl https://code.jquery.com/jquery-1.10.2.min.js >jquery-1.10.2.min.js
+curl https://code.jquery.com/jquery-1.10.2.min.map > jquery-1.10.2.min.map
 if [ ! -d ../static/js ]; then mkdir ../static/js ;fi
 mv jquery-1.10.2.min.js ../static/js
 mv jquery-1.10.2.min.map ../static/js
