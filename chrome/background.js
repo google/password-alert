@@ -482,6 +482,9 @@ passwordalert.background.handleRequest_ = function(
     case 'handleKeydown':
       passwordalert.background.handleKeydown_(sender.tab.id, request);
       break;
+    case 'checkString':
+      passwordalert.background.checkPassword_(sender.tab.id, request, false);
+      break;
     case 'statusRequest':
       passwordalert.background.pushToTab_(sender.tab.id);
       break;

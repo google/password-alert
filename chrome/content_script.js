@@ -596,6 +596,35 @@ passwordalert.handleKeydown_ = function(evt) {
 
 
 /**
+ * Called on each paste. Checks the entire pasted string to save on cpu cycles.
+ * @param {Event} evt Paste event.
+ * @private
+ */
+passwordalert.handlePaste_ = function(evt) {
+  if (!passwordalert.isRunning_) return;
+
+  // Legitimate paste events should have the clipboardData set.
+  if (evt.clipboardData === undefined) {
+    return;
+  }
+
+  // Legitimate paste events should have increasing timeStamps.
+  if (evt.timeStamp <= passwordalert.lastKeypressTimeStamp_) {
+    return;
+  }
+  passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
+
+  chrome.runtime.sendMessage({
+    action: 'checkString',
+    password: evt.clipboardData.getData('text/plain').trim(),
+    url: passwordalert.url_,
+    referer: document.referrer.toString(),
+    looksLikeGoogle: passwordalert.looksLikeGooglePage_()
+  });
+};
+
+
+/**
  * Called when SSO login page is submitted. Sends possible password to
  * background.js.
  * @param {Event} evt Form submit event that triggered this. Not used.
@@ -941,3 +970,6 @@ passwordalert.initializePage_();
 // TODO(adhintz) Also handle keypress to detect capslock state.
 //window.addEventListener('keypress', passwordalert.handleKeypress_, true);
 window.addEventListener('keydown', passwordalert.handleKeydown_, true);
+window.addEventListener('paste', function(evt) {
+  passwordalert.handlePaste_(evt);
+}, true);
