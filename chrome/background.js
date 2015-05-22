@@ -100,16 +100,29 @@ passwordalert.background.possiblePassword_ = {};
 
 
 /**
- * Associative array of tab state.
- * @private {{hash: string, otpCount: number, otpMode: boolean,
- *            otpTime: Date, typed: Object, typedTime: Date}}
+ * Associative array of state for Keydown events.
+ * @private {passwordalert.background.State_}
  */
-passwordalert.background.tabState_ = {
+passwordalert.background.stateKeydown_ = {
   'hash': '',
   'otpCount': 0,
   'otpMode': false,
   'otpTime': null,
   'typed': new passwordalert.keydown.Typed(),
+  'typedTime': null
+};
+
+
+/**
+ * Associative array of state for Keydown events.
+ * @private {passwordalert.background.State_}
+ */
+passwordalert.background.stateKeypress_ = {
+  'hash': '',
+  'otpCount': 0,
+  'otpMode': false,
+  'otpTime': null,
+  'typed': '',
   'typedTime': null
 };
 
@@ -161,6 +174,16 @@ passwordalert.background.ENTER_ASCII_CODE_ = 13;
  * @private
  */
 passwordalert.background.Request_;
+
+
+/**
+ * State of keypress or keydown events.
+ * @typedef {{hash: string, otpCount: number, otpMode: boolean,
+ *            otpTime: Date, typed: (passwordalert.keydown.Typed|string),
+ *            typedTime: Date}}
+ * @private
+ */
+passwordalert.background.State_;
 
 
 /**
@@ -479,11 +502,15 @@ passwordalert.background.handleRequest_ = function(
     return;
   }
   switch (request.action) {
+    case 'handleKeypress':
+      passwordalert.background.handleKeypress_(sender.tab.id, request);
+      break;
     case 'handleKeydown':
       passwordalert.background.handleKeydown_(sender.tab.id, request);
       break;
     case 'checkString':
-      passwordalert.background.checkPassword_(sender.tab.id, request, false);
+      passwordalert.background.checkPassword_(sender.tab.id, request,
+          passwordalert.background.stateKeydown_, false);
       break;
     case 'statusRequest':
       passwordalert.background.pushToTab_(sender.tab.id);
@@ -513,12 +540,67 @@ passwordalert.background.handleRequest_ = function(
 
 /**
  * Clears OTP mode.
+ * @param {passwordalert.background.State_} state State of keydown or keypress.
  * @private
  */
-passwordalert.background.clearOtpMode_ = function() {
-  passwordalert.background.tabState_['otpMode'] = false;
-  passwordalert.background.tabState_['otpCount'] = 0;
-  passwordalert.background.tabState_['otpTime'] = null;
+passwordalert.background.clearOtpMode_ = function(state) {
+  state['otpMode'] = false;
+  state['otpCount'] = 0;
+  state['otpTime'] = null;
+};
+
+
+/**
+ * Called on each key down. Checks the most recent possible characters.
+ * @param {number} tabId Id of the browser tab.
+ * @param {passwordalert.background.Request_} request Request object from
+ *     content_script. Contains url and referer.
+ * @param {passwordalert.background.State_} state State of keypress or keydown.
+ * @private
+ */
+passwordalert.background.checkOtp_ = function(tabId, request, state) {
+  if (state['otpMode']) {
+    var now = new Date();
+    if (now - state['otpTime'] >
+        passwordalert.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
+      passwordalert.background.clearOtpMode_(state);
+    } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
+      // is a digit
+      state['otpCount']++;
+    } else if (request.keyCode > 0x20 ||
+        // non-digit printable characters reset it
+        // Non-printable only allowed at start:
+        state['otpCount'] > 0) {
+      passwordalert.background.clearOtpMode_(state);
+    }
+    if (state['otpCount'] >=
+        passwordalert.background.OTP_LENGTH_) {
+      passwordalert.background.checkPassword_(tabId, request, state, true);
+      passwordalert.background.clearOtpMode_(state);
+    }
+  }
+};
+
+
+/**
+ * Called on each key down. Checks the most recent possible characters.
+ * @param {number} tabId Id of the browser tab.
+ * @param {passwordalert.background.Request_} request Request object from
+ *     content_script. Contains url and referer.
+ * @param {passwordalert.background.State_} state State of keydown or keypress.
+ * @private
+ */
+passwordalert.background.checkAllPasswords_ = function(tabId, request, state) {
+  if (state['typed'].length >= passwordalert.background.MINIMUM_PASSWORD_) {
+    for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
+      // Perform a check on every length, even if we don't have enough
+      // typed characters, to avoid timing attacks.
+      if (passwordalert.background.passwordLengths_[i]) {
+        request.password = state['typed'].substr(-1 * i);
+        passwordalert.background.checkPassword_(tabId, request, state, false);
+      }
+    }
+  }
 };
 
 
@@ -530,56 +612,69 @@ passwordalert.background.clearOtpMode_ = function() {
  * @private
  */
 passwordalert.background.handleKeydown_ = function(tabId, request) {
-  if (passwordalert.background.tabState_['otpMode']) {
-    var now = new Date();
-    if (now - passwordalert.background.tabState_['otpTime'] >
-        passwordalert.background.SECONDS_TO_CLEAR_OTP_ * 1000) {
-      passwordalert.background.clearOtpMode_();
-    } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
-      // is a digit
-      passwordalert.background.tabState_['otpCount']++;
-    } else if (request.keyCode > 0x20 ||
-        // non-digit printable characters reset it
-        // Non-printable only allowed at start:
-        passwordalert.background.tabState_['otpCount'] > 0) {
-      passwordalert.background.clearOtpMode_();
-    }
-    if (passwordalert.background.tabState_['otpCount'] >=
-        passwordalert.background.OTP_LENGTH_) {
-      passwordalert.background.checkPassword_(tabId, request, true);
-      passwordalert.background.clearOtpMode_();
-    }
-  }
+  var state = passwordalert.background.stateKeydown_;
+  passwordalert.background.checkOtp_(tabId, request, state);
 
   if (request.keyCode == passwordalert.background.ENTER_ASCII_CODE_) {
-    passwordalert.background.tabState_['typed'].clear();
+    state['typed'].clear();
     return;
   }
 
   var typedTime = new Date(request.typedTimeStamp);
-  if (typedTime - passwordalert.background.tabState_['typedTime'] >
+  if (typedTime - state['typedTime'] >
       passwordalert.background.SECONDS_TO_CLEAR_ * 1000) {
-    passwordalert.background.tabState_['typed'].clear();
+    state['typed'].clear();
   }
 
-  passwordalert.background.tabState_['typed'].event(
-      request.keyCode, request.shiftKey);
-  passwordalert.background.tabState_['typedTime'] = typedTime;
+  state['typed'].event(request.keyCode, request.shiftKey);
+  state['typedTime'] = typedTime;
 
-  passwordalert.background.tabState_['typed'].trim(
-      passwordalert.background.passwordLengths_.length);
+  state['typed'].trim(passwordalert.background.passwordLengths_.length);
 
-  if (passwordalert.background.tabState_['typed'].length() >=
-      passwordalert.background.MINIMUM_PASSWORD_) {
-    for (var i = 1; i < passwordalert.background.passwordLengths_.length; i++) {
-      // Perform a check on every length, even if we don't have enough
-      // typed characters, to avoid timing attacks.
-      if (passwordalert.background.passwordLengths_[i]) {
-        request.password = passwordalert.background
-            .tabState_['typed'].substr(-1 * i);
-        passwordalert.background.checkPassword_(tabId, request, false);
-      }
-    }
+  passwordalert.background.checkAllPasswords_(tabId, request, state);
+};
+
+
+/**
+ * Called on each key press. Checks the most recent possible characters.
+ * @param {number} tabId Id of the browser tab.
+ * @param {passwordalert.background.Request_} request Request object from
+ *     content_script. Contains url and referer.
+ * @private
+ */
+passwordalert.background.handleKeypress_ = function(tabId, request) {
+  var state = passwordalert.background.stateKeypress_;
+  passwordalert.background.checkOtp_(tabId, request, state);
+
+  if (request.keyCode == passwordalert.background.ENTER_ASCII_CODE_) {
+    state['typed'] = '';
+    return;
+  }
+
+  var typedTime = new Date(request.typedTimeStamp);
+  if (typedTime - state['typedTime'] >
+      passwordalert.background.SECONDS_TO_CLEAR_ * 1000) {
+    state['typed'] = '';
+  }
+
+  // We're treating keyCode and charCode the same here intentionally.
+  state['typed'] += String.fromCharCode(request.keyCode);
+  state['typedTime'] = typedTime;
+
+  // trim the buffer when it's too big
+  if (state['typed'].length >
+      passwordalert.background.passwordLengths_.length) {
+    state['typed'] = state['typed'].slice(
+        -1 * passwordalert.background.passwordLengths_.length);
+  }
+
+  // Send keypress event to keydown state so the keydown library can attempt
+  // to guess the state of capslock.
+  passwordalert.background.stateKeydown_['typed'].keypress(request.keyCode);
+
+  // Do not check passwords if keydown is in OTP mode to avoid double-warning.
+  if (!passwordalert.background.stateKeydown_['otpMode']) {
+    passwordalert.background.checkAllPasswords_(tabId, request, state);
   }
 };
 
@@ -751,16 +846,18 @@ passwordalert.background.checkRateLimit_ = function() {
  * @param {number} tabId The tab that sent this message.
  * @param {passwordalert.background.Request_} request Request object from
  *     content_script.
+ * @param {passwordalert.background.State_} state State of keypress or keydown.
  * @param {boolean} otpAlert If this is for an OTP alert.
  * @private
  */
-passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
+passwordalert.background.checkPassword_ = function(
+    tabId, request, state, otpAlert) {
   if (!passwordalert.background.checkRateLimit_()) {
     return;  // This limits content_script brute-forcing the password.
   }
 
   if (otpAlert) {
-    var hash = passwordalert.background.tabState_.hash;
+    var hash = state.hash;
   } else if (request.password) {
     var hash = passwordalert.background.hashPassword_(request.password);
   } else {
@@ -770,21 +867,21 @@ passwordalert.background.checkPassword_ = function(tabId, request, otpAlert) {
   if (localStorage[hash]) {
     var item = JSON.parse(localStorage[hash]);
 
-    if (item['length'] == request.password.length) {
+    if (otpAlert || (item['length'] == request.password.length)) {
       var date = new Date();
       var formattedTime = date.getHours() + ':' + date.getMinutes() + ':' +
           date.getSeconds();
       console.log('PASSWORD and/or OTP TYPED! ' + formattedTime + '\n' +
           request.url);
-      passwordalert.background.tabState_['hash'] = hash;
+      state['hash'] = hash;
 
       passwordalert.background.sendReportPassword_(
           request, item['email'], item['date'], otpAlert);
 
       console.log('Password has been typed.');
-      passwordalert.background.tabState_['otpCount'] = 0;
-      passwordalert.background.tabState_['otpMode'] = true;
-      passwordalert.background.tabState_['otpTime'] = new Date();
+      state['otpCount'] = 0;
+      state['otpMode'] = true;
+      state['otpTime'] = new Date();
 
       passwordalert.background.injectPasswordWarningIfNeeded_(
           request.url, item['email'], tabId);

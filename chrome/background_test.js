@@ -200,7 +200,7 @@ function testHashPassword() {
 
 
 function testEnterWillClearTypedCharsBuffer() {
-  passwordalert.background.tabState_ = {
+  passwordalert.background.stateKeydown_ = {
     hash: '',
     otpCount: 0,
     otpMode: false,
@@ -210,7 +210,7 @@ function testEnterWillClearTypedCharsBuffer() {
   };
 
   sendKeydownRequest(TAB_ID1, '\r', new Date());
-  assertEquals('', passwordalert.background.tabState_.typed.chars_);
+  assertEquals('', passwordalert.background.stateKeydown_.typed.chars_);
 }
 
 
@@ -218,7 +218,7 @@ function testTimeGapWillClearTypedCharsBuffer() {
   passwordalert.background.SECONDS_TO_CLEAR_ = 10;
   var now = new Date();
 
-  passwordalert.background.tabState_ = {
+  passwordalert.background.stateKeydown_ = {
     hash: '',
     otpCount: 0,
     otpMode: false,
@@ -229,25 +229,25 @@ function testTimeGapWillClearTypedCharsBuffer() {
 
   var typedTime1 = new Date(now.getTime() + 1000);
   sendKeydownRequest(TAB_ID1, 'a', typedTime1);
-  assertEquals('a', passwordalert.background.tabState_.typed.chars_);
+  assertEquals('a', passwordalert.background.stateKeydown_.typed.chars_);
   assertEquals(
       typedTime1.getTime(),
-      passwordalert.background.tabState_.typedTime.getTime());
+      passwordalert.background.stateKeydown_.typedTime.getTime());
 
   // Test that keys from other tabs are also handled.
   var typedTime2 = new Date(typedTime1.getTime() + 9000);
   sendKeydownRequest(TAB_ID2, 'b', typedTime2);
-  assertEquals('ab', passwordalert.background.tabState_.typed.chars_);
+  assertEquals('ab', passwordalert.background.stateKeydown_.typed.chars_);
   assertEquals(
       typedTime2.getTime(),
-      passwordalert.background.tabState_.typedTime.getTime());
+      passwordalert.background.stateKeydown_.typedTime.getTime());
 
   var typedTime3 = new Date(typedTime2.getTime() + 11000);
   sendKeydownRequest(TAB_ID1, 'c', typedTime3);
-  assertEquals('c', passwordalert.background.tabState_.typed.chars_);
+  assertEquals('c', passwordalert.background.stateKeydown_.typed.chars_);
   assertEquals(
       typedTime3.getTime(),
-      passwordalert.background.tabState_.typedTime.getTime());
+      passwordalert.background.stateKeydown_.typedTime.getTime());
 }
 
 
@@ -257,7 +257,7 @@ function testTypedCharsBufferTrimming() {
   passwordalert.background.MINIMUM_PASSWORD_ = 2;
   var now = new Date();
 
-  passwordalert.background.tabState_ = {
+  passwordalert.background.stateKeydown_ = {
     hash: '',
     otpCount: 0,
     otpMode: false,
@@ -272,10 +272,10 @@ function testTypedCharsBufferTrimming() {
     sendKeydownRequest(TAB_ID1, 'e', new Date(now.getTime() + 1000));
   }
   assertTrue(
-      passwordalert.background.tabState_.typed.length() < 5 * 5);
+      passwordalert.background.stateKeydown_.typed.length < 5 * 5);
 
   // Test what's actually being trimmed.
-  passwordalert.background.tabState_ = {
+  passwordalert.background.stateKeydown_ = {
     hash: '',
     otpCount: 0,
     otpMode: false,
@@ -285,21 +285,22 @@ function testTypedCharsBufferTrimming() {
   };
 
   var checkedPasswords = [];
-  passwordalert.background.checkPassword_ = function(tabId, request, otp) {
+  passwordalert.background.checkPassword_ = function(
+      tabId, request, state, otp) {
     checkedPasswords.push(request.password);
   };
 
   sendKeydownRequest(TAB_ID1, 'e', new Date(now.getTime() + 1000));
   assertEquals(
       'abcde',
-      passwordalert.background.tabState_.typed.chars_);
+      passwordalert.background.stateKeydown_.typed.chars_);
   assertEquals('de', checkedPasswords[0]);
   assertEquals('bcde', checkedPasswords[1]);
 
   sendKeydownRequest(TAB_ID1, 'f', new Date(now.getTime() + 2000));
   assertEquals(
       'bcdef',
-      passwordalert.background.tabState_.typed.chars_);
+      passwordalert.background.stateKeydown_.typed.chars_);
   assertEquals('ef', checkedPasswords[2]);
   assertEquals('cdef', checkedPasswords[3]);
 }
@@ -312,20 +313,19 @@ function testOtpMode() {
 
   alertCalled = false;
   passwordalert.background.checkPassword_ =
-      function(tabId, request, otpAlert) {
+      function(tabId, request, state, otpAlert) {
     if (otpAlert) {
       alertCalled = otpAlert;
     }
     if (request.password == 'pw') {
-      passwordalert.background.tabState_['otpCount'] = 0;
-      passwordalert.background.tabState_['otpMode'] = true;
-      passwordalert.background.tabState_['otpTime'] =
-          passwordalert.background.tabState_['typedTime'];
+      state['otpCount'] = 0;
+      state['otpMode'] = true;
+      state['otpTime'] = state['typedTime'];
     }
   };
 
   var now = new Date();
-  passwordalert.background.tabState_ = {
+  passwordalert.background.stateKeydown_ = {
     hash: '',
     otpCount: 0,
     otpMode: false,
@@ -338,13 +338,13 @@ function testOtpMode() {
   sendKeydownRequest(TAB_ID1, 'p', now);
   sendKeydownRequest(TAB_ID1, 'w', now);
   sendKeydownRequest(TAB_ID1, '1', now);
-  assertTrue(passwordalert.background.tabState_.otpMode);
-  assertEquals(1, passwordalert.background.tabState_['otpCount']);
+  assertTrue(passwordalert.background.stateKeydown_.otpMode);
+  assertEquals(1, passwordalert.background.stateKeydown_['otpCount']);
 
   sendKeydownRequest(TAB_ID1, 'a', now);
-  assertFalse(passwordalert.background.tabState_.otpMode);
-  assertEquals(0, passwordalert.background.tabState_['otpCount']);
-  assertNull(passwordalert.background.tabState_['otpTime']);
+  assertFalse(passwordalert.background.stateKeydown_.otpMode);
+  assertEquals(0, passwordalert.background.stateKeydown_['otpCount']);
+  assertNull(passwordalert.background.stateKeydown_['otpTime']);
 
   // Test space and tabs at beginning of otp are allowed.
   sendKeydownRequest(TAB_ID1, 'p', now);
@@ -353,7 +353,7 @@ function testOtpMode() {
   sendKeydownRequest(TAB_ID1, '\t', now);
 
   for (i = 0; i < passwordalert.background.OTP_LENGTH_; i++) {
-    assertTrue(passwordalert.background.tabState_.otpMode);
+    assertTrue(passwordalert.background.stateKeydown_.otpMode);
     assertFalse(alertCalled);
     sendKeydownRequest(TAB_ID1, '1', now);
   }
