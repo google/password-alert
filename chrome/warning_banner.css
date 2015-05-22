@@ -87,10 +87,12 @@
   line-height: 150%;
   color: #607D8B;
   position: absolute;
+  width: 160px;
+  height: 80px;
   top: 95%;
-  left: 34.25%;
-  right: 15%;
-  text-align: left;
+  left: 33%;
+  text-align: top;
+  text-align: center;
   cursor: pointer;
 }
 
