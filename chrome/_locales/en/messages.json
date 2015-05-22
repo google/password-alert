@@ -24,11 +24,11 @@
     "description": "This is used to thank the user after they have typed their password to properly initialized Password Alert."
   },
   "password_warning_banner_header": {
-    "message": "Reset your Gmail password",
+    "message": "Reset your Google Account password",
     "description": "This is used for the warning banner to warn users that they have typed their password. [CHAR LIMIT = 50]"
   },
   "password_warning_banner_body": {
-    "message": "Your Gmail password was just exposed to a non-Gmail login page. You should immediately reset your password to keep your Gmail account secure. Also, please make sure your Gmail password is not reused on other services.",
+    "message": "You just entered your Google Account password on a sign-in page that's not Google's. Immediately reset your password to protect your account. And please make sure you don't reuse your password for other apps and sites.",
     "description": "This is used for the warning banner to warn users that they have typed their password. [CHAR LIMIT = 300]"
   },
   "learn_more": {
@@ -40,7 +40,7 @@
     "description": "This is used to tell the user that they can ignore the warning for this time only. [CHAR LIMIT = 25]"
   },
   "always_ignore": {
-    "message": "Always ignore for this website",
+    "message": "Always ignore for this site",
     "description": "This is used to tell the user to always ignore this website from further warnings."
   },
   "always_ignore_confirmation": {
