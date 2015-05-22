@@ -202,6 +202,13 @@ passwordalert.lastKeypressTimeStamp_;
 
 
 /**
+ * The timeStamp from the most recent keydown event.
+ * @private {number}
+ */
+passwordalert.lastKeydownTimeStamp_;
+
+
+/**
  * Password lengths for passwords that are being watched.
  * If an array offset is true, then that password length is watched.
  * Value comes from background.js.
@@ -569,6 +576,36 @@ passwordalert.stop_ = function() {
  * @param {Event} evt Key press event.
  * @private
  */
+passwordalert.handleKeypress_ = function(evt) {
+  if (!passwordalert.isRunning_) return;
+
+  // Legitimate keypress events should have the view set and valid charCode.
+  if (evt.view == null || evt.charCode == 0) {
+    return;
+  }
+
+  // Legitimate keypress events should have increasing timeStamps.
+  if (evt.timeStamp <= passwordalert.lastKeypressTimeStamp_) {
+    return;
+  }
+  passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
+
+  chrome.runtime.sendMessage({
+    action: 'handleKeypress',
+    keyCode: evt.charCode,
+    typedTimeStamp: evt.timeStamp,
+    url: passwordalert.url_,
+    referer: document.referrer.toString(),
+    looksLikeGoogle: passwordalert.looksLikeGooglePage_()
+  });
+};
+
+
+/**
+ * Called on each key down. Checks the most recent possible characters.
+ * @param {Event} evt Key down event.
+ * @private
+ */
 passwordalert.handleKeydown_ = function(evt) {
   if (!passwordalert.isRunning_) return;
 
@@ -578,10 +615,10 @@ passwordalert.handleKeydown_ = function(evt) {
   }
 
   // Legitimate keypress events should have increasing timeStamps.
-  if (evt.timeStamp <= passwordalert.lastKeypressTimeStamp_) {
+  if (evt.timeStamp <= passwordalert.lastKeydownTimeStamp_) {
     return;
   }
-  passwordalert.lastKeypressTimeStamp_ = evt.timeStamp;
+  passwordalert.lastKeydownTimeStamp_ = evt.timeStamp;
 
   chrome.runtime.sendMessage({
     action: 'handleKeydown',
@@ -967,8 +1004,7 @@ chrome.storage.onChanged.addListener(
     passwordalert.handleManagedPolicyChanges_);
 
 passwordalert.initializePage_();
-// TODO(adhintz) Also handle keypress to detect capslock state.
-//window.addEventListener('keypress', passwordalert.handleKeypress_, true);
+window.addEventListener('keypress', passwordalert.handleKeypress_, true);
 window.addEventListener('keydown', passwordalert.handleKeydown_, true);
 window.addEventListener('paste', function(evt) {
   passwordalert.handlePaste_(evt);

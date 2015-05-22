@@ -103,6 +103,9 @@ passwordalert.keydown.MAP_ = {
 passwordalert.keydown.Typed = function(opt_chars) {
   this.caps_lock_ = false;  // Caps lock state.
   this.chars_ = opt_chars || '';
+  Object.defineProperty(this, 'length', { get: function() {
+    return this.chars_.length;
+  }});
 };
 
 
@@ -180,15 +183,6 @@ passwordalert.keydown.Typed.prototype.trim = function(max) {
   if (this.chars_.length > max) {
     this.chars_ = this.chars_.slice(-1 * max);
   }
-};
-
-
-/**
- * Length of characters that have been typed.
- * @return {number} Length of character string.
- */
-passwordalert.keydown.Typed.prototype.length = function() {
-  return this.chars_.length;
 };
 
 
