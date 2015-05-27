@@ -286,7 +286,7 @@ function testTypedCharsBufferTrimming() {
 
   var checkedPasswords = [];
   passwordalert.background.checkPassword_ = function(
-      tabId, request, state, otp) {
+      tabId, request, state) {
     checkedPasswords.push(request.password);
   };
 
@@ -312,12 +312,19 @@ function testOtpMode() {
   passwordalert.background.MINIMUM_PASSWORD_ = 2;
 
   alertCalled = false;
-  passwordalert.background.checkPassword_ =
-      function(tabId, request, state, otpAlert) {
+  passwordalert.background.sendReportPassword_ =
+      function(request, email, date, otpAlert) {
     if (otpAlert) {
       alertCalled = otpAlert;
     }
+  };
+
+  passwordalert.background.checkPassword_ = function(tabId, request, state) {
     if (request.password == 'pw') {
+      localStorage['pwhash'] = JSON.stringify(
+          {'email': 'adhintz@google.com',
+           'date': 1});
+      state['hash'] = 'pwhash';
       state['otpCount'] = 0;
       state['otpMode'] = true;
       state['otpTime'] = state['typedTime'];
