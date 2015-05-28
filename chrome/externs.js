@@ -94,6 +94,7 @@ request.keyCode;
 request.looksLikeGoogle;
 request.password;
 request.referer;
+request.securityEmailAddress;
 request.shiftKey;
 request.typedTimeStamp;
 request.url;
@@ -102,7 +103,6 @@ var state;
 state.otpMode;
 state.otpTime;
 state.passwordLengths;
-state.removeWarningBanner;
 
 var toParse;
 toParse.href;

@@ -517,6 +517,7 @@ passwordalert.background.handleRequest_ = function(
       break;
     case 'looksLikeGoogle':
       passwordalert.background.sendReportPage_(request);
+      passwordalert.background.injectPhishingWarning_(sender.tab.id, request);
       break;
     case 'deletePossiblePassword':
       delete passwordalert.background.possiblePassword_[sender.tab.id];
@@ -530,9 +531,6 @@ passwordalert.background.handleRequest_ = function(
     case 'getEmail':
       sendResponse(
           passwordalert.background.possiblePassword_[sender.tab.id]['email']);
-      break;
-    case 'removeWarningBanner':
-      passwordalert.background.pushRemoveWarningBannerToTab_(sender.tab.id);
       break;
   }
 };
@@ -584,7 +582,7 @@ passwordalert.background.checkOtp_ = function(tabId, request, state) {
       var item = JSON.parse(localStorage[state.hash]);
       console.log('OTP TYPED! ' + request.url);
       passwordalert.background.sendReportPassword_(
-        request, item['email'], item['date'], true);
+          request, item['email'], item['date'], true);
       passwordalert.background.clearOtpMode_(state);
     }
   }
@@ -915,13 +913,31 @@ passwordalert.background.injectPasswordWarningIfNeeded_ =
           return;
         }
         // TODO(adhintz) Change to named parameters.
-        var warning_url = chrome.extension.getURL('warning_banner.html') +
+        var warning_url = chrome.extension.getURL('password_warning.html') +
             '?' + encodeURIComponent(currentHost) +
             '&' + encodeURIComponent(email) +
             '&' + tabId;
         chrome.tabs.create({'url': warning_url});
       });
 
+};
+
+
+/**
+ * Inject the phishing warning banner.
+ * TODO(henryc): Rename "inject" to something more accurate, maybe "display".
+ * @param {number} tabId The tab that sent this message.
+ * @param {passwordalert.background.Request_} request Request message from the
+ *     content_script.
+ * @private
+ */
+passwordalert.background.injectPhishingWarning_ = function(tabId, request) {
+  // TODO(adhintz) Change to named parameters.
+  var warning_url = chrome.extension.getURL('phishing_warning.html') +
+      '?' + tabId +
+      '&' + encodeURIComponent(request.url) +
+      '&' + encodeURIComponent(request.securityEmailAddress);
+  chrome.tabs.update({'url': warning_url});
 };
 
 
@@ -1108,23 +1124,6 @@ passwordalert.background.pushToAllTabs_ = function() {
 passwordalert.background.pushToTab_ = function(tabId) {
   var state = {
     passwordLengths: passwordalert.background.passwordLengths_
-  };
-  chrome.tabs.sendMessage(tabId, JSON.stringify(state));
-};
-
-
-/**
- * Sends a message to the content_script to remove the warning banner on a tab.
- * This essentially removes the warning banner from all the iframes in the tab.
- * @param {number} tabId Tab to receive the message.
- * @private
- *
- * TODO(henryc): Consider refactoring pushToTab_ and the injectPasswordWarning
- * so that the state can be passed in.
- */
-passwordalert.background.pushRemoveWarningBannerToTab_ = function(tabId) {
-  var state = {
-    removeWarningBanner: true
   };
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
