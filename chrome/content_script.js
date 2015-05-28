@@ -139,9 +139,8 @@ passwordalert.corp_html_ = [
  */
 passwordalert.corp_html_tight_ = [
   // From https://accounts.google.com/ServiceLogin
-  ('<form novalidate="" method="post" ' +
-   'action="https://accounts.google.com/ServiceLoginAuth" ' +
-   'id="gaia_loginform">'),
+  ('<input id="Passwd" name="Passwd" placeholder="Password" class="" ' +
+   'type="password">'),
   ('<input id="Passwd" name="Passwd" type="password" placeholder="Password" ' +
    'class="">'),
   ('<input id="signIn" name="signIn" class="rc-button rc-button-submit" ' +
