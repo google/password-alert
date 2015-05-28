@@ -226,30 +226,6 @@ passwordalert.isEnterpriseUse_ = false;
 
 
 /**
- * The link to allow the user to visit the current site.
- * @private {string}
- * @const
- */
-passwordalert.VISIT_THIS_SITE_LINK_ =
-    '<a href="javascript:void(0)" style="background-color: black; ' +
-    'color: white; text-decoration: underline;" ' +
-    'onclick="javascript:document.getElementById(\'warning_banner\')' +
-    '.style.display = \'none\';">visit this site</a>';
-
-
-/**
- * The text to display in the phishing warning banner.
- * @private {string}
- * @const
- */
-passwordalert.PHISHING_WARNING_BANNER_TEXT_ =
-    '<span id="warning_banner_header">' +
-    chrome.i18n.getMessage('phishing_warning_banner_header') + '</span>' +
-    '<span id="warning_banner_body">' +
-    chrome.i18n.getMessage('phishing_warning_banner_body') + '</span>';
-
-
-/**
  * Key for the allowed hosts object in chrome storage.
  * @private {string}
  * @const
@@ -480,12 +456,11 @@ passwordalert.completePageInitialization_ = function() {
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
       console.log('Detected possible phishing page.');
-      chrome.runtime.sendMessage({action: 'looksLikeGoogle',
+      chrome.runtime.sendMessage({
+        action: 'looksLikeGoogle',
         url: passwordalert.url_,
-        referer: document.referrer.toString()});
-      passwordalert.injectWarningBanner_(
-          passwordalert.PHISHING_WARNING_BANNER_TEXT_,
-          passwordalert.createButtonsForPhishingWarningBanner_());
+        referer: document.referrer.toString(),
+        securityEmailAddress: passwordalert.security_email_address_});
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
   }
@@ -520,6 +495,7 @@ passwordalert.initializePage_ = function() {
  */
 passwordalert.start_ = function(msg) {
   var state = JSON.parse(msg);
+
   if (state.passwordLengths) {
     // TODO(henryc): Content_script is now only using passwordLengths_ to tell
     // if passwordLengths_length == 0. So, do not store passwordLengths,
@@ -529,9 +505,6 @@ passwordalert.start_ = function(msg) {
       passwordalert.stop_(); // no passwords, so no need to watch
       return;
     }
-  }
-  if (state.removeWarningBanner) {
-    passwordalert.removeWarningBanner_();
   }
 
   if ((passwordalert.sso_url_ &&
@@ -848,156 +821,6 @@ passwordalert.whitelistUrl_ = function() {
   return false;
 };
 
-
-/**
- * Create the email to notify about about phishing warning.
- * @private
- */
-passwordalert.createPhishingWarningEmail_ = function() {
-  window.open('mailto:' + passwordalert.security_email_address_ + '?' +
-      'subject=User has detected possible phishing site.&' +
-      'body=I have visited ' + encodeURIComponent(passwordalert.url_) +
-      ' and a phishing warning ' +
-      'was triggered. Please see if this is indeed a phishing attempt and ' +
-      'requires further action.');
-};
-
-
-/**
- * Navigates to the page for reporting a phishing page to Google Safe Browsing.
- * @private
- */
-passwordalert.reportToSafeBrowsing_ = function() {
-  window.location = 'https://www.google.com/safebrowsing/report_phish/?url=' +
-      encodeURIComponent(passwordalert.url_);
-};
-
-
-/**
- * Browser's back functionality.
- * @private
- */
-passwordalert.back_ = function() {
-  window.history.back();
-};
-
-
-/**
- * Remove the warning banner.
- * @private
- */
-passwordalert.removeWarningBanner_ = function() {
-  document.getElementById('warning_banner').remove();
-};
-
-
-/**
- * Send message to remove the warning banner.
- * @private
- */
-passwordalert.sendMessageToRemoveWarningBanner_ = function() {
-  chrome.runtime.sendMessage({action: 'removeWarningBanner'});
-};
-
-
-/**
- * Create buttons for the phishing warning banner.
- * @param {string} buttonText Text label of the button.
- * @param {string} buttonLeftPosition Position for the button from the left
- *     margin of the page.
- * @param {Function} buttonFunction Javascript that will be triggered when this
- *     button is clicked.
- * @param {boolean} isPrimaryButton Whether the button is the primary button
- *     that is preferred for the user to click.  If true, will be shown in
- *     a color that will induce the user to click.  If false, will be shown
- *     in a faded color.
- * @return {Element} button The html that represents the button.
- * @private
- */
-passwordalert.createButton_ = function(buttonText, buttonLeftPosition,
-    buttonFunction, isPrimaryButton) {
-  var button = document.createElement('button');
-  button.setAttribute('class', 'warning_banner_button');
-  button.innerText = buttonText;
-  button.style.left = buttonLeftPosition;
-  button.onclick = buttonFunction;
-  if (isPrimaryButton) {
-    button.classList.add('warning_banner_button_primary');
-  }
-  return button;
-};
-
-
-/**
- * Create the set of buttons for the phishing warning banner.
- * @return {Array} The set of buttons for the phishing warning banner.
- * @private
- */
-passwordalert.createButtonsForPhishingWarningBanner_ = function() {
-  var contactSecurityButton;
-  if (passwordalert.isEnterpriseUse_) {
-    contactSecurityButton = passwordalert.createButton_(
-        chrome.i18n.getMessage('contact_security'), '7%',
-        passwordalert.createPhishingWarningEmail_, true);
-  } else { // Consumer mode.
-    contactSecurityButton = passwordalert.createButton_(
-        chrome.i18n.getMessage('report_phishing'), '7%',
-        passwordalert.reportToSafeBrowsing_, true);
-  }
-  var backButton = passwordalert.createButton_(
-      chrome.i18n.getMessage('back'), '33%', passwordalert.back_, false);
-  var visitThisSiteButton = passwordalert.createButton_(
-      chrome.i18n.getMessage('visit_this_site'), '59%',
-      passwordalert.sendMessageToRemoveWarningBanner_, false);
-  return [contactSecurityButton, backButton, visitThisSiteButton];
-};
-
-
-/**
- * Injects a banner into the page to warn users.
- * @param {string} bannerText The text to display in the banner.
- * @param {Array} bannerButtons The set of buttons to disply in the banner.
- * @param {!Element=} opt_alwaysIgnoreLink The always ignore link (optional).
- * @private
- */
-passwordalert.injectWarningBanner_ = function(bannerText, bannerButtons,
-    opt_alwaysIgnoreLink) {
-  var style = document.createElement('link');
-  style.rel = 'stylesheet';
-  style.type = 'text/css';
-  style.href = chrome.extension.getURL('warning_banner.css');
-  document.head.appendChild(style);
-
-  var textElement = document.createElement('span');
-  textElement.innerHTML = bannerText;
-
-  var blockIcon = document.createElement('img');
-  blockIcon.setAttribute('id', 'warning_banner_icon');
-  blockIcon.setAttribute('src',
-                         chrome.extension.getURL('logo_password_alert.png'));
-
-  // A fixed-size inner container is the key to make the banner content
-  // look good across different screen sizes.
-  var bannerInnerContainer = document.createElement('div');
-  bannerInnerContainer.setAttribute('id', 'warning_banner_inner_container');
-
-  bannerInnerContainer.appendChild(blockIcon);
-  bannerInnerContainer.appendChild(textElement);
-  for (var i = 0; i < bannerButtons.length; ++i) {
-    bannerInnerContainer.appendChild(bannerButtons[i]);
-  }
-  if (opt_alwaysIgnoreLink) {
-    bannerInnerContainer.appendChild(opt_alwaysIgnoreLink);
-  }
-
-  var bannerElement = document.createElement('div');
-  bannerElement.setAttribute('id', 'warning_banner');
-  bannerElement.appendChild(bannerInnerContainer);
-  document.body.appendChild(bannerElement);
-
-  // Prevent pressing Enter from triggering a button or form submission.
-  document.activeElement.blur();
-};
 
 // Set listener before initializePage_ which calls chrome.storage.managed.get.
 chrome.storage.onChanged.addListener(

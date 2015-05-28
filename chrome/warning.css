@@ -132,3 +132,7 @@
 #warning_banner_inner_container .warning_banner_button_secondary {
   left: 33%;
 }
+
+#warning_banner_inner_container .warning_banner_button_tertiary {
+  left: 59%;
+}

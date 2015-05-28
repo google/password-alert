@@ -16,7 +16,7 @@
  */
 
 /**
- * @fileoverview Warning banner displayed on a password alert.
+ * @fileoverview Warning displayed on a password alert.
  * @author adhintz@google.com (Drew Hintz)
  */
 
