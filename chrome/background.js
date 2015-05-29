@@ -28,7 +28,7 @@ goog.provide('passwordalert.background');
 
 goog.require('goog.crypt');
 goog.require('goog.crypt.Sha1');
-goog.require('passwordalert.keydown');
+goog.require('passwordalert.keydown.Typed');
 
 
 /**
@@ -863,6 +863,9 @@ passwordalert.background.checkPassword_ = function(tabId, request, state) {
   if (state['otpMode']) {
     return;  // If password was recently typed, then no need to check again.
   }
+  if (!request.password) {
+    return;
+  }
 
   var hash = passwordalert.background.hashPassword_(request.password);
   if (localStorage[hash]) {
@@ -935,7 +938,7 @@ passwordalert.background.injectPhishingWarning_ = function(tabId, request) {
   // TODO(adhintz) Change to named parameters.
   var warning_url = chrome.extension.getURL('phishing_warning.html') +
       '?' + tabId +
-      '&' + encodeURIComponent(request.url) +
+      '&' + encodeURIComponent(request.url || '') +
       '&' + encodeURIComponent(request.securityEmailAddress);
   chrome.tabs.update({'url': warning_url});
 };
