@@ -257,6 +257,13 @@ passwordalert.background.isNewInstall_ = false;
 
 
 /**
+ * Whether the background page is initialized (managed policy loaded).
+ * @private {boolean}
+ */
+passwordalert.background.isInitialized_ = false;
+
+
+/**
  * This sets the state of new install that can be used later.
  * @param {!Object} details Details of the onInstall event.
  * @private
@@ -265,6 +272,7 @@ passwordalert.background.handleNewInstall_ = function(details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
     passwordalert.background.isNewInstall_ = true;
+    passwordalert.background.initializePasswordIfReady_();
   }
 };
 
@@ -423,7 +431,11 @@ passwordalert.background.displayInitializePasswordNotification_ = function() {
  * Prompts the user to initialize their password.
  * @private
  */
-passwordalert.background.initializePassword_ = function() {
+passwordalert.background.initializePasswordIfReady_ = function() {
+  if (!passwordalert.background.isNewInstall_ ||
+      !passwordalert.background.isInitialized_) {
+    return;
+  }
   if (passwordalert.background.isEnterpriseUse_ &&
       !passwordalert.background.shouldInitializePassword_) {
     return;
@@ -444,7 +456,7 @@ passwordalert.background.initializePassword_ = function() {
     if (!localStorage.hasOwnProperty(passwordalert.background.SALT_KEY_)) {
       console.log('Password still has not been initialized.  ' +
                   'Start the password initialization process again.');
-      passwordalert.background.initializePassword_();
+      passwordalert.background.initializePasswordIfReady_();
     }
   }, 300000);  // 5 minutes
 };
@@ -456,13 +468,12 @@ passwordalert.background.initializePassword_ = function() {
  * @private
  */
 passwordalert.background.completePageInitialization_ = function() {
-  if (passwordalert.background.isNewInstall_) {
-    // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
-    // This way, the content script will be ready to receive
-    // post-password initialization messages.
-    passwordalert.background.injectContentScriptIntoAllTabs_(
-        passwordalert.background.initializePassword_);
-  }
+  passwordalert.background.isInitialized_ = true;
+  // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
+  // This way, the content script will be ready to receive
+  // post-password initialization messages.
+  passwordalert.background.injectContentScriptIntoAllTabs_(
+      passwordalert.background.initializePasswordIfReady_);
 
   passwordalert.background.refreshPasswordLengths_();
   chrome.runtime.onMessage.addListener(
