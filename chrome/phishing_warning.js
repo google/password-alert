@@ -33,6 +33,8 @@ document.getElementById('warning_banner_header').textContent =
     chrome.i18n.getMessage('phishing_warning_banner_header');
 document.getElementById('warning_banner_text').textContent =
     chrome.i18n.getMessage('phishing_warning_banner_body');
+document.getElementById('learn_more').textContent =
+    chrome.i18n.getMessage('learn_more');
 
 // The report button will have different look and function between consumer
 // and enterprise modes.
