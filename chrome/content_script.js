@@ -254,10 +254,15 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
       passwordalert.sso_url_ = managedPolicy['sso_url'];
       passwordalert.sso_username_selector_ =
           managedPolicy['sso_username_selector'];
-      passwordalert.whitelist_top_domains_ =
-          managedPolicy['whitelist_top_domains'];
 
-      // Append policy html to the extension-provided Google login page html
+      // For the policies below, we want to append the user-provided policies
+      // to the extension-provided defaults.
+      if (managedPolicy['whitelist_top_domains']) {
+        Array.prototype.push.apply(
+            passwordalert.whitelist_top_domains_,
+            managedPolicy['whitelist_top_domains']
+        );
+      }
       if (managedPolicy['corp_html']) {
         Array.prototype.push.apply(
             passwordalert.corp_html_,
@@ -350,7 +355,12 @@ passwordalert.handleManagedPolicyChanges_ =
           passwordalert.sso_username_selector_ = newPolicyValue;
           break;
         case 'whitelist_top_domains':
-          passwordalert.whitelist_top_domains_ = newPolicyValue;
+          passwordalert.whitelist_top_domains_ = subtractArray(
+              passwordalert.whitelist_top_domains_,
+              oldPolicyValue);
+          Array.prototype.push.apply(
+              passwordalert.whitelist_top_domains_,
+              newPolicyValue);
           break;
       }
     }
