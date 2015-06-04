@@ -144,7 +144,7 @@ passwordalert.corp_html_tight_ = [
   ('<input id="Passwd" name="Passwd" type="password" placeholder="Password" ' +
    'class="">'),
   ('<input id="signIn" name="signIn" class="rc-button rc-button-submit" ' +
-   'type="submit" value="Sign in">'),
+   'type="submit" value="Sign in'),
   ('<input id="signIn" name="signIn" class="rc-button rc-button-submit" ' +
    'value="Sign in" type="submit">'),
   // From https://accounts.google.com/b/0/EditPasswd?hl=en
