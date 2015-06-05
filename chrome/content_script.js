@@ -225,6 +225,20 @@ passwordalert.isEnterpriseUse_ = false;
 
 
 /**
+ * Indicates that the managed policy has been set. Required to complete init.
+ * @private {boolean}
+ */
+passwordalert.policyLoaded_ = false;
+
+
+/**
+ * Indicates the DOM has been loaded. Required to complete initialization.
+ * @private {boolean}
+ */
+passwordalert.domContentLoaded_ = false;
+
+
+/**
  * Key for the allowed hosts object in chrome storage.
  * @private {string}
  * @const
@@ -277,6 +291,7 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
       }
 
     }
+    passwordalert.policyLoaded_ = true;
     callback();
   });
 };
@@ -376,7 +391,11 @@ passwordalert.handleManagedPolicyChanges_ =
  * corporate login pages.
  * @private
  */
-passwordalert.completePageInitialization_ = function() {
+passwordalert.completePageInitializationIfReady_ = function() {
+  if (!passwordalert.policyLoaded_ || !passwordalert.domContentLoaded_) {
+    return;
+  }
+
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (goog.string.startsWith(passwordalert.url_,
@@ -483,16 +502,6 @@ passwordalert.completePageInitialization_ = function() {
         passwordalert.start_(msg);
       });
   chrome.runtime.sendMessage({action: 'statusRequest'});
-};
-
-
-/**
- * Called when the page loads.
- * @private
- */
-passwordalert.initializePage_ = function() {
-  passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(
-      passwordalert.completePageInitialization_);
 };
 
 
@@ -831,13 +840,24 @@ passwordalert.whitelistUrl_ = function() {
 };
 
 
-// Set listener before initializePage_ which calls chrome.storage.managed.get.
-chrome.storage.onChanged.addListener(
-    passwordalert.handleManagedPolicyChanges_);
+// Listen for policy changes and then set initial managed policy:
+chrome.storage.onChanged.addListener(passwordalert.handleManagedPolicyChanges_);
+passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(
+    passwordalert.completePageInitializationIfReady_);
 
-passwordalert.initializePage_();
 window.addEventListener('keypress', passwordalert.handleKeypress_, true);
 window.addEventListener('keydown', passwordalert.handleKeydown_, true);
 window.addEventListener('paste', function(evt) {
   passwordalert.handlePaste_(evt);
 }, true);
+document.addEventListener('DOMContentLoaded', function() {
+  passwordalert.domContentLoaded_ = true;
+  passwordalert.completePageInitializationIfReady_();
+});
+// Check to see if we already missed DOMContentLoaded:
+if (document.readyState == 'interactive' ||
+    document.readyState == 'complete' ||
+    document.readyState == 'loaded') {
+  passwordalert.domContentLoaded_ = true;
+  passwordalert.completePageInitializationIfReady_();
+}
