@@ -21,6 +21,7 @@ import urllib2
 
 import datastore
 import google_directory_service
+import xsrf
 
 from google.appengine.api import users
 
@@ -118,8 +119,8 @@ def user_authorization_required(handler_method):
     if is_oauth_valid(oauth_token, email):
       logging.info('oauth valid, so allowing')
     elif datastore.Setting.get('domain_auth_secret'):
-      if (self.request.get('domain_auth_secret', None)
-          == datastore.Setting.get('domain_auth_secret')):
+      if xsrf.const_time_compare(self.request.get('domain_auth_secret', None),
+                                 datastore.Setting.get('domain_auth_secret')):
         logging.info('domain_auth_secret matches, so allowing')
       else:
         logging.warning('domain_auth_secret is set, but does NOT match')
