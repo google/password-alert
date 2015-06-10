@@ -534,6 +534,10 @@ passwordalert.background.handleRequest_ = function(
       break;
     case 'statusRequest':
       passwordalert.background.pushToTab_(sender.tab.id);
+      var state = {
+        passwordLengths: passwordalert.background.passwordLengths_
+      };
+      sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
       break;
     case 'looksLikeGoogle':
       passwordalert.background.sendReportPage_(request);

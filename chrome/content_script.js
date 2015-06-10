@@ -493,15 +493,10 @@ passwordalert.completePageInitializationIfReady_ = function() {
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
   }
 
-  chrome.runtime.onMessage.addListener(
-      /**
-       * @param {string} msg JSON object containing valid password lengths.
-       */
-      function(msg) {
-        passwordalert.stop_();
-        passwordalert.start_(msg);
-      });
-  chrome.runtime.sendMessage({action: 'statusRequest'});
+  chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
+    passwordalert.stop_();
+    passwordalert.start_(response);
+  });
 };
 
 
@@ -850,6 +845,15 @@ window.addEventListener('keydown', passwordalert.handleKeydown_, true);
 window.addEventListener('paste', function(evt) {
   passwordalert.handlePaste_(evt);
 }, true);
+chrome.runtime.onMessage.addListener(
+    /**
+     * @param {string} msg JSON object containing valid password lengths.
+     */
+    function(msg) {
+      passwordalert.stop_();
+      passwordalert.start_(msg);
+    }
+);
 document.addEventListener('DOMContentLoaded', function() {
   passwordalert.domContentLoaded_ = true;
   passwordalert.completePageInitializationIfReady_();
