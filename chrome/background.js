@@ -242,6 +242,15 @@ passwordalert.background.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
 
 
 /**
+ * Key for the phishing warning whitelist object in chrome storage.
+ * @private {string}
+ * @const
+ */
+passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_ =
+    'phishing_warning_whitelist';
+
+
+/**
  * The email of the user signed in to Chrome (which could be empty if there's
  * no signed in user). Only updates when the background page first loads.
  * @private {string}
@@ -528,7 +537,8 @@ passwordalert.background.handleRequest_ = function(
       break;
     case 'looksLikeGoogle':
       passwordalert.background.sendReportPage_(request);
-      passwordalert.background.injectPhishingWarning_(sender.tab.id, request);
+      passwordalert.background.injectPhishingWarningIfNeeded_(
+          sender.tab.id, request);
       break;
     case 'deletePossiblePassword':
       delete passwordalert.background.possiblePassword_[sender.tab.id];
@@ -918,12 +928,12 @@ passwordalert.background.injectPasswordWarningIfNeeded_ =
 
   chrome.storage.local.get(
       passwordalert.background.ALLOWED_HOSTS_KEY_,
-      function(allowedHosts) {
+      function(result) {
         var toParse = document.createElement('a');
         toParse.href = url;
         var currentHost = toParse.origin;
-        if (Object.keys(allowedHosts).length > 0 && allowedHosts[
-            passwordalert.background.ALLOWED_HOSTS_KEY_][currentHost]) {
+        var allowedHosts = result[passwordalert.background.ALLOWED_HOSTS_KEY_];
+        if (allowedHosts != undefined && allowedHosts[currentHost]) {
           return;
         }
         // TODO(adhintz) Change to named parameters.
@@ -938,20 +948,35 @@ passwordalert.background.injectPasswordWarningIfNeeded_ =
 
 
 /**
- * Inject the phishing warning banner.
+ * Check if the phishing warning should be injected and inject it.
  * TODO(henryc): Rename "inject" to something more accurate, maybe "display".
  * @param {number} tabId The tab that sent this message.
  * @param {passwordalert.background.Request_} request Request message from the
  *     content_script.
  * @private
  */
-passwordalert.background.injectPhishingWarning_ = function(tabId, request) {
-  // TODO(adhintz) Change to named parameters.
-  var warning_url = chrome.extension.getURL('phishing_warning.html') +
-      '?' + tabId +
-      '&' + encodeURIComponent(request.url || '') +
-      '&' + encodeURIComponent(request.securityEmailAddress);
-  chrome.tabs.update({'url': warning_url});
+passwordalert.background.injectPhishingWarningIfNeeded_ = function(
+    tabId, request) {
+  chrome.storage.local.get(
+      passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_,
+      function(result) {
+        var toParse = document.createElement('a');
+        toParse.href = request.url;
+        var currentHost = toParse.origin;
+        var phishingWarningWhitelist =
+            result[passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_];
+        if (phishingWarningWhitelist != undefined &&
+            phishingWarningWhitelist[currentHost]) {
+          return;
+        }
+        // TODO(adhintz) Change to named parameters.
+        var warning_url = chrome.extension.getURL('phishing_warning.html') +
+            '?' + tabId +
+            '&' + encodeURIComponent(request.url || '') +
+            '&' + encodeURIComponent(currentHost) +
+            '&' + encodeURIComponent(request.securityEmailAddress);
+        chrome.tabs.update({'url': warning_url});
+      });
 };
 
 

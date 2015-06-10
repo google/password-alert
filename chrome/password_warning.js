@@ -74,13 +74,13 @@ document.getElementById('always_ignore').onclick = function() {
   if (confirm(chrome.i18n.getMessage('always_ignore_confirmation'))) {
     chrome.storage.local.get(
         ALLOWED_HOSTS_KEY_,
-        function(allowedHosts) {
+        function(result) {
           var currentHost = decodeURIComponent(parameters[0]);
-          if (Object.keys(allowedHosts).length == 0) {
-            allowedHosts[ALLOWED_HOSTS_KEY_] = {};
+          if (result[ALLOWED_HOSTS_KEY_] === undefined) {
+            result[ALLOWED_HOSTS_KEY_] = {};
           }
-          allowedHosts[ALLOWED_HOSTS_KEY_][currentHost] = true;
-          chrome.storage.local.set(allowedHosts);
+          result[ALLOWED_HOSTS_KEY_][currentHost] = true;
+          chrome.storage.local.set(result);
           window.close();
         });
   }
