@@ -221,7 +221,7 @@ passwordalert.passwordLengths_;
  * used by individual consumer.
  * @private {boolean}
  */
-passwordalert.isEnterpriseUse_ = false;
+passwordalert.enterpriseMode_ = false;
 
 
 /**
@@ -255,9 +255,9 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
     if (Object.keys(managedPolicy).length == 0) {
-      passwordalert.isEnterpriseUse_ = false;
+      passwordalert.enterpriseMode_ = false;
     } else {
-      passwordalert.isEnterpriseUse_ = true;
+      passwordalert.enterpriseMode_ = true;
       passwordalert.corp_email_domain_ =
           managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
       passwordalert.security_email_address_ =
@@ -327,8 +327,8 @@ passwordalert.handleManagedPolicyChanges_ =
 
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
-      if (!passwordalert.isEnterpriseUse_) {
-        passwordalert.isEnterpriseUse_ = true;
+      if (!passwordalert.enterpriseMode_) {
+        passwordalert.enterpriseMode_ = true;
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       var oldPolicyValue = changedPolicies[changedPolicy]['oldValue'];
@@ -537,7 +537,7 @@ passwordalert.start_ = function(msg) {
   passwordalert.isRunning_ = true;
 
   // If the current site is marked as Always Ignore, then passwordalert.stop_().
-  if (!passwordalert.isEnterpriseUse_) {
+  if (!passwordalert.enterpriseMode_) {
     chrome.storage.local.get(
         passwordalert.ALLOWED_HOSTS_KEY_,
         function(allowedHosts) {
@@ -690,7 +690,7 @@ passwordalert.saveGaiaPassword_ = function(evt) {
   var email = loginForm.Email ?
       goog.string.trim(loginForm.Email.value.toLowerCase()) : '';
   var password = loginForm.Passwd ? loginForm.Passwd.value : '';
-  if ((passwordalert.isEnterpriseUse_ &&
+  if ((passwordalert.enterpriseMode_ &&
       !passwordalert.isEmailInDomain_(email)) ||
       goog.string.isEmptyString(goog.string.makeSafe(password))) {
     return;  // Ignore generic @gmail.com logins or for other domains.

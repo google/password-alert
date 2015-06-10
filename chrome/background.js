@@ -199,7 +199,7 @@ passwordalert.background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
  * used by individual consumer.
  * @private {boolean}
  */
-passwordalert.background.isEnterpriseUse_ = false;
+passwordalert.background.enterpriseMode_ = false;
 
 
 /**
@@ -295,14 +295,14 @@ passwordalert.background.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
     if (Object.keys(managedPolicy).length == 0) {
-      console.log('No managed policy found. Consumer use.');
+      console.log('No managed policy found. Consumer mode.');
     } else {
-      console.log('Managed policy found.  Enterprise use.');
+      console.log('Managed policy found.  Enterprise mode.');
       passwordalert.background.corp_email_domain_ =
           managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
       passwordalert.background.displayUserAlert_ =
           managedPolicy['display_user_alert'];
-      passwordalert.background.isEnterpriseUse_ = true;
+      passwordalert.background.enterpriseMode_ = true;
       passwordalert.background.report_url_ = managedPolicy['report_url'];
       passwordalert.background.shouldInitializePassword_ =
           managedPolicy['should_initialize_password'];
@@ -336,9 +336,9 @@ passwordalert.background.handleManagedPolicyChanges_ =
     console.log('Handling changed policies.');
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
-      if (!passwordalert.background.isEnterpriseUse_) {
-        passwordalert.background.isEnterpriseUse_ = true;
-        console.log('Enterprise use via updated managed policy.');
+      if (!passwordalert.background.enterpriseMode_) {
+        passwordalert.background.enterpriseMode_ = true;
+        console.log('Enterprise mode via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       switch (changedPolicy) {
@@ -445,7 +445,7 @@ passwordalert.background.initializePasswordIfReady_ = function() {
       !passwordalert.background.isInitialized_) {
     return;
   }
-  if (passwordalert.background.isEnterpriseUse_ &&
+  if (passwordalert.background.enterpriseMode_ &&
       !passwordalert.background.shouldInitializePassword_) {
     return;
   }
@@ -801,7 +801,7 @@ passwordalert.background.savePossiblePassword_ = function(tabId) {
   item['date'] = new Date();
 
   if (passwordalert.background.isNewInstall_) {
-    if (passwordalert.background.isEnterpriseUse_ &&
+    if (passwordalert.background.enterpriseMode_ &&
         !passwordalert.background.shouldInitializePassword_) {
       // If enterprise policy says not to prompt, then don't prompt.
       passwordalert.background.isNewInstall_ = false;
@@ -921,7 +921,7 @@ passwordalert.background.checkPassword_ = function(tabId, request, state) {
  */
 passwordalert.background.injectPasswordWarningIfNeeded_ =
     function(url, email, tabId) {
-  if (passwordalert.background.isEnterpriseUse_ &&
+  if (passwordalert.background.enterpriseMode_ &&
       !passwordalert.background.displayUserAlert_) {
     return;
   }
@@ -1030,7 +1030,7 @@ passwordalert.background.sendReportPage_ = function(request) {
  */
 passwordalert.background.sendReport_ = function(
     request, email, date, otp, path) {
-  if (!passwordalert.background.isEnterpriseUse_) {
+  if (!passwordalert.background.enterpriseMode_) {
     console.log('Not in enterprise mode, so not sending a report.');
     return;
   }
