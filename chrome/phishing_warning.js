@@ -27,7 +27,8 @@
 var parameters = window.location.search.substr(1).split('&');
 var phishingTabId = parseInt(parameters[0]);
 var url = decodeURIComponent(parameters[1]);
-var securityEmailAddress = decodeURIComponent(parameters[2]);
+var host = decodeURIComponent(parameters[2]);
+var securityEmailAddress = decodeURIComponent(parameters[3]);
 
 document.getElementById('warning_banner_header').textContent =
     chrome.i18n.getMessage('phishing_warning_banner_header');
@@ -70,14 +71,46 @@ document.getElementById('report_phishing').onclick = function() {
 document.getElementById('back').onclick = function() {
   chrome.tabs.get(phishingTabId, function(tab) {
     chrome.tabs.highlight({'tabs': tab.index}, function() {
+      // When the phishing site gets opened in a new tab.
+      if (window.history.length <= 2) {
+        window.close();
+        return;
+      }
       window.history.go(-2);
     });
   });
 };
 
+
+PHISHING_WARNING_WHITELIST_KEY_ = 'phishing_warning_whitelist';
+
+
+/**
+ * If a user decides to visit the site, the site will be whitelisted from
+ * future phishing warnings.  The saved object in chrome storage has the
+ * below structure. The top-level key is used as the argument for
+ * StorageArea get(), and the associated value will be an inner object that
+ * has all the host details.
+ *
+ * {phishing_warning_whitelist:
+ *     {https://www.example1.com: true,
+ *      https://www.example2.com: true}
+ * }
+ *
+ * @private
+ */
 document.getElementById('visit_this_site').onclick = function() {
   chrome.tabs.get(phishingTabId, function(tab) {
     chrome.tabs.highlight({'tabs': tab.index}, function() {});
-    window.history.back();
+    chrome.storage.local.get(
+        PHISHING_WARNING_WHITELIST_KEY_,
+        function(result) {
+          if (result[PHISHING_WARNING_WHITELIST_KEY_] === undefined) {
+            result[PHISHING_WARNING_WHITELIST_KEY_] = {};
+          }
+          result[PHISHING_WARNING_WHITELIST_KEY_][host] = true;
+          chrome.storage.local.set(result);
+          window.history.back();
+        });
   });
 };

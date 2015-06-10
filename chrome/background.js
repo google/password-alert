@@ -199,7 +199,7 @@ passwordalert.background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
  * used by individual consumer.
  * @private {boolean}
  */
-passwordalert.background.isEnterpriseUse_ = false;
+passwordalert.background.enterpriseMode_ = false;
 
 
 /**
@@ -239,6 +239,15 @@ passwordalert.background.NOTIFICATION_ID_ =
  * @const
  */
 passwordalert.background.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
+
+
+/**
+ * Key for the phishing warning whitelist object in chrome storage.
+ * @private {string}
+ * @const
+ */
+passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_ =
+    'phishing_warning_whitelist';
 
 
 /**
@@ -286,14 +295,14 @@ passwordalert.background.setManagedPolicyValuesIntoConfigurableVariables_ =
     function(callback) {
   chrome.storage.managed.get(function(managedPolicy) {
     if (Object.keys(managedPolicy).length == 0) {
-      console.log('No managed policy found. Consumer use.');
+      console.log('No managed policy found. Consumer mode.');
     } else {
-      console.log('Managed policy found.  Enterprise use.');
+      console.log('Managed policy found.  Enterprise mode.');
       passwordalert.background.corp_email_domain_ =
           managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
       passwordalert.background.displayUserAlert_ =
           managedPolicy['display_user_alert'];
-      passwordalert.background.isEnterpriseUse_ = true;
+      passwordalert.background.enterpriseMode_ = true;
       passwordalert.background.report_url_ = managedPolicy['report_url'];
       passwordalert.background.shouldInitializePassword_ =
           managedPolicy['should_initialize_password'];
@@ -327,9 +336,9 @@ passwordalert.background.handleManagedPolicyChanges_ =
     console.log('Handling changed policies.');
     var changedPolicy;
     for (changedPolicy in changedPolicies) {
-      if (!passwordalert.background.isEnterpriseUse_) {
-        passwordalert.background.isEnterpriseUse_ = true;
-        console.log('Enterprise use via updated managed policy.');
+      if (!passwordalert.background.enterpriseMode_) {
+        passwordalert.background.enterpriseMode_ = true;
+        console.log('Enterprise mode via updated managed policy.');
       }
       var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
       switch (changedPolicy) {
@@ -436,7 +445,7 @@ passwordalert.background.initializePasswordIfReady_ = function() {
       !passwordalert.background.isInitialized_) {
     return;
   }
-  if (passwordalert.background.isEnterpriseUse_ &&
+  if (passwordalert.background.enterpriseMode_ &&
       !passwordalert.background.shouldInitializePassword_) {
     return;
   }
@@ -528,7 +537,8 @@ passwordalert.background.handleRequest_ = function(
       break;
     case 'looksLikeGoogle':
       passwordalert.background.sendReportPage_(request);
-      passwordalert.background.injectPhishingWarning_(sender.tab.id, request);
+      passwordalert.background.injectPhishingWarningIfNeeded_(
+          sender.tab.id, request);
       break;
     case 'deletePossiblePassword':
       delete passwordalert.background.possiblePassword_[sender.tab.id];
@@ -791,7 +801,7 @@ passwordalert.background.savePossiblePassword_ = function(tabId) {
   item['date'] = new Date();
 
   if (passwordalert.background.isNewInstall_) {
-    if (passwordalert.background.isEnterpriseUse_ &&
+    if (passwordalert.background.enterpriseMode_ &&
         !passwordalert.background.shouldInitializePassword_) {
       // If enterprise policy says not to prompt, then don't prompt.
       passwordalert.background.isNewInstall_ = false;
@@ -911,19 +921,19 @@ passwordalert.background.checkPassword_ = function(tabId, request, state) {
  */
 passwordalert.background.injectPasswordWarningIfNeeded_ =
     function(url, email, tabId) {
-  if (passwordalert.background.isEnterpriseUse_ &&
+  if (passwordalert.background.enterpriseMode_ &&
       !passwordalert.background.displayUserAlert_) {
     return;
   }
 
   chrome.storage.local.get(
       passwordalert.background.ALLOWED_HOSTS_KEY_,
-      function(allowedHosts) {
+      function(result) {
         var toParse = document.createElement('a');
         toParse.href = url;
         var currentHost = toParse.origin;
-        if (Object.keys(allowedHosts).length > 0 && allowedHosts[
-            passwordalert.background.ALLOWED_HOSTS_KEY_][currentHost]) {
+        var allowedHosts = result[passwordalert.background.ALLOWED_HOSTS_KEY_];
+        if (allowedHosts != undefined && allowedHosts[currentHost]) {
           return;
         }
         // TODO(adhintz) Change to named parameters.
@@ -938,20 +948,35 @@ passwordalert.background.injectPasswordWarningIfNeeded_ =
 
 
 /**
- * Inject the phishing warning banner.
+ * Check if the phishing warning should be injected and inject it.
  * TODO(henryc): Rename "inject" to something more accurate, maybe "display".
  * @param {number} tabId The tab that sent this message.
  * @param {passwordalert.background.Request_} request Request message from the
  *     content_script.
  * @private
  */
-passwordalert.background.injectPhishingWarning_ = function(tabId, request) {
-  // TODO(adhintz) Change to named parameters.
-  var warning_url = chrome.extension.getURL('phishing_warning.html') +
-      '?' + tabId +
-      '&' + encodeURIComponent(request.url || '') +
-      '&' + encodeURIComponent(request.securityEmailAddress);
-  chrome.tabs.update({'url': warning_url});
+passwordalert.background.injectPhishingWarningIfNeeded_ = function(
+    tabId, request) {
+  chrome.storage.local.get(
+      passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_,
+      function(result) {
+        var toParse = document.createElement('a');
+        toParse.href = request.url;
+        var currentHost = toParse.origin;
+        var phishingWarningWhitelist =
+            result[passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_];
+        if (phishingWarningWhitelist != undefined &&
+            phishingWarningWhitelist[currentHost]) {
+          return;
+        }
+        // TODO(adhintz) Change to named parameters.
+        var warning_url = chrome.extension.getURL('phishing_warning.html') +
+            '?' + tabId +
+            '&' + encodeURIComponent(request.url || '') +
+            '&' + encodeURIComponent(currentHost) +
+            '&' + encodeURIComponent(request.securityEmailAddress);
+        chrome.tabs.update({'url': warning_url});
+      });
 };
 
 
@@ -1005,7 +1030,7 @@ passwordalert.background.sendReportPage_ = function(request) {
  */
 passwordalert.background.sendReport_ = function(
     request, email, date, otp, path) {
-  if (!passwordalert.background.isEnterpriseUse_) {
+  if (!passwordalert.background.enterpriseMode_) {
     console.log('Not in enterprise mode, so not sending a report.');
     return;
   }
