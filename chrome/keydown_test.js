@@ -20,6 +20,8 @@
  * @author adhintz@google.com (Drew Hintz)
  */
 
+goog.require('passwordalert.keydown.Typed');
+
 function setUp() {
 }
 
