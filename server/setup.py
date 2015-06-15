@@ -111,10 +111,10 @@ class RedirectHandler(webapp2.RequestHandler):
 
     if not user_info['isAdmin']:
       logging.error('not admin in user object. Should not happen.')
-      self.error(403)
+      self.abort(403)
     if user_info['primaryEmail'] != users.get_current_user().email():
       logging.error('email logged into App Engine different than oauth email')
-      self.error(403)
+      self.abort(403)
     _StoreCredentials(credentials)
     self.redirect('/settings/')
 
