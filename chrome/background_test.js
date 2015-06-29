@@ -20,6 +20,8 @@
  * @author adhintz@google.com (Drew Hintz)
  */
 
+goog.require('passwordalert.keydown.Typed');
+
 
 TAB_ID1 = 1;
 TAB_ID2 = 2;
@@ -323,7 +325,7 @@ function testOtpMode() {
     if (request.password == 'pw') {
       localStorage['pwhash'] = JSON.stringify(
           {'email': 'adhintz@google.com',
-           'date': 1});
+            'date': 1});
       state['hash'] = 'pwhash';
       state['otpCount'] = 0;
       state['otpMode'] = true;

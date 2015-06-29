@@ -139,7 +139,7 @@ pc_lint() {
     else
       ADDITIONAL=$*
     fi
-    gjslint --strict --closurized_namespaces=goog,pc --limited_doc_files=_test.js $ADDITIONAL
+    gjslint --strict --closurized_namespaces=passwordalert --limited_doc_files=chrome_api_stubs.js $ADDITIONAL
     RETVAL=$?
   fi
 }
