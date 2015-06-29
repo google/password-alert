@@ -16,7 +16,7 @@ One attack idea a malicious page could try is to generate fake keystrokes and th
 
 2. The background page limits password checks to a somewhat human speed. Anything over the limit is silently discarded. For the code, see [chrome/background.js](chrome/background.js) passwordalert.background.checkRateLimit_()
 
-3. Saving only 37 bits of the hash intentionally creates collisions. A straight-forward brute force of the hash would result in 20 million+ collisions for a 10 character password, depending on your character space. An attacker would need to pick out the correct password from this list. 
+3. Saving only 37 bits of the hash intentionally creates collisions. A straight-forward brute force of the hash would result in 20 million+ collisions for a 10 character password, depending on your character space. An attacker would need to pick out the correct password from this list.
 
 ## Calculation for Size of Hash Bits
 Why 37 bits? We were trying to balance two goals: store enough bits to prevent false positives, but few enough bits so that even if an attacker can brute-force it they won’t be able to easily discern your real password.  The false positive rate is such that with a 20,000 person company typing randomly for a year, you'd get one false positive. This assumes a user types 300 characters a minute for 120000 work minutes a year and is typing for 20% of the time. It is calculated with `(20000*300*120000*0.2)/(2**37)` Random typing isn't what people actually do, so the actual false positive rate is likely significantly lower.
@@ -25,7 +25,7 @@ For the calculations, we've assumed that password characters are chosen from a s
 
 If your password has more than 37 bits of entropy, then an attacker looking for another password that hashes to the same 37 bits would get collisions and not know which brute-forced password was correct.
 
-Note that Google for Work administrators can [determine password lengths here](https://support.google.com/a/answer/139399?hl=en). Other services like Active Directory also [support password policies](https://msdn.microsoft.com/en-us/library/cc875839.aspx). 
+Note that Google for Work administrators can [determine password lengths here](https://support.google.com/a/answer/139399?hl=en). Other services like Active Directory also [support password policies](https://msdn.microsoft.com/en-us/library/cc875839.aspx).
 
 ## Google's bug bounty program
 Password Alert is covered by Google's bug bounty program as
