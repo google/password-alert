@@ -323,9 +323,10 @@ function testOtpMode() {
 
   passwordalert.background.checkPassword_ = function(tabId, request, state) {
     if (request.password == 'pw') {
-      localStorage['pwhash'] = JSON.stringify(
-          {'email': 'adhintz@google.com',
-            'date': 1});
+      localStorage['pwhash'] = JSON.stringify({
+        'email': 'adhintz@google.com',
+        'date': 1
+      });
       state['hash'] = 'pwhash';
       state['otpCount'] = 0;
       state['otpMode'] = true;
