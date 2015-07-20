@@ -405,7 +405,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
   if (passwordalert.sso_url_ &&
       goog.string.startsWith(passwordalert.url_,
                              passwordalert.sso_url_)) {
-    console.log('SSO login url is detected: ' + passwordalert.url_);
     var loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
       chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
@@ -416,7 +415,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
     }
   } else if (goog.string.startsWith(passwordalert.url_,
       passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
-    console.log('Enforced change password url is detected.');
     // This change password page does not have any email information.
     // So we fallback to the email already set in background.js because users
     // will be prompted to login before arriving here.
@@ -435,14 +433,11 @@ passwordalert.completePageInitializationIfReady_ = function() {
         }, true);
   } else if (goog.string.startsWith(passwordalert.url_,
                                     passwordalert.GAIA_URL_)) {
-    console.log('Google login url is detected: ' + passwordalert.url_);
     if (goog.string.startsWith(passwordalert.url_,
                                passwordalert.GAIA_SECOND_FACTOR_)) {
-      console.log('Second factor url is detected.');
       // Second factor page is only displayed when the password is correct.
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     } else {
-      console.log('Second factor url is not detected: ' + passwordalert.url_);
       // Delete any previously considered password in case this is a re-prompt
       // when an incorrect password is entered, such as a ServiceLoginAuth page.
       chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
@@ -456,7 +451,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
     }
   } else if (goog.string.startsWith(passwordalert.url_,
                                     passwordalert.CHANGE_PASSWORD_URL_)) {
-    console.log('Change password url is detected: ' + passwordalert.url_);
     chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
     // Need to wait until the change password page has finished loading
     // before listener can be added.
@@ -483,7 +477,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
   } else {  // Not a Google login URL.
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
-      console.log('Detected possible phishing page.');
       chrome.runtime.sendMessage({
         action: 'looksLikeGoogle',
         url: passwordalert.url_,
@@ -654,7 +647,6 @@ passwordalert.handlePaste_ = function(evt) {
  * @private
  */
 passwordalert.saveSsoPassword_ = function(evt) {
-  console.log('Saving SSO password.');
   if (passwordalert.validateSso_()) {
     var username =
         document.querySelector(passwordalert.sso_username_selector_).value;
@@ -679,7 +671,6 @@ passwordalert.saveSsoPassword_ = function(evt) {
  * @private
  */
 passwordalert.saveGaiaPassword_ = function(evt) {
-  console.log('Saving Google login password.');
   //TODO(adhintz) Should we do any validation here?
   var loginForm = document.getElementById('gaia_loginform');
   var email = loginForm.Email ?
@@ -712,7 +703,6 @@ passwordalert.saveChangedPassword_ = function() {
     if ((Date.now() - passwordChangeStartTime) > 1000) {
       return;
     }
-    console.log('Saving changed Google password.');
     var dataConfig =
         document.querySelector('div[data-config]').getAttribute('data-config');
     var start = dataConfig.indexOf('",["') + 4;
@@ -720,7 +710,6 @@ passwordalert.saveChangedPassword_ = function() {
     var email = dataConfig.substring(start, end);
 
     if (goog.format.EmailAddress.isValidAddress(email)) {
-      console.log('Parsed email on change password page is valid: %s', email);
       chrome.runtime.sendMessage({
         action: 'setPossiblePassword',
         email: email,
@@ -765,7 +754,6 @@ passwordalert.validateSso_ = function() {
     console.log('SSO data is not filled in.');
     return false;
   }
-  console.log('SSO data is filled in.');
   return true;
 };
 
@@ -808,7 +796,6 @@ passwordalert.looksLikeGooglePageTight_ = function() {
   var allHtml = document.documentElement.innerHTML.slice(0, 100000);
   for (var i in passwordalert.corp_html_tight_) {
     if (allHtml.indexOf(passwordalert.corp_html_tight_[i]) >= 0) {
-      console.log('Looks like (tight) login page.');
       return true;
     }
   }
@@ -827,7 +814,6 @@ passwordalert.whitelistUrl_ = function() {
   for (var i in passwordalert.whitelist_top_domains_) {
     if (goog.string.endsWith(domain,
                              passwordalert.whitelist_top_domains_[i])) {
-      console.log('Whitelisted domain detected: ' + domain);
       return true;
     }
   }
