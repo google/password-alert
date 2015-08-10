@@ -533,7 +533,6 @@ passwordalert.background.handleRequest_ = function(
           passwordalert.background.stateKeydown_);
       break;
     case 'statusRequest':
-      passwordalert.background.pushToTab_(sender.tab.id);
       var state = {
         passwordLengths: passwordalert.background.passwordLengths_
       };
