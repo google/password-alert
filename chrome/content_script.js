@@ -777,7 +777,7 @@ passwordalert.looksLikeGooglePage_ = function() {
       passwordalert.looks_like_google_ == false) {
     return passwordalert.looks_like_google_;
   }
-  var allHtml = document.documentElement.innerHTML.slice(0, 100000);
+  var allHtml = document.documentElement.innerHTML.slice(0, 120000);
   for (var i in passwordalert.corp_html_) {
     if (allHtml.indexOf(passwordalert.corp_html_[i]) >= 0) {
       passwordalert.looks_like_google_ = true;
