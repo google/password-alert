@@ -183,7 +183,14 @@ passwordalert.whitelist_top_domains_ = [
  * The URL for the current page.
  * @private {string}
  */
-passwordalert.url_ = location.href.toString();
+passwordalert.url_ = '';
+
+
+/**
+ * The referrer for the current page.
+ * @private {string}
+ */
+passwordalert.referrer_ = '';
 
 
 /**
@@ -480,7 +487,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
       chrome.runtime.sendMessage({
         action: 'looksLikeGoogle',
         url: passwordalert.url_,
-        referer: document.referrer.toString(),
+        referer: passwordalert.referrer_,
         securityEmailAddress: passwordalert.security_email_address_});
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
@@ -574,7 +581,7 @@ passwordalert.handleKeypress_ = function(evt) {
     keyCode: evt.charCode,
     typedTimeStamp: evt.timeStamp,
     url: passwordalert.url_,
-    referer: document.referrer.toString(),
+    referer: passwordalert.referrer_,
     looksLikeGoogle: passwordalert.looksLikeGooglePage_()
   });
 };
@@ -605,7 +612,7 @@ passwordalert.handleKeydown_ = function(evt) {
     shiftKey: evt.shiftKey,
     typedTimeStamp: evt.timeStamp,
     url: passwordalert.url_,
-    referer: document.referrer.toString(),
+    referer: passwordalert.referrer_,
     looksLikeGoogle: passwordalert.looksLikeGooglePage_()
   });
 };
@@ -634,7 +641,7 @@ passwordalert.handlePaste_ = function(evt) {
     action: 'checkString',
     password: evt.clipboardData.getData('text/plain').trim(),
     url: passwordalert.url_,
-    referer: document.referrer.toString(),
+    referer: passwordalert.referrer_,
     looksLikeGoogle: passwordalert.looksLikeGooglePage_()
   });
 };
@@ -770,7 +777,7 @@ passwordalert.looksLikeGooglePage_ = function() {
       passwordalert.looks_like_google_ == false) {
     return passwordalert.looks_like_google_;
   }
-  var allHtml = document.documentElement.innerHTML.slice(0, 100000);
+  var allHtml = document.documentElement.innerHTML.slice(0, 120000);
   for (var i in passwordalert.corp_html_) {
     if (allHtml.indexOf(passwordalert.corp_html_[i]) >= 0) {
       passwordalert.looks_like_google_ = true;
@@ -831,6 +838,17 @@ window.addEventListener('keydown', passwordalert.handleKeydown_, true);
 window.addEventListener('paste', function(evt) {
   passwordalert.handlePaste_(evt);
 }, true);
+
+// If we're in an iframe get the parent's href.
+var url = location.href.toString();
+if (url == 'about:blank') {
+  passwordalert.url_ = window.parent.location.href;
+  passwordalert.referrer_ = '';
+} else {
+  passwordalert.url_ = url;
+  passwordalert.referrer_ = document.referrer.toString();
+}
+
 chrome.runtime.onMessage.addListener(
     /**
      * @param {string} msg JSON object containing valid password lengths.
