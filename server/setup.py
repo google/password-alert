@@ -109,7 +109,7 @@ class RedirectHandler(webapp2.RequestHandler):
       else:
         return self.response.out.write(NO_ACCESS_MESSAGE)
 
-    if not user_info['isAdmin']:
+    if not user_info['isAdmin'] and not user_info['isDelegatedAdmin']:
       logging.error('not admin in user object. Should not happen.')
       self.abort(403)
     if user_info['primaryEmail'] != users.get_current_user().email():

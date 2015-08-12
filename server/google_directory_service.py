@@ -136,7 +136,7 @@ def IsInAdminGroup(user):
     ndb.Key('CredentialsModel', datastore.CURRENT_DOMAIN).delete()
     raise SetupNeeded('oauth token no longer valid')
   # TODO(adhintz) memcache this isAdmin check.
-  if user_info.get('isAdmin', ''):
+  if user_info.get('isAdmin', '') or user_info.get('isDelegatedAdmin', ''):
     logging.info('user is a domain admin')
     return True
   logging.debug('Checking if %s is in admin group.', user.nickname())
