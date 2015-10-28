@@ -49,3 +49,6 @@ Now let's look for some examples that are very unique to the GitHub login page a
 
 Doing a quick search for these different HTML snippets shows that they're relatively unique. Most importantly, the title HTML that we chose seems to only appear on pages that are copies of the GitHub login page.
 
+
+# Other SSO Settings
+Instructions on how to create values for the other SSO settings, such as SSO Form Selector (sso_form_selector), SSO Password Selector (sso_password_selector), SSO Server URL (sso_url), and SSO Username Selector (sso_username_selector) are described in the [Password Alert Deployment Guide section Configure SSO extension policies](https://docs.google.com/document/d/1bqbS6umRaNoRl2BZr4q9Q2YckmL-UHDcelkyPTy35AQ/preview#heading=h.8ovugfbimou0).
