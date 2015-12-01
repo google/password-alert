@@ -28,6 +28,7 @@ goog.provide('passwordalert.background');
 
 goog.require('goog.crypt');
 goog.require('goog.crypt.Sha1');
+goog.require('goog.string');
 goog.require('passwordalert.keydown.Typed');
 
 
@@ -206,7 +207,7 @@ passwordalert.background.enterpriseMode_ = false;
  * The corp email domain, e.g. "@company.com".
  * @private {string}
  */
-passwordalert.corp_email_domain_;
+passwordalert.background.corp_email_domain_;
 
 
 /**
@@ -340,7 +341,10 @@ passwordalert.background.handleManagedPolicyChanges_ =
         passwordalert.background.enterpriseMode_ = true;
         console.log('Enterprise mode via updated managed policy.');
       }
-      var newPolicyValue = changedPolicies[changedPolicy]['newValue'];
+      var newPolicyValue = '';
+      if (changedPolicies[changedPolicy].hasOwnProperty('newValue')) {
+        newPolicyValue = changedPolicies[changedPolicy]['newValue'];
+      }
       switch (changedPolicy) {
         case 'corp_email_domain':
           passwordalert.background.corp_email_domain_ =
@@ -540,7 +544,7 @@ passwordalert.background.handleRequest_ = function(
       break;
     case 'looksLikeGoogle':
       passwordalert.background.sendReportPage_(request);
-      passwordalert.background.injectPhishingWarningIfNeeded_(
+      passwordalert.background.displayPhishingWarningIfNeeded_(
           sender.tab.id, request);
       break;
     case 'deletePossiblePassword':
@@ -898,31 +902,36 @@ passwordalert.background.checkPassword_ = function(tabId, request, state) {
     if (item['length'] == request.password.length) {
       console.log('PASSWORD TYPED! ' + request.url);
 
-      passwordalert.background.sendReportPassword_(
-          request, item['email'], item['date'], false);
-
-      console.log('Password has been typed.');
-      state['hash'] = hash;
-      state['otpCount'] = 0;
-      state['otpMode'] = true;
-      state['otpTime'] = new Date();
-
-      passwordalert.background.injectPasswordWarningIfNeeded_(
-          request.url, item['email'], tabId);
+      if (!passwordalert.background.enterpriseMode_) {  // Consumer mode.
+        passwordalert.background.displayPasswordWarningIfNeeded_(
+            request.url, item['email'], tabId);
+      } else {  // Enterprise mode.
+        if (passwordalert.background.isEmailInDomain_(item['email'])) {
+          console.log('enterprise mode and email matches domain.');
+          passwordalert.background.sendReportPassword_(
+              request, item['email'], item['date'], false);
+          state['hash'] = hash;
+          state['otpCount'] = 0;
+          state['otpMode'] = true;
+          state['otpTime'] = new Date();
+          passwordalert.background.displayPasswordWarningIfNeeded_(
+              request.url, item['email'], tabId);
+        }
+      }
     }
   }
 };
 
 
 /**
- * Check if the password warning banner should be injected and inject it.
+ * Check if the password warning banner should be displayed and display it.
  * @param {string|undefined} url URI that triggered this warning.
  * @param {string} email Email address that triggered this warning.
  * @param {number} tabId The tab that sent this message.
  *
  * @private
  */
-passwordalert.background.injectPasswordWarningIfNeeded_ =
+passwordalert.background.displayPasswordWarningIfNeeded_ =
     function(url, email, tabId) {
   if (passwordalert.background.enterpriseMode_ &&
       !passwordalert.background.displayUserAlert_) {
@@ -951,14 +960,13 @@ passwordalert.background.injectPasswordWarningIfNeeded_ =
 
 
 /**
- * Check if the phishing warning should be injected and inject it.
- * TODO(henryc): Rename "inject" to something more accurate, maybe "display".
+ * Check if the phishing warning should be displayed and display it.
  * @param {number} tabId The tab that sent this message.
  * @param {passwordalert.background.Request_} request Request message from the
  *     content_script.
  * @private
  */
-passwordalert.background.injectPhishingWarningIfNeeded_ = function(
+passwordalert.background.displayPhishingWarningIfNeeded_ = function(
     tabId, request) {
   chrome.storage.local.get(
       passwordalert.background.PHISHING_WARNING_WHITELIST_KEY_,
@@ -1080,17 +1088,47 @@ passwordalert.background.sendReport_ = function(
 
 /**
  * Guesses the email address for the current user.
+ * Should only be called in enterpise mode, such as phishing page reports.
  * @return {string} email address for this user. '' if none found.
  * @private
  */
 passwordalert.background.guessUser_ = function() {
+  if (!passwordalert.background.enterpriseMode_) {
+    return '';
+  }
+
   for (var i = 0; i < localStorage.length; i++) {
     var item = passwordalert.background.getLocalStorageItem_(i);
-    if (item && item['email']) {
+    if (item && item['email'] &&
+        passwordalert.background.isEmailInDomain_(item['email'])) {
       return item['email'];
     }
   }
-  return passwordalert.background.signed_in_email_;
+
+  if (passwordalert.background.isEmailInDomain_(
+      passwordalert.background.signed_in_email_)) {
+    return passwordalert.background.signed_in_email_;
+  } else {
+    return '';
+  }
+};
+
+
+// TODO(adhintz) de-duplicate this function with content_script.js.
+/**
+ * Checks if the email address is for an enterprise mode configured domain.
+ * @param {string} email Email address to check.
+ * @return {boolean} True if email address is for a configured corporate domain.
+ * @private
+ */
+passwordalert.background.isEmailInDomain_ = function(email) {
+  var domains = passwordalert.background.corp_email_domain_.split(',');
+  for (var i in domains) {
+    if (goog.string.endsWith(email, '@' + domains[i].trim())) {
+      return true;
+    }
+  }
+  return false;
 };
 
 

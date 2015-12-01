@@ -178,17 +178,6 @@ function testRateLimitCheck() {
 }
 
 
-function testRefreshPasswordLengths() {
-  localStorage['somehashhere'] = JSON.stringify({
-    'length': 7,
-    'email': 'adhintz+here@google.com',
-    'date': new Date()
-  });
-  assertEquals('adhintz+here@google.com',
-      passwordalert.background.guessUser_());
-}
-
-
 function testHashPassword() {
   localStorage[passwordalert.background.SALT_KEY_] = '';
   passwordalert.background.HASH_BITS_ = 37;
@@ -368,4 +357,26 @@ function testOtpMode() {
     sendKeydownRequest(TAB_ID1, '1', now);
   }
   assertTrue(alertCalled);
+}
+
+function testGuessUser() {
+  localStorage['guessuser2'] = JSON.stringify({
+    'length': 7,
+    'email': 'adhintz+2@example.com',
+    'date': new Date()
+  });
+  localStorage['guessuser1'] = JSON.stringify({
+    'length': 7,
+    'email': 'adhintz@guessuser.google.com',
+    'date': new Date()
+  });
+  localStorage['guessuser0'] = JSON.stringify({
+    'length': 7,
+    'email': 'adhintz@example.com',
+    'date': new Date()
+  });
+  passwordalert.background.enterpriseMode_ = true;
+  passwordalert.background.corp_email_domain_ = 'guessuser.google.com';
+  assertEquals('adhintz@guessuser.google.com',
+      passwordalert.background.guessUser_());
 }
