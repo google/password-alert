@@ -33,7 +33,7 @@ function sendKeydown(char) {
   evt.keyCode = char.toUpperCase().charCodeAt(0);
   evt.shiftKey = false;
   evt.timeStamp = timeStamp++;
-  evt.view = Window;
+  evt.isTrusted = true;
   passwordalert.handleKeydown_(evt);
 }
 
