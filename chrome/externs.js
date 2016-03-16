@@ -110,7 +110,3 @@ toParse.origin;
 
 var options;
 options.priority;
-
-// TODO(adhintz) Move isTrusted to the Closure library.
-var evt;
-evt.isTrusted;
