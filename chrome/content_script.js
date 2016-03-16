@@ -85,6 +85,33 @@ passwordalert.GAIA_SECOND_FACTOR_ =
 
 
 /**
+ * URL prefix for verified phone prompt. Happens on correct password.
+ * @private {string}
+ * @const
+ */
+passwordalert.GAIA_PHONE_ =
+    'https://accounts.google.com/b/0/VerifiedPhoneInterstitial';
+
+
+/**
+ * URL prefix for security key prompt. Happens on correct password.
+ * @private {string}
+ * @const
+ */
+passwordalert.GAIA_SECURITY_KEY_ =
+    'https://accounts.google.com/signin/challenge';
+
+
+/**
+ * URL prefix for privacy prompt. Happens on correct password.
+ * @private {string}
+ * @const
+ */
+passwordalert.GAIA_PRIVACY_ =
+    'https://accounts.google.com/signin/privacyreminder';
+
+
+/**
  * URL prefix for changing GAIA password.
  * @private {string}
  * @const
@@ -423,7 +450,13 @@ passwordalert.completePageInitializationIfReady_ = function() {
   } else if (goog.string.startsWith(passwordalert.url_,
                                     passwordalert.GAIA_URL_)) {
     if (goog.string.startsWith(passwordalert.url_,
-                               passwordalert.GAIA_SECOND_FACTOR_)) {
+                               passwordalert.GAIA_SECOND_FACTOR_) ||
+        goog.string.startsWith(passwordalert.url_,
+                               passwordalert.GAIA_PHONE_) ||
+        goog.string.startsWith(passwordalert.url_,
+                               passwordalert.GAIA_SECURITY_KEY_) ||
+        goog.string.startsWith(passwordalert.url_,
+                               passwordalert.GAIA_PRIVACY_)) {
       // Second factor page is only displayed when the password is correct.
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     } else {
