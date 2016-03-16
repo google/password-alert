@@ -427,7 +427,9 @@ passwordalert.completePageInitializationIfReady_ = function() {
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
-      console.log('No login form found on SSO page.');
+      // This handles the case where user is redirected to a page that starts
+      // with sso url upon a successful sso login.
+      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     }
   } else if (goog.string.startsWith(passwordalert.url_,
       passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
