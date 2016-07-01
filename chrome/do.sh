@@ -63,7 +63,7 @@ pc_build_extension() {
   echo "Building extension to $BUILD_EXT_DIR"
   rm -rf "$BUILD_EXT_DIR"
   mkdir -p "$BUILD_EXT_DIR"
-  SRC_DIRS=( lib/closure-library )
+  SRC_DIRS=( lib/closure-library/closure/goog )
 
   jscompile_pc="$JSCOMPILE_CMD"
   for var in "${SRC_DIRS[@]}"
