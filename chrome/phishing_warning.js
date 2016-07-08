@@ -61,7 +61,7 @@ document.getElementById('report_phishing').onclick = function() {
     // tab can be closed.
     window.open('mailto:' + encodeURIComponent(securityEmailAddress) + '?' +
         'subject=User has detected possible phishing site.&' +
-        'body=I have visited ' + encodeURIComponent(url) + ' and a phising ' +
+        'body=I have visited ' + encodeURIComponent(url) + ' and a phishing ' +
         'warning was triggered. Please see if this is indeed a phishing ' +
         'attempt and requires further action.');
     chrome.tabs.remove(phishingTabId);
