@@ -282,7 +282,20 @@ passwordalert.background.handleNewInstall_ = function(details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
     passwordalert.background.isNewInstall_ = true;
-    passwordalert.background.initializePasswordIfReady_();
+  }
+
+  if (details['reason'] == 'install' ||
+      details['reason'] == 'update') {
+    // Only inject the content script into all tabs once upon new install.
+    // This prevents re-injection when the event page reloads.
+    //
+    // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
+    // This way, the content script will be ready to receive
+    // post-password initialization messages.
+    passwordalert.background.injectContentScriptIntoAllTabs_(function() {
+      passwordalert.background.initializePasswordIfReady_(
+          5, 1000, passwordalert.background.initializePasswordIfNeeded_);
+    });
   }
 };
 
@@ -375,12 +388,16 @@ passwordalert.background.handleManagedPolicyChanges_ =
  *
  * The programmatically injected script will be replaced by the
  * normally injected script when a tab reloads or loads a new url.
+ *
+ * TODO: Think about how to handle orphaned content scripts after autoupdates.
+ *
  * @param {function()} callback Executed after content scripts have been
  *     injected, e.g. user to initialize password.
  * @private
  */
 passwordalert.background.injectContentScriptIntoAllTabs_ =
     function(callback) {
+  console.log('Inject content scripts into all tabs.');
   chrome.tabs.query({}, function(tabs) {
     for (var i = 0; i < tabs.length; i++) {
       var tabIdentifier = tabs[i].id + ' - ' + tabs[i].url;
@@ -441,14 +458,10 @@ passwordalert.background.displayInitializePasswordNotification_ = function() {
 
 
 /**
- * Prompts the user to initialize their password.
+ * Prompts the user to initialize their password if needed.
  * @private
  */
-passwordalert.background.initializePasswordIfReady_ = function() {
-  if (!passwordalert.background.isNewInstall_ ||
-      !passwordalert.background.isInitialized_) {
-    return;
-  }
+passwordalert.background.initializePasswordIfNeeded_ = function() {
   if (passwordalert.background.enterpriseMode_ &&
       !passwordalert.background.shouldInitializePassword_) {
     return;
@@ -469,9 +482,39 @@ passwordalert.background.initializePasswordIfReady_ = function() {
     if (!localStorage.hasOwnProperty(passwordalert.background.SALT_KEY_)) {
       console.log('Password still has not been initialized.  ' +
                   'Start the password initialization process again.');
-      passwordalert.background.initializePasswordIfReady_();
+      passwordalert.background.initializePasswordIfReady_(
+          5, 1000, passwordalert.background.initializePasswordIfNeeded_);
     }
   }, 300000);  // 5 minutes
+};
+
+
+/**
+ * Prompts the user to initialize their password if ready.
+ * Uses exponential backoff to make sure all page initialization and
+ * managed policies are completed first.
+ * @param {number} maxRetries Max number to retry.
+ * @param {number} delay Milliseconds to wait before retry.
+ * @param {function()} callback Executed if password is ready to be initialized.
+ * @private
+ */
+passwordalert.background.initializePasswordIfReady_ =
+    function(maxRetries, delay, callback) {
+
+  if (passwordalert.background.isNewInstall_ &&
+      passwordalert.background.isInitialized_) {
+    callback();
+    return;
+  }
+
+  if (maxRetries > 0) {
+    setTimeout(function() {
+      passwordalert.background.initializePasswordIfReady_(
+          maxRetries - 1, delay * 2, callback);
+    }, delay);
+  } else {
+    console.log('Password is not ready to be initialized.');
+  }
 };
 
 
@@ -482,12 +525,6 @@ passwordalert.background.initializePasswordIfReady_ = function() {
  */
 passwordalert.background.completePageInitialization_ = function() {
   passwordalert.background.isInitialized_ = true;
-  // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
-  // This way, the content script will be ready to receive
-  // post-password initialization messages.
-  passwordalert.background.injectContentScriptIntoAllTabs_(
-      passwordalert.background.initializePasswordIfReady_);
-
   passwordalert.background.refreshPasswordLengths_();
   chrome.runtime.onMessage.addListener(
       passwordalert.background.handleRequest_);
@@ -903,6 +940,13 @@ passwordalert.background.checkPassword_ = function(tabId, request, state) {
       console.log('PASSWORD TYPED! ' + request.url);
 
       if (!passwordalert.background.enterpriseMode_) {  // Consumer mode.
+        // TODO(henryc): This is a workaround for http://cl/105095500,
+        // which introduced a regression where double-warning is displayed
+        // by both keydown and keypress handlers.
+        // There is a more robust fix for this at http://cl/118720482.
+        // But it's pretty sizable, so let's wait for Drew to take a look,
+        // and use this in the meantime.
+        state['otpMode'] = true;
         passwordalert.background.displayPasswordWarningIfNeeded_(
             request.url, item['email'], tabId);
       } else {  // Enterprise mode.
