@@ -1167,7 +1167,7 @@ passwordalert.background.guessUser_ = function() {
  */
 passwordalert.background.isEmailInDomain_ = function(email) {
   var domains = passwordalert.background.corp_email_domain_.split(',');
-  for (var i in domains) {
+  for (var i = 0; i < domains.length; i++) {
     if (goog.string.endsWith(email, '@' + domains[i].trim())) {
       return true;
     }

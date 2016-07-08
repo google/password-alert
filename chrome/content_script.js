@@ -737,7 +737,7 @@ passwordalert.saveChangedPassword_ = function() {
  */
 passwordalert.isEmailInDomain_ = function(email) {
   var domains = passwordalert.corp_email_domain_.split(',');
-  for (var i in domains) {
+  for (var i = 0; i < domains.length; i++) {
     if (goog.string.endsWith(email, '@' + domains[i].trim())) {
       return true;
     }
@@ -776,7 +776,7 @@ passwordalert.looksLikeGooglePage_ = function() {
     return passwordalert.looks_like_google_;
   }
   var allHtml = document.documentElement.innerHTML.slice(0, 120000);
-  for (var i in passwordalert.corp_html_) {
+  for (var i = 0; i < passwordalert.corp_html_.length; i++) {
     if (allHtml.indexOf(passwordalert.corp_html_[i]) >= 0) {
       passwordalert.looks_like_google_ = true;
       return true;
@@ -799,7 +799,7 @@ passwordalert.looksLikeGooglePageTight_ = function() {
   // impacting performance for large pages. Although an attacker could use this
   // to avoid detection, they could obfuscate the HTML just as easily.
   var allHtml = document.documentElement.innerHTML.slice(0, 120000);
-  for (var i in passwordalert.corp_html_tight_) {
+  for (var i = 0; i < passwordalert.corp_html_tight_.length; i++) {
     if (allHtml.indexOf(passwordalert.corp_html_tight_[i]) >= 0) {
       return true;
     }
@@ -816,7 +816,7 @@ passwordalert.looksLikeGooglePageTight_ = function() {
  */
 passwordalert.whitelistUrl_ = function() {
   var domain = goog.uri.utils.getDomain(passwordalert.url_) || '';
-  for (var i in passwordalert.whitelist_top_domains_) {
+  for (var i = 0; i < passwordalert.whitelist_top_domains_.length; i++) {
     if (goog.string.endsWith(domain,
                              passwordalert.whitelist_top_domains_[i])) {
       return true;
