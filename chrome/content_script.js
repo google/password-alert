@@ -75,6 +75,8 @@ passwordalert.corp_email_domain_;
 passwordalert.GAIA_URL_ = 'https://accounts.google.com/';
 
 
+// TODO(adhintz) See if GAIA_SECOND_FACTOR_ and GAIA_PHONE_ URLs are still used
+// and if not, then delete them.
 /**
  * URL prefix for second factor prompt. Happens on correct password.
  * @private {string}
@@ -94,12 +96,30 @@ passwordalert.GAIA_PHONE_ =
 
 
 /**
+ * URL prefix for login verification selection. Happens on correct password.
+ * @private {string}
+ * @const
+ */
+passwordalert.GAIA_VERIFY_ =
+    'https://accounts.google.com/signin/selectchallenge';
+
+
+/**
  * URL prefix for security key prompt. Happens on correct password.
  * @private {string}
  * @const
  */
 passwordalert.GAIA_SECURITY_KEY_ =
     'https://accounts.google.com/signin/challenge';
+
+
+/**
+ * URL prefix for password prompt. Happens on wrong password.
+ * @private {string}
+ * @const
+ */
+passwordalert.GAIA_PASSWORD_ =
+    'https://accounts.google.com/signin/challenge/sl/password';
 
 
 /**
@@ -456,7 +476,11 @@ passwordalert.completePageInitializationIfReady_ = function() {
         goog.string.startsWith(passwordalert.url_,
                                passwordalert.GAIA_PHONE_) ||
         goog.string.startsWith(passwordalert.url_,
-                               passwordalert.GAIA_SECURITY_KEY_) ||
+                               passwordalert.GAIA_VERIFY_) ||
+        (goog.string.startsWith(passwordalert.url_,
+                                passwordalert.GAIA_SECURITY_KEY_) &&
+         !(goog.string.startsWith(passwordalert.url_,
+                                  passwordalert.GAIA_PASSWORD_))) ||
         goog.string.startsWith(passwordalert.url_,
                                passwordalert.GAIA_PRIVACY_)) {
       // Second factor page is only displayed when the password is correct.
