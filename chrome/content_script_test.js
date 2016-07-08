@@ -21,6 +21,9 @@
  * @author adhintz@google.com (Drew Hintz)
  */
 
+goog.require('passwordalert');
+
+
 var timeStamp;  // To ensure event timestamps are increasing.
 
 function setUpPage() {  // Only run once.
@@ -34,7 +37,7 @@ function sendKeydown(char) {
   evt.shiftKey = false;
   evt.timeStamp = timeStamp++;
   evt.isTrusted = true;
-  passwordalert.handleKeydown_(evt);
+  passwordalert.handleKeydown(evt);
 }
 
 function testOnKeydown() {
