@@ -118,7 +118,6 @@ pc_testserver() {
   echo "Generating build/test_js_deps-runfiles.js file..."
   mkdir -p "$BUILD_DIR"
   $PYTHON_CMD lib/closure-library/closure/bin/build/depswriter.py \
-    --root_with_prefix="src/javascript/crypto/pc/ ../crypto/pc/" \
     > "$BUILD_DIR/test_js_deps-runfiles.js"
 
   rm -f "$BUILD_DIR/all_tests.js"
