@@ -134,7 +134,7 @@ pc_lint() {
   else
     echo "Running Closure Linter..."
     if [ -z "$1" ]; then
-      ADDITIONAL="-r src/javascript/crypto/pc"
+      ADDITIONAL="*.js"
     else
       ADDITIONAL=$*
     fi
