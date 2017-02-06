@@ -146,7 +146,7 @@ passwordalert.CHANGE_PASSWORD_URL_ =
  * @const
  */
 passwordalert.ENFORCED_CHANGE_PASSWORD_URL_ =
-    'https://accounts.google.com/ChangePassword';
+    'https://accounts.google.com/speedbump/changepassword';
 
 
 /**
@@ -241,15 +241,6 @@ passwordalert.referrer_ = '';
  * @private {boolean}
  */
 passwordalert.isRunning_ = false;
-
-
-/**
- * Password lengths for passwords that are being watched.
- * If an array offset is true, then that password length is watched.
- * Value comes from background.js.
- * @private {Array.<boolean>}
- */
-passwordalert.passwordLengths_;
 
 
 /**
@@ -548,18 +539,15 @@ passwordalert.completePageInitializationIfReady_ = function() {
  * @private
  */
 passwordalert.start_ = function(msg) {
-  var state = JSON.parse(msg);
-
-  if (state.passwordLengths) {
-    // TODO(henryc): Content_script is now only using passwordLengths_ to tell
-    // if passwordLengths_length == 0. So, do not store passwordLengths,
-    // just have the message from background page tell it to start or stop.
-    passwordalert.passwordLengths_ = state.passwordLengths;
-    if (passwordalert.passwordLengths_.length == 0) {
+  try {
+    var state = JSON.parse(msg);
+    if (state.passwordLengths && state.passwordLengths == 0) {
       passwordalert.stop_(); // no passwords, so no need to watch
       return;
     }
-  }
+  } catch (e) {} // Silently swallow any parser errors.
+
+
 
   if ((passwordalert.sso_url_ &&
       goog.string.startsWith(passwordalert.url_,
