@@ -146,7 +146,7 @@ passwordalert.CHANGE_PASSWORD_URL_ =
  * @const
  */
 passwordalert.ENFORCED_CHANGE_PASSWORD_URL_ =
-    'https://accounts.google.com/ChangePassword';
+    'https://accounts.google.com/speedbump/changepassword';
 
 
 /**
