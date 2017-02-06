@@ -91,6 +91,7 @@ if ! command -v npm >/dev/null; then
             brew install node # Comes with npm
             ;;
         Linux)
+            sudo apt-get update
             sudo apt-get install nodejs
             sudo ln -s /usr/bin/nodejs /usr/bin/node
             curl -L https://www.npmjs.com/install.sh > install_npm.sh
