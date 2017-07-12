@@ -774,7 +774,8 @@ passwordalert.background.setPossiblePassword_ = function(tabId, request) {
   passwordalert.background.possiblePassword_[tabId] = {
     'email': request.email,
     'password': passwordalert.background.hashPassword_(request.password),
-    'length': request.password.length
+    'length': request.password.length,
+    'time': Math.floor(Date.now() / 1000)
   };
 };
 
@@ -805,6 +806,9 @@ passwordalert.background.savePossiblePassword_ = function(tabId) {
   var possiblePassword_ = passwordalert.background.possiblePassword_[tabId];
   if (!possiblePassword_) {
     return;
+  }
+  if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
+    return;  // If login took more than 60 seconds, ignore it.
   }
   var email = possiblePassword_['email'];
   var password = possiblePassword_['password'];
@@ -895,9 +899,8 @@ passwordalert.background.checkRateLimit_ = function() {
   var now = new Date();
   if (!passwordalert.background.rateLimitResetDate_ ||  // initialization case
       now >= passwordalert.background.rateLimitResetDate_) {
-    // setHours() handles wrapping correctly.
-    passwordalert.background.rateLimitResetDate_ =
-        now.setHours(now.getHours() + 1);
+    now.setHours(now.getHours() + 1);  // setHours() handles wrapping correctly.
+    passwordalert.background.rateLimitResetDate_ = now;
     passwordalert.background.rateLimitCount_ = 0;
   }
 
