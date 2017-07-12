@@ -75,60 +75,33 @@ passwordalert.corp_email_domain_;
 passwordalert.GAIA_URL_ = 'https://accounts.google.com/';
 
 
-// TODO(adhintz) See if GAIA_SECOND_FACTOR_ and GAIA_PHONE_ URLs are still used
-// and if not, then delete them.
+// TODO(adhintz) See if /SecondFactor and /b/0/VerifiedPhoneInterstitial URLs
+// are still used and if not, then delete them.
 /**
- * URL prefix for second factor prompt. Happens on correct password.
- * @private {string}
+ * URL prefixes under GAIA_URL_ that indicate a correct password.
+ * @private {Array.<string>}
  * @const
  */
-passwordalert.GAIA_SECOND_FACTOR_ =
-    'https://accounts.google.com/SecondFactor';
-
-
-/**
- * URL prefix for verified phone prompt. Happens on correct password.
- * @private {string}
- * @const
- */
-passwordalert.GAIA_PHONE_ =
-    'https://accounts.google.com/b/0/VerifiedPhoneInterstitial';
+passwordalert.GAIA_CORRECT_ = [
+  'https://accounts.google.com/SecondFactor',
+  'https://accounts.google.com/b/0/VerifiedPhoneInterstitial',
+  'https://accounts.google.com/signin/newfeatures',
+  'https://accounts.google.com/signin/selectchallenge',
+  'https://accounts.google.com/signin/challenge',
+  'https://accounts.google.com/signin/privacyreminder'
+];
 
 
 /**
- * URL prefix for login verification selection. Happens on correct password.
- * @private {string}
+ * URL prefixes under GAIA_URL_ that indicate a *not* correct password.
+ * We only need entries that are within GAIA_CORRECT_ prefixes.
+ * @private {Array.<string>}
  * @const
  */
-passwordalert.GAIA_VERIFY_ =
-    'https://accounts.google.com/signin/selectchallenge';
-
-
-/**
- * URL prefix for security key prompt. Happens on correct password.
- * @private {string}
- * @const
- */
-passwordalert.GAIA_SECURITY_KEY_ =
-    'https://accounts.google.com/signin/challenge';
-
-
-/**
- * URL prefix for password prompt. Happens on wrong password.
- * @private {string}
- * @const
- */
-passwordalert.GAIA_PASSWORD_ =
-    'https://accounts.google.com/signin/challenge/sl/password';
-
-
-/**
- * URL prefix for privacy prompt. Happens on correct password.
- * @private {string}
- * @const
- */
-passwordalert.GAIA_PRIVACY_ =
-    'https://accounts.google.com/signin/privacyreminder';
+passwordalert.GAIA_INCORRECT_ = [
+  'https://accounts.google.com/signin/challenge/sl/password',
+  'https://accounts.google.com/signin/challenge/pwd/1'
+];
 
 
 /**
@@ -137,7 +110,7 @@ passwordalert.GAIA_PRIVACY_ =
  * @const
  */
 passwordalert.CHANGE_PASSWORD_URL_ =
-    'https://myaccount.google.com/security/signinoptions/password';
+    'https://myaccount.google.com/signinoptions/password';
 
 
 /**
@@ -462,19 +435,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
         }, true);
   } else if (goog.string.startsWith(passwordalert.url_,
                                     passwordalert.GAIA_URL_)) {
-    if (goog.string.startsWith(passwordalert.url_,
-                               passwordalert.GAIA_SECOND_FACTOR_) ||
-        goog.string.startsWith(passwordalert.url_,
-                               passwordalert.GAIA_PHONE_) ||
-        goog.string.startsWith(passwordalert.url_,
-                               passwordalert.GAIA_VERIFY_) ||
-        (goog.string.startsWith(passwordalert.url_,
-                                passwordalert.GAIA_SECURITY_KEY_) &&
-         !(goog.string.startsWith(passwordalert.url_,
-                                  passwordalert.GAIA_PASSWORD_))) ||
-        goog.string.startsWith(passwordalert.url_,
-                               passwordalert.GAIA_PRIVACY_)) {
-      // Second factor page is only displayed when the password is correct.
+    if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     } else {
       // Delete any previously considered password in case this is a re-prompt
@@ -486,6 +447,9 @@ passwordalert.completePageInitializationIfReady_ = function() {
       if (loginForm && document.getElementById('Email')) {
         loginForm.addEventListener(
             'submit', passwordalert.saveGaiaPassword_, true);
+      } else if (document.getElementById('hiddenEmail') &&
+                 document.getElementsByName('password')){
+        window.onbeforeunload = passwordalert.saveGaia2Password_;
       }
     }
   } else if (goog.string.startsWith(passwordalert.url_,
@@ -531,6 +495,28 @@ passwordalert.completePageInitializationIfReady_ = function() {
   });
 };
 
+/**
+ * Returns true if the URL indicates that the password is correct.
+ * @param {string} url The page's URL.
+ * @return {boolean} True if the URL indicates the password is correct.
+ * @private
+ */
+passwordalert.is_gaia_correct_ = function(url) {
+  var ret = false;
+  passwordalert.GAIA_CORRECT_.forEach( function(prefix) {
+    if (goog.string.startsWith(url, prefix)) {
+      ret = true;
+    }
+  });
+  if (ret) {  // Filter out exceptions which indicate password is not correct.
+    passwordalert.GAIA_INCORRECT_.forEach( function(prefix) {
+      if (goog.string.startsWith(url, prefix)) {
+        ret = false;
+      }
+    });
+  }
+  return ret;
+};
 
 /**
  * Sets variables to enable watching for passwords being typed. Called when
@@ -681,7 +667,8 @@ passwordalert.saveSsoPassword_ = function(evt) {
   }
 };
 
-
+// TODO(adhintz) See if the old GAIA login page is used any where.
+// If not, delete this function.
 /**
  * Called when the GAIA page is submitted. Sends possible
  * password to background.js.
@@ -689,11 +676,38 @@ passwordalert.saveSsoPassword_ = function(evt) {
  * @private
  */
 passwordalert.saveGaiaPassword_ = function(evt) {
-  //TODO(adhintz) Should we do any validation here?
   var loginForm = document.getElementById('gaia_loginform');
   var email = loginForm.Email ?
       goog.string.trim(loginForm.Email.value.toLowerCase()) : '';
   var password = loginForm.Passwd ? loginForm.Passwd.value : '';
+  if ((passwordalert.enterpriseMode_ &&
+      !passwordalert.isEmailInDomain_(email)) ||
+      goog.string.isEmptyString(goog.string.makeSafe(password))) {
+    return;  // Ignore generic @gmail.com logins or for other domains.
+  }
+  chrome.runtime.sendMessage({
+    action: 'setPossiblePassword',
+    email: email,
+    password: password
+  });
+};
+
+
+/**
+ * Called when the new GAIA page is unloaded. Sends possible
+ * password to background.js.
+ * @param {Event} evt BeforeUnloadEvent that triggered this. Not used.
+ * @private
+ */
+passwordalert.saveGaia2Password_ = function(evt) {
+  var emailInput = document.getElementById('hiddenEmail');
+  var email = emailInput ?
+      goog.string.trim(emailInput.value.toLowerCase()) : '';
+  var passwordInputs = document.getElementsByName('password');
+  if (!passwordInputs || passwordInputs.length != 1) {
+    return;
+  }
+  var password = passwordInputs[0].value;
   if ((passwordalert.enterpriseMode_ &&
       !passwordalert.isEmailInDomain_(email)) ||
       goog.string.isEmptyString(goog.string.makeSafe(password))) {
