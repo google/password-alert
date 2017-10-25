@@ -274,7 +274,8 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
       if (managedPolicy['whitelist_top_domains']) {
         Array.prototype.push.apply(
             passwordalert.whitelist_top_domains_,
-            managedPolicy['whitelist_top_domains']
+            // filter empty values
+            managedPolicy['whitelist_top_domains'].filter(String)
         );
       }
       if (managedPolicy['corp_html']) {
@@ -372,10 +373,10 @@ passwordalert.handleManagedPolicyChanges_ =
         case 'whitelist_top_domains':
           passwordalert.whitelist_top_domains_ = subtractArray(
               passwordalert.whitelist_top_domains_,
-              oldPolicyValue);
+              oldPolicyValue.filter(String));  // filter empty values
           Array.prototype.push.apply(
               passwordalert.whitelist_top_domains_,
-              newPolicyValue);
+              newPolicyValue.filter(String));  // filter empty values
           break;
       }
     }
@@ -532,8 +533,6 @@ passwordalert.start_ = function(msg) {
       return;
     }
   } catch (e) {} // Silently swallow any parser errors.
-
-
 
   if ((passwordalert.sso_url_ &&
       goog.string.startsWith(passwordalert.url_,
@@ -837,14 +836,26 @@ passwordalert.looksLikeGooglePageTight_ = function() {
 /**
  * Detects if the page is whitelisted as not a phishing page or for password
  * typing.
+ *
+ * Make sure if user whitelists example.com, then evilexample.com
+ * will not pass the whitelist.
+ *
  * @return {boolean} True if this page is whitelisted.
  * @private
  */
 passwordalert.whitelistUrl_ = function() {
   var domain = goog.uri.utils.getDomain(passwordalert.url_) || '';
   for (var i = 0; i < passwordalert.whitelist_top_domains_.length; i++) {
-    if (goog.string.endsWith(domain,
-                             passwordalert.whitelist_top_domains_[i])) {
+    var whitelisted_domain = passwordalert.whitelist_top_domains_[i];
+    if (domain == whitelisted_domain) {
+      return true;
+    }
+
+    var whitelisted_domain_as_suffix = whitelisted_domain;
+    if (!goog.string.startsWith(whitelisted_domain, '.')) {
+      whitelisted_domain_as_suffix = '.' + whitelisted_domain_as_suffix;
+    }
+    if (goog.string.endsWith(domain, whitelisted_domain_as_suffix)) {
       return true;
     }
   }

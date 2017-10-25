@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
-  "version": "1.25",
+  "version": "1.26",
   "default_locale": "en",
   "minimum_chrome_version": "46",
   "icons": { "128": "icon128.png" },
@@ -12,13 +12,6 @@
     "storage",
     "tabs",
     "<all_urls>"
-  ],
-
-  "web_accessible_resources": [
-    "logo_password_alert.png",
-    "password_warning.js",
-    "phishing_warning.js",
-    "warning.css"
   ],
 
   "storage": {

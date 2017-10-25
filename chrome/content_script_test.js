@@ -123,6 +123,27 @@ function testWhitelist() {
   assertFalse(passwordalert.whitelistUrl_());
 }
 
+/**
+ * Make sure if user whitelists example.com, then evilexample.com
+ * will not pass the whitelist.
+ */
+function testWhitelistSuffix() {
+  passwordalert.url_ = 'https://company.com/';
+  passwordalert.whitelist_top_domains_ = [
+    'company.com'
+  ];
+  assertTrue(passwordalert.whitelistUrl_());
+
+  passwordalert.url_ = 'https://evilcompany.com/';
+  passwordalert.whitelist_top_domains_ = [
+    'company.com'
+  ];
+  assertFalse(passwordalert.whitelistUrl_());
+  passwordalert.whitelist_top_domains_ = [
+    '.company.com'
+  ];
+  assertFalse(passwordalert.whitelistUrl_());
+}
 
 function testIsEmailInDomain() {
   passwordalert.corp_email_domain_ = 'example.com';
