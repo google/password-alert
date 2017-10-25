@@ -274,7 +274,7 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
       if (managedPolicy['whitelist_top_domains']) {
         Array.prototype.push.apply(
             passwordalert.whitelist_top_domains_,
-	    // filter empty values
+            // filter empty values
             managedPolicy['whitelist_top_domains'].filter(String)
         );
       }
@@ -836,14 +836,26 @@ passwordalert.looksLikeGooglePageTight_ = function() {
 /**
  * Detects if the page is whitelisted as not a phishing page or for password
  * typing.
+ *
+ * Make sure if user whitelists example.com, then evilexample.com
+ * will not pass the whitelist.
+ *
  * @return {boolean} True if this page is whitelisted.
  * @private
  */
 passwordalert.whitelistUrl_ = function() {
   var domain = goog.uri.utils.getDomain(passwordalert.url_) || '';
   for (var i = 0; i < passwordalert.whitelist_top_domains_.length; i++) {
-    if (goog.string.endsWith(domain,
-                             passwordalert.whitelist_top_domains_[i])) {
+    var whitelisted_domain = passwordalert.whitelist_top_domains_[i];
+    if (domain == whitelisted_domain) {
+      return true;
+    }
+
+    var whitelisted_domain_as_suffix = whitelisted_domain;
+    if (!goog.string.startsWith(whitelisted_domain, '.')) {
+      whitelisted_domain_as_suffix = '.' + whitelisted_domain_as_suffix;
+    }
+    if (goog.string.endsWith(domain, whitelisted_domain_as_suffix)) {
       return true;
     }
   }
