@@ -14,13 +14,6 @@
     "<all_urls>"
   ],
 
-  "web_accessible_resources": [
-    "logo_password_alert.png",
-    "password_warning.js",
-    "phishing_warning.js",
-    "warning.css"
-  ],
-
   "storage": {
     "managed_schema": "managed_policy_schema.json"
   },
