@@ -274,7 +274,8 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ =
       if (managedPolicy['whitelist_top_domains']) {
         Array.prototype.push.apply(
             passwordalert.whitelist_top_domains_,
-            managedPolicy['whitelist_top_domains']
+	    // filter empty values
+            managedPolicy['whitelist_top_domains'].filter(String)
         );
       }
       if (managedPolicy['corp_html']) {
@@ -372,10 +373,10 @@ passwordalert.handleManagedPolicyChanges_ =
         case 'whitelist_top_domains':
           passwordalert.whitelist_top_domains_ = subtractArray(
               passwordalert.whitelist_top_domains_,
-              oldPolicyValue);
+              oldPolicyValue.filter(String));  // filter empty values
           Array.prototype.push.apply(
               passwordalert.whitelist_top_domains_,
-              newPolicyValue);
+              newPolicyValue.filter(String));  // filter empty values
           break;
       }
     }
@@ -532,8 +533,6 @@ passwordalert.start_ = function(msg) {
       return;
     }
   } catch (e) {} // Silently swallow any parser errors.
-
-
 
   if ((passwordalert.sso_url_ &&
       goog.string.startsWith(passwordalert.url_,
