@@ -247,6 +247,20 @@ passwordalert.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
 
 
 /**
+ * Temporary variable to store username.
+ * @private {string}
+ */
+passwordalert.temp_user_ = '';
+
+
+/**
+ * Temporary variable to store password.
+ * @private {string}
+ */
+passwordalert.temp_pass_ = '';
+
+
+/**
  * Set the managed policy values into the configurable variables.
  * @param {function()} callback Executed after policy values have been set.
  * @private
@@ -393,10 +407,6 @@ passwordalert.handleManagedPolicyChanges_ =
  * @private
  */
 passwordalert.completePageInitializationIfReady_ = function() {
-  if (!passwordalert.policyLoaded_ || !passwordalert.domContentLoaded_) {
-    return;
-  }
-
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (goog.string.startsWith(passwordalert.url_,
@@ -442,14 +452,18 @@ passwordalert.completePageInitializationIfReady_ = function() {
       // Delete any previously considered password in case this is a re-prompt
       // when an incorrect password is entered, such as a ServiceLoginAuth page.
       chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
-      var loginForm = document.getElementById('gaia_loginform');
-      // The chooser is also a gaia_loginform, so verify we're on a password
-      // entry page.
+      var loginForm = document.querySelector('#view_container > form');
+      // The chooser is no longer a gaia_loginform, so verify we're on a password
+      // entry page by finding a form in a view_container.
       if (loginForm && document.getElementById('Email')) {
         loginForm.addEventListener(
             'submit', passwordalert.saveGaiaPassword_, true);
       } else if (document.getElementById('hiddenEmail') &&
                  document.getElementsByName('password')){
+        document.getElementById("passwordNext").addEventListener('click',function (){
+          passwordalert.temp_user_ = document.getElementById('hiddenEmail');
+          passwordalert.temp_pass_ = document.getElementsByName('password')[0].value;
+        });
         window.onbeforeunload = passwordalert.saveGaia2Password_;
       }
     }
@@ -699,14 +713,10 @@ passwordalert.saveGaiaPassword_ = function(evt) {
  * @private
  */
 passwordalert.saveGaia2Password_ = function(evt) {
-  var emailInput = document.getElementById('hiddenEmail');
+  var emailInput = passwordalert.temp_user_;
   var email = emailInput ?
       goog.string.trim(emailInput.value.toLowerCase()) : '';
-  var passwordInputs = document.getElementsByName('password');
-  if (!passwordInputs || passwordInputs.length != 1) {
-    return;
-  }
-  var password = passwordInputs[0].value;
+  var password = passwordalert.temp_pass_;
   if ((passwordalert.enterpriseMode_ &&
       !passwordalert.isEmailInDomain_(email)) ||
       goog.string.isEmptyString(goog.string.makeSafe(password))) {
@@ -891,14 +901,19 @@ chrome.runtime.onMessage.addListener(
       passwordalert.start_(msg);
     }
 );
-document.addEventListener('DOMContentLoaded', function() {
-  passwordalert.domContentLoaded_ = true;
-  passwordalert.completePageInitializationIfReady_();
-});
-// Check to see if we already missed DOMContentLoaded:
-if (document.readyState == 'interactive' ||
-    document.readyState == 'complete' ||
-    document.readyState == 'loaded') {
-  passwordalert.domContentLoaded_ = true;
-  passwordalert.completePageInitializationIfReady_();
+
+domReadyCheck = function() {
+  var loginForm = document.querySelector('#view_container > form');
+  if (loginForm && document.getElementById('Email')) {
+    passwordalert.domContentLoaded_ = true;
+  } else if (document.getElementById('hiddenEmail') &&
+             document.getElementsByName('password')){
+    passwordalert.domContentLoaded_ = true;
+  }
+  if (passwordalert.domContentLoaded_) {
+    window.removeEventListener('DOMNodeInserted', domReadyCheck);
+    passwordalert.completePageInitializationIfReady_();
+  }
 }
+
+window.addEventListener('DOMNodeInserted', domReadyCheck);
