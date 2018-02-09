@@ -88,7 +88,8 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/newfeatures',
   'https://accounts.google.com/signin/selectchallenge',
   'https://accounts.google.com/signin/challenge',
-  'https://accounts.google.com/signin/privacyreminder'
+  'https://accounts.google.com/signin/privacyreminder',
+  'https://accounts.google.com/signin/v2/challenge/ipp'
 ];
 
 
@@ -247,20 +248,6 @@ passwordalert.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
 
 
 /**
- * Temporary variable to store username.
- * @private {string}
- */
-passwordalert.temp_user_ = '';
-
-
-/**
- * Temporary variable to store password.
- * @private {string}
- */
-passwordalert.temp_pass_ = '';
-
-
-/**
  * Set the managed policy values into the configurable variables.
  * @param {function()} callback Executed after policy values have been set.
  * @private
@@ -407,6 +394,10 @@ passwordalert.handleManagedPolicyChanges_ =
  * @private
  */
 passwordalert.completePageInitializationIfReady_ = function() {
+  if (!passwordalert.policyLoaded_ || !passwordalert.domContentLoaded_) {
+    return;
+  }
+
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (goog.string.startsWith(passwordalert.url_,
@@ -460,10 +451,22 @@ passwordalert.completePageInitializationIfReady_ = function() {
             'submit', passwordalert.saveGaiaPassword_, true);
       } else if (document.getElementById('hiddenEmail') &&
                  document.getElementsByName('password')){
+        // TODO(adhintz) Avoid adding event listeners if they already exist.
         document.getElementById("passwordNext").addEventListener('click',function (){
-          passwordalert.temp_user_ = document.getElementById('hiddenEmail');
-          passwordalert.temp_pass_ = document.getElementsByName('password')[0].value;
+          passwordalert.saveGaia2Password_(null);
         });
+        // Pressing spacebar on the Next button will trigger save.
+        document.getElementById("passwordNext").addEventListener('keydown', function(evt) {
+          if (evt.keyCode == 32) {
+            passwordalert.saveGaia2Password_(evt);
+          }
+        }, true);
+        // Pressing enter anywhere on the page will trigger save.
+        document.addEventListener('keydown', function(evt) {
+          if (evt.keyCode == 13) {
+            passwordalert.saveGaia2Password_(evt);
+          }
+        }, true);
         window.onbeforeunload = passwordalert.saveGaia2Password_;
       }
     }
@@ -713,10 +716,17 @@ passwordalert.saveGaiaPassword_ = function(evt) {
  * @private
  */
 passwordalert.saveGaia2Password_ = function(evt) {
-  var emailInput = passwordalert.temp_user_;
+  var emailInput = document.getElementById('hiddenEmail');
   var email = emailInput ?
       goog.string.trim(emailInput.value.toLowerCase()) : '';
-  var password = passwordalert.temp_pass_;
+  var passwordInputs = document.getElementsByName('password');
+  if (!passwordInputs || passwordInputs.length != 1) {
+    return;
+  }
+  var password = passwordInputs[0].value;
+  if (!email || !password) {
+    return;
+  }
   if ((passwordalert.enterpriseMode_ &&
       !passwordalert.isEmailInDomain_(email)) ||
       goog.string.isEmptyString(goog.string.makeSafe(password))) {
@@ -872,15 +882,23 @@ passwordalert.whitelistUrl_ = function() {
   return false;
 };
 
+/**
+ * Called when the DOM has loaded. Sets up observers the dynamic login page.
+ *
+ * @private
+ */
+passwordalert.domReadyCheck_ = function() {
+  passwordalert.domContentLoaded_ = true;
 
-// Listen for policy changes and then set initial managed policy:
-chrome.storage.onChanged.addListener(passwordalert.handleManagedPolicyChanges_);
-passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(
-    passwordalert.completePageInitializationIfReady_);
+  if (goog.string.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
+    var config = { attributes: true, childList: true, characterData: true };
+    var observer = new MutationObserver(passwordalert.completePageInitializationIfReady_);
+    observer.observe(document.body, config);
+  }
 
-window.addEventListener('keypress', passwordalert.handleKeypress, true);
-window.addEventListener('keydown', passwordalert.handleKeydown, true);
-window.addEventListener('paste', passwordalert.handlePaste, true);
+  passwordalert.completePageInitializationIfReady_();
+};
+
 
 // If we're in an iframe get the parent's href.
 var url = location.href.toString();
@@ -892,6 +910,15 @@ if (url == 'about:blank') {
   passwordalert.referrer_ = document.referrer.toString();
 }
 
+// Listen for policy changes and then set initial managed policy:
+chrome.storage.onChanged.addListener(passwordalert.handleManagedPolicyChanges_);
+passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(
+    passwordalert.completePageInitializationIfReady_);
+
+window.addEventListener('keypress', passwordalert.handleKeypress, true);
+window.addEventListener('keydown', passwordalert.handleKeydown, true);
+window.addEventListener('paste', passwordalert.handlePaste, true);
+
 chrome.runtime.onMessage.addListener(
     /**
      * @param {string} msg JSON object containing valid password lengths.
@@ -902,18 +929,10 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
-domReadyCheck = function() {
-  var loginForm = document.querySelector('#view_container > form');
-  if (loginForm && document.getElementById('Email')) {
-    passwordalert.domContentLoaded_ = true;
-  } else if (document.getElementById('hiddenEmail') &&
-             document.getElementsByName('password')){
-    passwordalert.domContentLoaded_ = true;
-  }
-  if (passwordalert.domContentLoaded_) {
-    window.removeEventListener('DOMNodeInserted', domReadyCheck);
-    passwordalert.completePageInitializationIfReady_();
-  }
+document.addEventListener('DOMContentLoaded', passwordalert.domReadyCheck_);
+// Check to see if we already missed DOMContentLoaded:
+if (document.readyState == 'interactive' ||
+    document.readyState == 'complete' ||
+    document.readyState == 'loaded') {
+  passwordalert.domReadyCheck_();
 }
-
-window.addEventListener('DOMNodeInserted', domReadyCheck);
