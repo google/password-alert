@@ -115,7 +115,7 @@ passwordalert.background.stateKeydown_ = {
 
 
 /**
- * Associative array of state for Keydown events.
+ * Associative array of state for Keypress events.
  * @private {passwordalert.background.State_}
  */
 passwordalert.background.stateKeypress_ = {
