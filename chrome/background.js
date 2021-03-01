@@ -401,11 +401,21 @@ passwordalert.background.injectContentScriptIntoAllTabs_ =
   chrome.tabs.query({}, function(tabs) {
     for (var i = 0; i < tabs.length; i++) {
       var tabIdentifier = tabs[i].id + ' - ' + tabs[i].url;
+
+      // Skip any pages not starting with https://
+      chrome.tabs.onActivated.addListener(tab => {
+        chrome.tabs.get(tab.tabId, current_tab_info => {
+          if (/^https:\/\/www\.*/.test(current_tab_info.url)){
+            chrome.tabs.executeScript(tabs[i].id,
+              {file: 'content_script_compiled.js'});
+          }
+        })
+      })
       // Skip chrome:// and chrome-devtools:// pages
-      if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
+      /*if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
         chrome.tabs.executeScript(tabs[i].id,
                                   {file: 'content_script_compiled.js'});
-      }
+      }*/
     }
     callback();
   });

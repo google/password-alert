@@ -15,13 +15,13 @@
 
 __author__ = "koto@google.com (Krzysztof Kotowicz)"
 
-import BaseHTTPServer
-import cgi
+from io import StringIO
+
+import html
 import fnmatch
 import os
 import os.path
-import SimpleHTTPServer
-import StringIO
+import http.server
 import sys
 
 PORT = 8000
@@ -35,7 +35,7 @@ DEPS_FILE = "build/test_js_deps-runfiles.js"
 ALL_JSTESTS_FILE = "build/all_tests.js"
 
 
-class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class TestServerRequestHandler(http.server.SimpleHTTPRequestHandler):
   """Request handler for test server."""
 
   DIRECTORY_MAP = {
@@ -61,12 +61,12 @@ class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
   def list_directory(self, path):
     """Lists only src/**/_test.html files."""
     test_files = self.get_test_files()
-    out = StringIO.StringIO()
+    out = StringIO()
     out.write("<h2>Password Alert test server</h2>")
     out.write("<h3>Individual tests</h3>")
     out.write("<ul>")
     for f in test_files:
-      out.write("<li><a href=\"%s\">%s</a>\n" % (f, cgi.escape(f)))
+      out.write("<li><a href=\"%s\">%s</a>\n" % (f, html.escape(f)))
     out.write("</ul>")
     out.seek(0)
     self.send_response(200)
@@ -84,9 +84,9 @@ class TestServerRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     for prefix, dest_dir in TestServerRequestHandler.DIRECTORY_MAP.items():
       if path.startswith(prefix):
         return dest_dir + path[len(prefix):]
-    return SimpleHTTPServer.SimpleHTTPRequestHandler.translate_path(
+    return http.server.SimpleHTTPRequestHandler.translate_path(
         self, path)
 
-httpd = BaseHTTPServer.HTTPServer(server_address, TestServerRequestHandler)
-print "Starting test server at http://%s:%d" % server_address
+httpd = http.server.HTTPServer(server_address, TestServerRequestHandler)
+print("Starting test server at http://%s:%d" % server_address)
 httpd.serve_forever()
