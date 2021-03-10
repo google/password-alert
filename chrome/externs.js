@@ -19,6 +19,7 @@
  * @fileoverview External variables that the JavaScript compiler will not
  * rename.
  * @author adhintz@google.com (Drew Hintz)
+ * @externs
  */
 
 

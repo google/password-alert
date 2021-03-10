@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+goog.require('passwordalert.background');
 /**
  * @fileoverview Tests for background.js Included by background_test.html.
  * @author adhintz@google.com (Drew Hintz)
