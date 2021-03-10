@@ -890,8 +890,10 @@ passwordalert.whitelistUrl_ = function() {
 passwordalert.domReadyCheck_ = function() {
   passwordalert.domContentLoaded_ = true;
 
-  if (goog.string.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
-    var config = { attributes: true, childList: true, characterData: true };
+  if ((goog.string.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) ||
+      (passwordalert.sso_url_ && goog.string.startsWith(passwordalert.url_,
+                                passwordalert.sso_url_))) {
+    var config = { attributes: true, subtree: true, childList: true, characterData: true };
     var observer = new MutationObserver(passwordalert.completePageInitializationIfReady_);
     observer.observe(document.body, config);
   }
