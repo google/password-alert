@@ -28,6 +28,7 @@ var iconUrl;
 var localStorage;
 var JSON;
 
+var chrome;
 chrome.extension;
 chrome.extension.getURL;
 
