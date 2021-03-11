@@ -19,23 +19,16 @@
 #  * @author koto@google.com (Krzysztof Kotowicz)
 #  */
 PYTHON_CMD="python"
-JSCOMPILE_CMD="java -jar lib/closure-compiler/build/compiler.jar --flagfile=compiler.flags"
+JSCOMPILE_CMD="google-closure-compiler --flagfile=compiler.flags"
 BUILD_DIR="build"
 cd ${0%/*}
 
 pc_assert_dependencies() {
   # Check if required binaries are present.
   type "$PYTHON_CMD" >/dev/null 2>&1 || { echo >&2 "Python is required to build"; exit 1; }
-  type ant >/dev/null 2>&1 || { echo >&2 "Ant is required to build"; exit 1; }
-  type java >/dev/null 2>&1 || { echo >&2 "Java is required to build"; exit 1; }
-  jversion=$(java -version 2>&1 | grep version | awk -F '"' '{print $2}')
-  if [[ $jversion < "1.7" ]]; then
-    echo "Java 1.7 or higher is required to build."
-    exit 1
-  fi
+  type "google-closure-compiler" >/dev/null 2>&1 || { echo >&2 "google-closure-compiler is required to build, see https://github.com/google/closure-compiler/#getting-started"; exit 1; }
   # Check if required files are present.
   files=(lib/closure-library \
-    lib/closure-compiler/build/compiler.jar \
     lib/chrome_extensions.js \
   )
   for var in "${files[@]}"

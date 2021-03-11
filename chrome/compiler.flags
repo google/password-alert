@@ -1,5 +1,4 @@
---language_in=ECMASCRIPT5
+--language_in=ECMASCRIPT6
 --externs=externs.js
---only_closure_dependencies
 --manage_closure_dependencies
 --js build/deps.js
