@@ -15,7 +15,7 @@
 
 __author__ = "koto@google.com (Krzysztof Kotowicz)"
 
-from io import StringIO
+from io import BytesIO
 
 import html
 import fnmatch
@@ -61,13 +61,13 @@ class TestServerRequestHandler(http.server.SimpleHTTPRequestHandler):
   def list_directory(self, path):
     """Lists only src/**/_test.html files."""
     test_files = self.get_test_files()
-    out = StringIO()
-    out.write("<h2>Password Alert test server</h2>")
-    out.write("<h3>Individual tests</h3>")
-    out.write("<ul>")
+    out = BytesIO()
+    out.write(b"<h2>Password Alert test server</h2>")
+    out.write(b"<h3>Individual tests</h3>")
+    out.write(b"<ul>")
     for f in test_files:
-      out.write("<li><a href=\"%s\">%s</a>\n" % (f, html.escape(f)))
-    out.write("</ul>")
+      out.write(b"<li><a href=\"%s\">%s</a>\n" % (f.encode(), html.escape(f).encode()))
+    out.write(b"</ul>")
     out.seek(0)
     self.send_response(200)
     self.send_header("Content-type", "text/html")

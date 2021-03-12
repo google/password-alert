@@ -18,7 +18,7 @@
 #  *
 #  * @author koto@google.com (Krzysztof Kotowicz)
 #  */
-PYTHON_CMD="python"
+PYTHON_CMD="python3"
 JSCOMPILE_CMD="google-closure-compiler --flagfile=compiler.flags"
 BUILD_DIR="build"
 cd ${0%/*}
