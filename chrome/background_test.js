@@ -15,30 +15,24 @@
  * limitations under the License.
  */
 
-goog.require('passwordalert.background');
+goog.module('backgroundTest');
+goog.setTestOnly();
+goog.require('chrome_api_stubs');  // must be before background goog.require to pull in chrome export symbol.
+goog.require('passwordalert.background');  // exports background symbol.
+const keydown = goog.require('passwordalert.keydown');
+const testSuite = goog.require('goog.testing.testSuite');
+
 /**
- * @fileoverview Tests for background.js Included by background_test.html.
+ * @fileoverview Tests for background.js
  * @author adhintz@google.com (Drew Hintz)
  */
 
-goog.require('passwordalert.keydown.Typed');
+const TAB_ID1 = 1;
+const TAB_ID2 = 2;
 
 
-TAB_ID1 = 1;
-TAB_ID2 = 2;
-
-
-function setUp() {
-  passwordalert.background.possiblePassword_ = {};
-  passwordalert.background.passwordLengths_;
-  localStorage.clear();
-  passwordalert.background.refreshPasswordLengths_();
-  passwordalert.background.rateLimitCount_ = 0;
-}
-
-
-function sendKeydownRequest(tabId, char, typedTime) {
-  var request = {};
+const sendKeydownRequest = function(tabId, char, typedTime) {
+  const request = {};
   request.action = 'handleKeydown';
   // charCode to keyCode but doesn't handle all characters:
   request.keyCode = char.toUpperCase().charCodeAt(0);
@@ -48,336 +42,302 @@ function sendKeydownRequest(tabId, char, typedTime) {
   request.referer = 'https://example-referrer.com';
   request.looksLikeGoogle = false;
 
-  passwordalert.background.handleKeydown_(tabId, request);
-}
+  background.handleKeydown_(tabId, request);
+};
+
+testSuite({
+
+  setUp() {
+    background.possiblePassword_ = {};
+    background.passwordLengths_ = [];
+    localStorage.clear();
+    background.refreshPasswordLengths_();
+    background.rateLimitCount_ = 0;
+  },
 
 
-function testPasswordSaving() {
-  passwordalert.background.MINIMUM_PASSWORD_ = 8;
-  var password = 'foopassword';
-  var email = 'adhintz@google.com';
-  var requestSet = {
-    'action': 'setPossiblePassword',
-    'email': email,
-    'password': password
-  };
+  testPasswordSaving() {
+    background.MINIMUM_PASSWORD_ = 8;
+    const password = 'foopassword';
+    const email = 'adhintz@google.com';
+    const requestSet = {
+      'action': 'setPossiblePassword',
+      'email': email,
+      'password': password
+    };
 
-  var requestSave = {
-    'action': 'savePossiblePassword'
-  };
+    const requestSave = {'action': 'savePossiblePassword'};
 
-  var sender = {
-    'tab': {
-      'id': 42
+    const sender = {'tab': {'id': 42}};
+
+    // Set and save password.
+    background.handleRequest_(requestSet, sender);
+    assertNotUndefined(background.possiblePassword_[42]);
+    background.handleRequest_(requestSave, sender);
+    assertNotNull(localStorage.getItem(background.hashPassword_(password)));
+    assertTrue(background.passwordLengths_[password.length]);
+    assertUndefined(background.possiblePassword_[42]);
+
+    // Attempt to save too short of a password.
+    requestSet.password = 'short';
+    background.handleRequest_(requestSet, sender);
+    background.handleRequest_(requestSave, sender);
+    assertNull(localStorage.getItem(background.hashPassword_('short')));
+
+    // Set and save new password for existing email.
+    const passwordNew = 'foopassword2';
+    requestSet.password = passwordNew;
+    background.handleRequest_(requestSet, sender);
+    background.handleRequest_(requestSave, sender);
+    assertNull(localStorage.getItem(background.hashPassword_(password)));
+    assertNotNull(localStorage.getItem(background.hashPassword_(passwordNew)));
+
+    // Test with other tab id. Does not change saved password information.
+    const passwordOther = 'foopassword3';
+    requestSet.password = passwordOther;
+    background.handleRequest_(requestSet, sender);
+    sender.tab.id = 99;
+    background.handleRequest_(requestSave, sender);
+    assertNull(localStorage.getItem(background.hashPassword_(passwordOther)));
+
+    // Save Chromium password with different password.
+    const passwordChromium = 'chromiumpasswordislongpassword';
+    requestSet.password = passwordChromium;
+    requestSet.email = 'adhintz@chromium.org';
+    background.handleRequest_(requestSet, sender);
+    background.handleRequest_(requestSave, sender);
+    assertNotNull(
+        localStorage.getItem(background.hashPassword_(passwordChromium)));
+    assertTrue(background.passwordLengths_[passwordChromium.length]);
+
+    // Save Chromium password with new password that is the same as new Google
+    // password.
+    requestSet.password = passwordNew;
+    requestSet.email = 'adhintz@chromium.org';
+    background.handleRequest_(requestSet, sender);
+    background.handleRequest_(requestSave, sender);
+    let item = localStorage.getItem(background.hashPassword_(passwordNew));
+    assertNotNull(item);
+    item = JSON.parse(item);
+    assertEquals(item['email'], requestSet.email);
+    assertNull(
+        localStorage.getItem(background.hashPassword_(passwordChromium)));
+  },
+
+
+  testRefreshPasswordLengths() {
+    localStorage['fooseven'] = JSON.stringify(
+        {'length': 7, 'email': 'adhintz+7@google.com', 'date': new Date()});
+    background.refreshPasswordLengths_();
+    assertTrue(background.passwordLengths_[7]);
+    assertFalse(Boolean(background.passwordLengths_[6]));
+
+    localStorage['foosix'] = JSON.stringify(
+        {'length': 6, 'email': 'adhintz+6@google.com', 'date': new Date()});
+    background.refreshPasswordLengths_();
+    assertTrue(background.passwordLengths_[7]);
+    assertTrue(background.passwordLengths_[6]);
+
+    delete localStorage['fooseven'];
+    background.refreshPasswordLengths_();
+    assertTrue(background.passwordLengths_[6]);
+    assertFalse(Boolean(background.passwordLengths_[7]));
+  },
+
+
+  testRateLimitCheck() {
+    assertTrue(background.checkRateLimit_());
+    assertEquals(1, background.rateLimitCount_);
+    assertTrue(background.checkRateLimit_());
+    assertEquals(2, background.rateLimitCount_);
+
+    background.rateLimitCount_ = background.MAX_RATE_PER_HOUR_ + 1;
+    assertFalse(background.checkRateLimit_());
+
+    background.rateLimitResetDate_ = new Date();
+    assertTrue(background.checkRateLimit_());
+  },
+
+
+  testHashPassword() {
+    localStorage[background.SALT_KEY_] = '';
+    background.HASH_BITS_ = 37;
+    assertEquals('0beec7b5e8', background.hashPassword_('foo'));
+
+    localStorage.removeItem(background.SALT_KEY_);
+    assertNotEquals('0beec7b5e8', background.hashPassword_('foo'));
+  },
+
+
+  testEnterWillClearTypedCharsBuffer() {
+    background.stateKeydown_ = {
+      hash: '',
+      otpCount: 0,
+      otpMode: false,
+      otpTime: null,
+      typed: new keydown.Typed('ab'),
+      typedTime: null
+    };
+
+    sendKeydownRequest(TAB_ID1, '\r', new Date());
+    assertEquals('', background.stateKeydown_.typed.chars_);
+  },
+
+
+  testTimeGapWillClearTypedCharsBuffer() {
+    background.SECONDS_TO_CLEAR_ = 10;
+    const now = new Date();
+
+    background.stateKeydown_ = {
+      hash: '',
+      otpCount: 0,
+      otpMode: false,
+      otpTime: null,
+      typed: new keydown.Typed(),
+      typedTime: now
+    };
+
+    const typedTime1 = new Date(now.getTime() + 1000);
+    sendKeydownRequest(TAB_ID1, 'a', typedTime1);
+    assertEquals('a', background.stateKeydown_.typed.chars_);
+    assertEquals(
+        typedTime1.getTime(), background.stateKeydown_.typedTime.getTime());
+
+    // Test that keys from other tabs are also handled.
+    const typedTime2 = new Date(typedTime1.getTime() + 9000);
+    sendKeydownRequest(TAB_ID2, 'b', typedTime2);
+    assertEquals('ab', background.stateKeydown_.typed.chars_);
+    assertEquals(
+        typedTime2.getTime(), background.stateKeydown_.typedTime.getTime());
+
+    const typedTime3 = new Date(typedTime2.getTime() + 11000);
+    sendKeydownRequest(TAB_ID1, 'c', typedTime3);
+    assertEquals('c', background.stateKeydown_.typed.chars_);
+    assertEquals(
+        typedTime3.getTime(), background.stateKeydown_.typedTime.getTime());
+  },
+
+
+  testTypedCharsBufferTrimming() {
+    // pw len = 2 & 4
+    background.passwordLengths_ = [null, null, true, null, true];
+    background.MINIMUM_PASSWORD_ = 2;
+    const now = new Date();
+
+    background.stateKeydown_ = {
+      hash: '',
+      otpCount: 0,
+      otpMode: false,
+      otpTime: null,
+      typed: new keydown.Typed(),
+      typedTime: now
+    };
+
+    // Test that the buffer is trimmed if it gets too big.
+    // It's trimmed at 2 * max, but test 10 * max so the test is less brittle.
+    for (let i = 0; i < 10 * 5; i++) {  // 5 is length from msg passwordLengths.
+      sendKeydownRequest(TAB_ID1, 'e', new Date(now.getTime() + 1000));
     }
-  };
+    assertTrue(background.stateKeydown_.typed.length < 5 * 5);
 
-  // Set and save password.
-  passwordalert.background.handleRequest_(requestSet, sender);
-  assertNotUndefined(passwordalert.background.possiblePassword_[42]);
-  passwordalert.background.handleRequest_(requestSave, sender);
-  assertNotNull(
-      localStorage.getItem(passwordalert.background.hashPassword_(password)));
-  assertTrue(passwordalert.background.passwordLengths_[password.length]);
-  assertUndefined(passwordalert.background.possiblePassword_[42]);
+    // Test what's actually being trimmed.
+    background.stateKeydown_ = {
+      hash: '',
+      otpCount: 0,
+      otpMode: false,
+      otpTime: null,
+      typed: new keydown.Typed('abcd'),
+      typedTime: now
+    };
 
-  // Attempt to save too short of a password.
-  requestSet.password = 'short';
-  passwordalert.background.handleRequest_(requestSet, sender);
-  passwordalert.background.handleRequest_(requestSave, sender);
-  assertNull(
-      localStorage.getItem(passwordalert.background.hashPassword_('short')));
+    const checkedPasswords = [];
+    background.checkPassword_ = function(tabId, request, state) {
+      checkedPasswords.push(request.password);
+    };
 
-  // Set and save new password for existing email.
-  var passwordNew = 'foopassword2';
-  requestSet.password = passwordNew;
-  passwordalert.background.handleRequest_(requestSet, sender);
-  passwordalert.background.handleRequest_(requestSave, sender);
-  assertNull(
-      localStorage.getItem(
-          passwordalert.background.hashPassword_(password)));
-  assertNotNull(
-      localStorage.getItem(
-          passwordalert.background.hashPassword_(passwordNew)));
-
-  // Test with other tab id. Does not change saved password information.
-  var passwordOther = 'foopassword3';
-  requestSet.password = passwordOther;
-  passwordalert.background.handleRequest_(requestSet, sender);
-  sender.tab.id = 99;
-  passwordalert.background.handleRequest_(requestSave, sender);
-  assertNull(
-      localStorage.getItem(
-          passwordalert.background.hashPassword_(passwordOther)));
-
-  // Save Chromium password with different password.
-  var passwordChromium = 'chromiumpasswordislongpassword';
-  requestSet.password = passwordChromium;
-  requestSet.email = 'adhintz@chromium.org';
-  passwordalert.background.handleRequest_(requestSet, sender);
-  passwordalert.background.handleRequest_(requestSave, sender);
-  assertNotNull(
-      localStorage.getItem(
-          passwordalert.background.hashPassword_(passwordChromium)));
-  assertTrue(
-      passwordalert.background.passwordLengths_[passwordChromium.length]);
-
-  // Save Chromium password with new password that is the same as new Google
-  // password.
-  requestSet.password = passwordNew;
-  requestSet.email = 'adhintz@chromium.org';
-  passwordalert.background.handleRequest_(requestSet, sender);
-  passwordalert.background.handleRequest_(requestSave, sender);
-  var item = localStorage.getItem(passwordalert.background.hashPassword_(
-      passwordNew));
-  assertNotNull(item);
-  item = JSON.parse(item);
-  assertEquals(item['email'], requestSet.email);
-  assertNull(localStorage.getItem(passwordalert.background.hashPassword_(
-      passwordChromium)));
-}
-
-
-function testRefreshPasswordLengths() {
-  localStorage['fooseven'] = JSON.stringify({
-    'length': 7,
-    'email': 'adhintz+7@google.com',
-    'date': new Date()
-  });
-  passwordalert.background.refreshPasswordLengths_();
-  assertTrue(passwordalert.background.passwordLengths_[7]);
-  assertFalse(Boolean(passwordalert.background.passwordLengths_[6]));
-
-  localStorage['foosix'] = JSON.stringify({
-    'length': 6,
-    'email': 'adhintz+6@google.com',
-    'date': new Date()
-  });
-  passwordalert.background.refreshPasswordLengths_();
-  assertTrue(passwordalert.background.passwordLengths_[7]);
-  assertTrue(passwordalert.background.passwordLengths_[6]);
-
-  delete localStorage['fooseven'];
-  passwordalert.background.refreshPasswordLengths_();
-  assertTrue(passwordalert.background.passwordLengths_[6]);
-  assertFalse(Boolean(passwordalert.background.passwordLengths_[7]));
-}
-
-
-function testRateLimitCheck() {
-  assertTrue(passwordalert.background.checkRateLimit_());
-  assertEquals(1, passwordalert.background.rateLimitCount_);
-  assertTrue(passwordalert.background.checkRateLimit_());
-  assertEquals(2, passwordalert.background.rateLimitCount_);
-
-  passwordalert.background.rateLimitCount_ =
-      passwordalert.background.MAX_RATE_PER_HOUR_ + 1;
-  assertFalse(passwordalert.background.checkRateLimit_());
-
-  passwordalert.background.rateLimitResetDate_ = new Date();
-  assertTrue(passwordalert.background.checkRateLimit_());
-}
-
-
-function testHashPassword() {
-  localStorage[passwordalert.background.SALT_KEY_] = '';
-  passwordalert.background.HASH_BITS_ = 37;
-  assertEquals('0beec7b5e8',
-      passwordalert.background.hashPassword_('foo'));
-
-  localStorage.removeItem(passwordalert.background.SALT_KEY_);
-  assertNotEquals('0beec7b5e8',
-      passwordalert.background.hashPassword_('foo'));
-}
-
-
-function testEnterWillClearTypedCharsBuffer() {
-  passwordalert.background.stateKeydown_ = {
-    hash: '',
-    otpCount: 0,
-    otpMode: false,
-    otpTime: null,
-    typed: new passwordalert.keydown.Typed('ab'),
-    typedTime: null
-  };
-
-  sendKeydownRequest(TAB_ID1, '\r', new Date());
-  assertEquals('', passwordalert.background.stateKeydown_.typed.chars_);
-}
-
-
-function testTimeGapWillClearTypedCharsBuffer() {
-  passwordalert.background.SECONDS_TO_CLEAR_ = 10;
-  var now = new Date();
-
-  passwordalert.background.stateKeydown_ = {
-    hash: '',
-    otpCount: 0,
-    otpMode: false,
-    otpTime: null,
-    typed: new passwordalert.keydown.Typed(),
-    typedTime: now
-  };
-
-  var typedTime1 = new Date(now.getTime() + 1000);
-  sendKeydownRequest(TAB_ID1, 'a', typedTime1);
-  assertEquals('a', passwordalert.background.stateKeydown_.typed.chars_);
-  assertEquals(
-      typedTime1.getTime(),
-      passwordalert.background.stateKeydown_.typedTime.getTime());
-
-  // Test that keys from other tabs are also handled.
-  var typedTime2 = new Date(typedTime1.getTime() + 9000);
-  sendKeydownRequest(TAB_ID2, 'b', typedTime2);
-  assertEquals('ab', passwordalert.background.stateKeydown_.typed.chars_);
-  assertEquals(
-      typedTime2.getTime(),
-      passwordalert.background.stateKeydown_.typedTime.getTime());
-
-  var typedTime3 = new Date(typedTime2.getTime() + 11000);
-  sendKeydownRequest(TAB_ID1, 'c', typedTime3);
-  assertEquals('c', passwordalert.background.stateKeydown_.typed.chars_);
-  assertEquals(
-      typedTime3.getTime(),
-      passwordalert.background.stateKeydown_.typedTime.getTime());
-}
-
-
-function testTypedCharsBufferTrimming() {
-  // pw len = 2 & 4
-  passwordalert.background.passwordLengths_ = [null, null, true, null, true];
-  passwordalert.background.MINIMUM_PASSWORD_ = 2;
-  var now = new Date();
-
-  passwordalert.background.stateKeydown_ = {
-    hash: '',
-    otpCount: 0,
-    otpMode: false,
-    otpTime: null,
-    typed: new passwordalert.keydown.Typed(),
-    typedTime: now
-  };
-
-  // Test that the buffer is trimmed if it gets too big.
-  // It's trimmed at 2 * max, but test 10 * max so the test is less brittle.
-  for (var i = 0; i < 10 * 5; i++) {  // 5 is length from msg passwordLengths.
     sendKeydownRequest(TAB_ID1, 'e', new Date(now.getTime() + 1000));
-  }
-  assertTrue(
-      passwordalert.background.stateKeydown_.typed.length < 5 * 5);
+    assertEquals('abcde', background.stateKeydown_.typed.chars_);
+    assertEquals('de', checkedPasswords[0]);
+    assertEquals('bcde', checkedPasswords[1]);
 
-  // Test what's actually being trimmed.
-  passwordalert.background.stateKeydown_ = {
-    hash: '',
-    otpCount: 0,
-    otpMode: false,
-    otpTime: null,
-    typed: new passwordalert.keydown.Typed('abcd'),
-    typedTime: now
-  };
-
-  var checkedPasswords = [];
-  passwordalert.background.checkPassword_ = function(
-      tabId, request, state) {
-    checkedPasswords.push(request.password);
-  };
-
-  sendKeydownRequest(TAB_ID1, 'e', new Date(now.getTime() + 1000));
-  assertEquals(
-      'abcde',
-      passwordalert.background.stateKeydown_.typed.chars_);
-  assertEquals('de', checkedPasswords[0]);
-  assertEquals('bcde', checkedPasswords[1]);
-
-  sendKeydownRequest(TAB_ID1, 'f', new Date(now.getTime() + 2000));
-  assertEquals(
-      'bcdef',
-      passwordalert.background.stateKeydown_.typed.chars_);
-  assertEquals('ef', checkedPasswords[2]);
-  assertEquals('cdef', checkedPasswords[3]);
-}
+    sendKeydownRequest(TAB_ID1, 'f', new Date(now.getTime() + 2000));
+    assertEquals('bcdef', background.stateKeydown_.typed.chars_);
+    assertEquals('ef', checkedPasswords[2]);
+    assertEquals('cdef', checkedPasswords[3]);
+  },
 
 
-function testOtpMode() {
-  // pw len = 2
-  passwordalert.background.passwordLengths_ = [null, null, true];
-  passwordalert.background.MINIMUM_PASSWORD_ = 2;
+  testOtpMode() {
+    // pw len = 2
+    background.passwordLengths_ = [null, null, true];
+    background.MINIMUM_PASSWORD_ = 2;
 
-  alertCalled = false;
-  passwordalert.background.sendReportPassword_ =
-      function(request, email, date, otpAlert) {
-    if (otpAlert) {
-      alertCalled = otpAlert;
-    }
-  };
+    let alertCalled = false;
+    background.sendReportPassword_ = function(request, email, date, otpAlert) {
+      if (otpAlert) {
+        alertCalled = otpAlert;
+      }
+    };
 
-  passwordalert.background.checkPassword_ = function(tabId, request, state) {
-    if (request.password == 'pw') {
-      localStorage['pwhash'] = JSON.stringify({
-        'email': 'adhintz@google.com',
-        'date': 1
-      });
-      state['hash'] = 'pwhash';
-      state['otpCount'] = 0;
-      state['otpMode'] = true;
-      state['otpTime'] = state['typedTime'];
-    }
-  };
+    background.checkPassword_ = function(tabId, request, state) {
+      if (request.password == 'pw') {
+        localStorage['pwhash'] =
+            JSON.stringify({'email': 'adhintz@google.com', 'date': 1});
+        state['hash'] = 'pwhash';
+        state['otpCount'] = 0;
+        state['otpMode'] = true;
+        state['otpTime'] = state['typedTime'];
+      }
+    };
 
-  var now = new Date();
-  passwordalert.background.stateKeydown_ = {
-    hash: '',
-    otpCount: 0,
-    otpMode: false,
-    otpTime: null,
-    typed: new passwordalert.keydown.Typed(),
-    typedTime: now
-  };
+    const now = new Date();
+    background.stateKeydown_ = {
+      hash: '',
+      otpCount: 0,
+      otpMode: false,
+      otpTime: null,
+      typed: new keydown.Typed(),
+      typedTime: now
+    };
 
-  // Test alpha character ends OTP mode.
-  sendKeydownRequest(TAB_ID1, 'p', now);
-  sendKeydownRequest(TAB_ID1, 'w', now);
-  sendKeydownRequest(TAB_ID1, '1', now);
-  assertTrue(passwordalert.background.stateKeydown_.otpMode);
-  assertEquals(1, passwordalert.background.stateKeydown_['otpCount']);
-
-  sendKeydownRequest(TAB_ID1, 'a', now);
-  assertFalse(passwordalert.background.stateKeydown_.otpMode);
-  assertEquals(0, passwordalert.background.stateKeydown_['otpCount']);
-  assertNull(passwordalert.background.stateKeydown_['otpTime']);
-
-  // Test space and tabs at beginning of otp are allowed.
-  sendKeydownRequest(TAB_ID1, 'p', now);
-  sendKeydownRequest(TAB_ID1, 'w', now);
-  sendKeydownRequest(TAB_ID1, ' ', now);
-  sendKeydownRequest(TAB_ID1, '\t', now);
-
-  for (i = 0; i < passwordalert.background.OTP_LENGTH_; i++) {
-    assertTrue(passwordalert.background.stateKeydown_.otpMode);
-    assertFalse(alertCalled);
+    // Test alpha character ends OTP mode.
+    sendKeydownRequest(TAB_ID1, 'p', now);
+    sendKeydownRequest(TAB_ID1, 'w', now);
     sendKeydownRequest(TAB_ID1, '1', now);
-  }
-  assertTrue(alertCalled);
-}
+    assertTrue(background.stateKeydown_.otpMode);
+    assertEquals(1, background.stateKeydown_['otpCount']);
 
-function testGuessUser() {
-  localStorage['guessuser2'] = JSON.stringify({
-    'length': 7,
-    'email': 'adhintz+2@example.com',
-    'date': new Date()
-  });
-  localStorage['guessuser1'] = JSON.stringify({
-    'length': 7,
-    'email': 'adhintz@guessuser.google.com',
-    'date': new Date()
-  });
-  localStorage['guessuser0'] = JSON.stringify({
-    'length': 7,
-    'email': 'adhintz@example.com',
-    'date': new Date()
-  });
-  passwordalert.background.enterpriseMode_ = true;
-  passwordalert.background.corp_email_domain_ = 'guessuser.google.com';
-  assertEquals('adhintz@guessuser.google.com',
-      passwordalert.background.guessUser_());
-}
+    sendKeydownRequest(TAB_ID1, 'a', now);
+    assertFalse(background.stateKeydown_.otpMode);
+    assertEquals(0, background.stateKeydown_['otpCount']);
+    assertNull(background.stateKeydown_['otpTime']);
+
+    // Test space and tabs at beginning of otp are allowed.
+    sendKeydownRequest(TAB_ID1, 'p', now);
+    sendKeydownRequest(TAB_ID1, 'w', now);
+    sendKeydownRequest(TAB_ID1, ' ', now);
+    sendKeydownRequest(TAB_ID1, '\t', now);
+
+    for (let i = 0; i < background.OTP_LENGTH_; i++) {
+      assertTrue(background.stateKeydown_.otpMode);
+      assertFalse(alertCalled);
+      sendKeydownRequest(TAB_ID1, '1', now);
+    }
+    assertTrue(alertCalled);
+  },
+
+  testGuessUser() {
+    localStorage['guessuser2'] = JSON.stringify(
+        {'length': 7, 'email': 'adhintz+2@example.com', 'date': new Date()});
+    localStorage['guessuser1'] = JSON.stringify({
+      'length': 7,
+      'email': 'adhintz@guessuser.google.com',
+      'date': new Date()
+    });
+    localStorage['guessuser0'] = JSON.stringify(
+        {'length': 7, 'email': 'adhintz@example.com', 'date': new Date()});
+    background.enterpriseMode_ = true;
+    background.corp_email_domain_ = 'guessuser.google.com';
+    assertEquals('adhintz@guessuser.google.com', background.guessUser_());
+  }
+});

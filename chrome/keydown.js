@@ -23,8 +23,7 @@
  */
 'use strict';
 
-goog.provide('passwordalert.keydown');
-goog.provide('passwordalert.keydown.Typed');
+goog.module('passwordalert.keydown');
 
 
 /**
@@ -32,7 +31,7 @@ goog.provide('passwordalert.keydown.Typed');
  * @private {!Object<number, string>}
  * @const
  */
-passwordalert.keydown.MAP_SHIFT_ = {
+const MAP_SHIFT_ = {
   32: ' ',
   48: ')',
   49: '!',
@@ -63,7 +62,7 @@ passwordalert.keydown.MAP_SHIFT_ = {
  * @private {!Object<number, string>}
  * @const
  */
-passwordalert.keydown.MAP_ = {
+const MAP_ = {
   32: ' ',
   96: '0',  // Number pad values.
   97: '1',  // Does not handle num lock state, but could with changes.
@@ -97,10 +96,11 @@ passwordalert.keydown.MAP_ = {
 
 /**
  * Class to keep track of typed keycodes and characters.
+ * @this {Typed}
  * @param {string=} opt_chars Initial characters, used for testing.
  * @constructor
  */
-passwordalert.keydown.Typed = function(opt_chars) {
+exports.Typed = function(opt_chars) {
   this.caps_lock_ = false;  // Caps lock state.
   this.chars_ = opt_chars || '';
   Object.defineProperty(this, 'length', { get: function() {
@@ -114,9 +114,9 @@ passwordalert.keydown.Typed = function(opt_chars) {
  * @param {number} keyCode keyCode from the keyboardEvent.
  * @param {boolean} shiftKey True if shift key was pressed. From keyboardEvent.
  */
-passwordalert.keydown.Typed.prototype.event = function(keyCode, shiftKey) {
+exports.Typed.prototype.event = function(keyCode, shiftKey) {
   if (65 <= keyCode && keyCode <= 90) {  // Letters.
-    var c = String.fromCharCode(keyCode);
+    let c = String.fromCharCode(keyCode);
     if ((!shiftKey && !this.caps_lock_) ||
         (shiftKey && this.caps_lock_)) {
       c = c.toLowerCase();
@@ -130,12 +130,12 @@ passwordalert.keydown.Typed.prototype.event = function(keyCode, shiftKey) {
     this.chars_ = this.chars_.slice(0, -1);
   } else {
     if (shiftKey) {
-      if (keyCode in passwordalert.keydown.MAP_SHIFT_) {
-        this.chars_ += passwordalert.keydown.MAP_SHIFT_[keyCode];
+      if (keyCode in MAP_SHIFT_) {
+        this.chars_ += MAP_SHIFT_[keyCode];
       }
     } else {
-      if (keyCode in passwordalert.keydown.MAP_) {
-        this.chars_ += passwordalert.keydown.MAP_[keyCode];
+      if (keyCode in MAP_) {
+        this.chars_ += MAP_[keyCode];
       }
     }
   }
@@ -146,13 +146,13 @@ passwordalert.keydown.Typed.prototype.event = function(keyCode, shiftKey) {
  * Handles keypress events, only used to guess capslock state.
  * @param {number} keyCode keyCode from the keypress keyboardEvent.
  */
-passwordalert.keydown.Typed.prototype.keypress = function(keyCode) {
+exports.Typed.prototype.keypress = function(keyCode) {
   if ((65 <= keyCode && keyCode <= 90) || // Letters.
       (97 <= keyCode && keyCode <= 122)) {
-    var c = String.fromCharCode(keyCode);
-    var last = this.chars_.substr(-1);
+    const c = String.fromCharCode(keyCode);
+    const last = this.chars_.substr(-1);
     if (last != c) {
-      var cReverseCase;  // Opposite case of c.
+      let cReverseCase;  // Opposite case of c.
       if (keyCode <= 90) { // Upper-case.
         cReverseCase = c.toLowerCase();
       } else {
@@ -170,7 +170,7 @@ passwordalert.keydown.Typed.prototype.keypress = function(keyCode) {
 /**
  * Deletes all typed characters, but preserves caps lock state.
  */
-passwordalert.keydown.Typed.prototype.clear = function() {
+exports.Typed.prototype.clear = function() {
   this.chars_ = '';
 };
 
@@ -179,7 +179,7 @@ passwordalert.keydown.Typed.prototype.clear = function() {
  * Trims character buffer to a maxiumum length.
  * @param {number} max Maximum length of character buffer.
  */
-passwordalert.keydown.Typed.prototype.trim = function(max) {
+exports.Typed.prototype.trim = function(max) {
   if (this.chars_.length > max) {
     this.chars_ = this.chars_.slice(-1 * max);
   }
@@ -191,6 +191,6 @@ passwordalert.keydown.Typed.prototype.trim = function(max) {
  * @param {number} i Argument to substr.
  * @return {string} Substring result.
  */
-passwordalert.keydown.Typed.prototype.substr = function(i) {
+exports.Typed.prototype.substr = function(i) {
   return this.chars_.substr(i);
 };

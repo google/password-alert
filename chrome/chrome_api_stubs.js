@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+goog.module('chrome_api_stubs');
+
 /**
  * @fileoverview Stubs for Chrome APIs. Used only by tests.
  * @author adhintz@google.com (Drew Hintz)
@@ -62,3 +64,5 @@ chrome.notifications.getMessage = function() {};
 chrome.notifications.getMessage.addListener = function() {};
 chrome.notifications.onButtonClicked = {};
 chrome.notifications.onButtonClicked.addListener = function() {};
+
+goog.exportSymbol('chrome', chrome);

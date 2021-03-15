@@ -28,7 +28,7 @@ var iconUrl;
 var localStorage;
 var JSON;
 
-var chrome;
+// var chrome;  // TODO(adhintz) seems to be needed for open source build, but breaks internal build.
 chrome.extension;
 chrome.extension.getURL;
 

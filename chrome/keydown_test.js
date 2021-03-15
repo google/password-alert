@@ -15,48 +15,53 @@
  * limitations under the License.
  */
 
+goog.module('keydownTest');
+goog.setTestOnly();
+
 /**
- * @fileoverview Tests for keydown.js Included by keydown_test.html.
+ * @fileoverview Tests for keydown.js
  * @author adhintz@google.com (Drew Hintz)
  */
 
-goog.require('passwordalert.keydown.Typed');
+const keydown = goog.require('passwordalert.keydown');
+const testSuite = goog.require('goog.testing.testSuite');
+goog.require('goog.testing.asserts');
 
-function setUp() {
-}
+testSuite({
 
-function testLetters() {
-  var typed = new passwordalert.keydown.Typed();
-  typed.event(65, false);    // a
-  typed.event(65, true);     // A
-  typed.event(0x31, false);  // 1
-  assertEquals('aA1', typed.chars_);
-  typed.event(8, false);     // Backspace.
-  assertEquals('aA', typed.chars_);
-}
+  testLetters() {
+    const typed = new keydown.Typed();
+    typed.event(65, false);    // a
+    typed.event(65, true);     // A
+    typed.event(0x31, false);  // 1
+    assertEquals('aA1', typed.chars_);
+    typed.event(8, false);  // Backspace.
+    assertEquals('aA', typed.chars_);
+  },
 
-function testCapslock() {
-  var typed = new passwordalert.keydown.Typed();
-  typed.event(90, false);  // z
-  typed.event(20, false);  // caps lock.
-  typed.event(90, false);  // z (caps locked to Z)
-  typed.event(90, true);   // Z (caps locked to z)
-  typed.event(20, false);  // caps lock.
-  typed.event(90, false);  // z
-  assertEquals('zZzz', typed.chars_);
-}
+  testCapslock() {
+    const typed = new keydown.Typed();
+    typed.event(90, false);  // z
+    typed.event(20, false);  // caps lock.
+    typed.event(90, false);  // z (caps locked to Z)
+    typed.event(90, true);   // Z (caps locked to z)
+    typed.event(20, false);  // caps lock.
+    typed.event(90, false);  // z
+    assertEquals('zZzz', typed.chars_);
+  },
 
-function testSymbols() {
-  var typed = new passwordalert.keydown.Typed();
-  typed.event(189, false);  // -
-  typed.event(189, true);   // _
-  assertEquals('-_', typed.chars_);
-}
+  testSymbols() {
+    const typed = new keydown.Typed();
+    typed.event(189, false);  // -
+    typed.event(189, true);   // _
+    assertEquals('-_', typed.chars_);
+  },
 
-function testCapsGuess() {
-  var typed = new passwordalert.keydown.Typed();
-  typed.event(65, false);  // a
-  typed.keypress(65);      // A so triggers caps lock guessing.
-  typed.event(65, false);  // a
-  assertEquals('AA', typed.chars_);
-}
+  testCapsGuess() {
+    const typed = new keydown.Typed();
+    typed.event(65, false);  // a
+    typed.keypress(65);      // A so triggers caps lock guessing.
+    typed.event(65, false);  // a
+    assertEquals('AA', typed.chars_);
+  }
+});
