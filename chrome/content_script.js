@@ -189,7 +189,7 @@ passwordalert.security_email_address_;
  * @private {!Array.<string>}
  */
 passwordalert.whitelist_top_domains_ =
-    ['accounts.google.com', 'login.corp.google.com', 'myaccount.google.com'];
+    ['accounts.google.com', 'login.corp.google.com', 'myaccount.google.com', 'remotedesktop.corp.google.com'];
 
 
 /**
