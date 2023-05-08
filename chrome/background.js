@@ -34,6 +34,7 @@ const safe = goog.require('goog.dom.safe');
 let background = {};
 goog.exportSymbol('background', background);  // for tests only.
 
+
 /**
  * Key for localStorage to store salt value.
  * @private {string}
@@ -397,8 +398,10 @@ background.injectContentScriptIntoAllTabs_ = function(callback) {
     for (let i = 0; i < tabs.length; i++) {
       // Skip chrome:// and chrome-devtools:// pages
       if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
-        chrome.tabs.executeScript(
-            tabs[i].id, {file: 'content_script_compiled.js'});
+        chrome.scripting.executeScript({
+          target: {tabId: tabs[i].id}, 
+          files: ['content_script_compiled.js']
+        });
       }
     }
     callback();
@@ -427,7 +430,7 @@ background.displayInitializePasswordNotification_ = function() {
         priority: 1,
         title: chrome.i18n.getMessage('extension_name'),
         message: chrome.i18n.getMessage('initialization_message'),
-        iconUrl: chrome.extension.getURL('logo_password_alert.png'),
+        iconUrl: chrome.runtime.getURL('logo_password_alert.png'),
         buttons: [{title: chrome.i18n.getMessage('sign_in')}]
       };
       chrome.notifications.create(
@@ -471,13 +474,15 @@ background.initializePasswordIfNeeded_ = function() {
   }
 
   setTimeout(function() {
-    if (!localStorage.hasOwnProperty(background.SALT_KEY_)) {
-      console.log(
-          'Password still has not been initialized.  ' +
-          'Start the password initialization process again.');
-      background.initializePasswordIfReady_(
-          5, 1000, background.initializePasswordIfNeeded_);
-    }
+    chrome.storage.local.get(background.SALT_KEY_).then(result => {
+      if (!result) {
+        console.log(
+            'Password still has not been initialized.  ' +
+            'Start the password initialization process again.');
+        background.initializePasswordIfReady_(
+            5, 1000, background.initializePasswordIfNeeded_);
+      }
+    });
   }, 300000);  // 5 minutes
 };
 
@@ -570,6 +575,8 @@ background.handleRequest_ = function(request, sender, sendResponse) {
       background.displayPhishingWarningIfNeeded_(sender.tab.id, request);
       break;
     case 'deletePossiblePassword':
+      console.log(request.reason);
+      console.log(request.passwordalert);
       delete background.possiblePassword_[sender.tab.id];
       break;
     case 'setPossiblePassword':
@@ -577,6 +584,7 @@ background.handleRequest_ = function(request, sender, sendResponse) {
       break;
     case 'savePossiblePassword':
       background.savePossiblePassword_(sender.tab.id);
+      console.log('setpossiblepassword');
       break;
     case 'getEmail':
       sendResponse(background.possiblePassword_[sender.tab.id]['email']);
@@ -627,11 +635,13 @@ background.checkOtp_ = function(tabId, request, state) {
       background.clearOtpMode_(state);
     }
     if (state['otpCount'] >= background.OTP_LENGTH_) {
-      const item = JSON.parse(localStorage[state.hash]);
-      console.log('OTP TYPED! ' + request.url);
-      background.sendReportPassword_(
-          request, item['email'], item['date'], true);
-      background.clearOtpMode_(state);
+      // const item = JSON.parse(localStorage[state.hash]);
+      chrome.storage.local.get(state.hash).then(item => {
+        console.log('OTP TYPED! ' + request.url);
+        background.sendReportPassword_(
+            request, item['email'], item['date'], true);
+        background.clearOtpMode_(state);
+      });
     }
   }
 };
@@ -749,16 +759,19 @@ background.setPossiblePassword_ = function(tabId, request) {
         background.MINIMUM_PASSWORD_);
     return;
   }
-
-  console.log(
-      'Setting possible password for %s, password length of %s', request.email,
-      request.password.length);
+  console.log(tabId);
+  console.log(request);
+  console.log('Setting possible password for %s, password length of %s', request.email, request.password.length);
+  console.log(background.hashPassword_(request.password));
   background.possiblePassword_[tabId] = {
     'email': request.email,
     'password': background.hashPassword_(request.password),
     'length': request.password.length,
     'time': Math.floor(Date.now() / 1000)
   };
+  console.log('guardado ok!!')
+  console.log(background.possiblePassword_);
+  console.log(background.possiblePassword_[tabId]);
 };
 
 
@@ -768,15 +781,31 @@ background.setPossiblePassword_ = function(tabId, request) {
  * @return {*} The item.
  * @private
  */
+// background.getLocalStorageItem_ = function(index) {
+//   let item;
+//   if (localStorage.key(index) == background.SALT_KEY_) {
+//     item = null;
+//   } else {
+//     item = JSON.parse(localStorage[localStorage.key(index)]);
+//   }
+//   return item;
+// };
+
 background.getLocalStorageItem_ = function(index) {
-  let item;
-  if (localStorage.key(index) == background.SALT_KEY_) {
-    item = null;
-  } else {
-    item = JSON.parse(localStorage[localStorage.key(index)]);
-  }
-  return item;
+  chrome.storage.local.get(null).then(result => {
+    let item;
+    const keys = Object.keys(result);
+
+    if(keys[index] === background.SALT_KEY_) {
+      item = null;
+    } else {
+      item = JSON.parse(result[keys[index]]);
+    }
+    return item;
+  })
 };
+
+
 
 
 /**
@@ -785,8 +814,15 @@ background.getLocalStorageItem_ = function(index) {
  * @private
  */
 background.savePossiblePassword_ = function(tabId) {
+  console.log('111');
   const possiblePassword_ = background.possiblePassword_[tabId];
+  console.log("possible password: "); 
+  console.log(background);
+  console.log(tabId);
+  console.log(possiblePassword_);
+  console.log('finnnn')
   if (!possiblePassword_) {
+    console.log('222');
     return;
   }
   if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
@@ -796,61 +832,86 @@ background.savePossiblePassword_ = function(tabId) {
   const password = possiblePassword_['password'];
   const length = possiblePassword_['length'];
 
+  console.log('333');
   // Delete old email entries.
-  for (let i = 0; i < localStorage.length; i++) {
-    const item = background.getLocalStorageItem_(i);
-    if (item && item['email'] == email) {
-      delete item['email'];
-      delete item['date'];
-      localStorage[localStorage.key(i)] = JSON.stringify(item);
+  // for (let i = 0; i < localStorage.length; i++) {
+  //   const item = background.getLocalStorageItem_(i);
+  //   if (item && item['email'] == email) {
+  //     delete item['email'];
+  //     delete item['date'];
+  //     localStorage[localStorage.key(i)] = JSON.stringify(item);
+  //   }
+  // }
+
+  // Get the entire content of storage 
+  chrome.storage.local.get(null).then(result => {
+    const keys = Object.keys(result);
+    console.log('444');
+    console.log(keys);
+    for (let i = 0; i < keys.length; i++) {
+      const item = background.getLocalStorageItem_(i);
+      if (item && item['email'] == email) {
+        delete item['email'];
+        delete item['date'];
+        chrome.storage.local.set({ [keys[i]] : JSON.stringify(item) });
+        console.log('en el if');
+        // localStorage[localStorage.key(i)] = JSON.stringify(item);
+      }
     }
-  }
 
-  // Delete any entries that now have no emails.
-  const keysToDelete = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const item = background.getLocalStorageItem_(i);
-    if (item && !('email' in item)) {
-      // Delete the item later.
-      // We avoid modifying localStorage while iterating over it.
-      keysToDelete.push(localStorage.key(i));
+    // Delete any entries that now have no emails.
+    const keysToDelete = [];
+    for (let i = 0; i < keys.length; i++) {
+      const item = background.getLocalStorageItem_(i);
+      if (item && !('email' in item)) {
+        // Delete the item later.
+        // We avoid modifying localStorage while iterating over it.
+        keysToDelete.push(keys[i]);
+      }
     }
-  }
-  for (let i = 0; i < keysToDelete.length; i++) {
-    localStorage.removeItem(keysToDelete[i]);
-  }
 
-  console.log('Saving password for: ' + email);
-  let item;
-  if (password in localStorage) {
-    item = JSON.parse(localStorage[password]);
-  } else {
-    item = {'length': length};
-  }
-  item['email'] = email;
-  item['date'] = new Date();
+    // for (let i = 0; i < keysToDelete.length; i++) {
+    //   // localStorage.removeItem(keysToDelete[i]);
+    //   chrome.storage.local.remove()
+    // }
+    chrome.storage.local.remove(keysToDelete);
+    console.log('555');
 
-  if (background.isNewInstall_) {
-    if (background.enterpriseMode_ && !background.shouldInitializePassword_) {
-      // If enterprise policy says not to prompt, then don't prompt.
-      background.isNewInstall_ = false;
+    console.log('Saving password for: ' + email);
+    let item;
+    if (password in result) {
+      item = JSON.parse(result[password]);
     } else {
-      const options = {
-        type: 'basic',
-        title: chrome.i18n.getMessage('extension_name'),
-        message: chrome.i18n.getMessage('initialization_thank_you_message'),
-        iconUrl: chrome.extension.getURL('logo_password_alert.png')
-      };
-      chrome.notifications.create(
-          'thank_you_notification', options, function() {
-            background.isNewInstall_ = false;
-          });
+      item = {'length': length};
     }
-  }
+    item['email'] = email;
+    item['date'] = new Date();
+    console.log(123)
+    if (background.isNewInstall_) {
+      if (background.enterpriseMode_ && !background.shouldInitializePassword_) {
+        // If enterprise policy says not to prompt, then don't prompt.
+        background.isNewInstall_ = false;
+      } else {
+        const options = {
+          type: 'basic',
+          title: chrome.i18n.getMessage('extension_name'),
+          message: chrome.i18n.getMessage('initialization_thank_you_message'),
+          iconUrl: chrome.runtime.getURL('logo_password_alert.png')
+        };
+        chrome.notifications.create(
+            'thank_you_notification', options, function() {
+              background.isNewInstall_ = false;
+            });
+      }
+    }
+  
+    // localStorage[password] = JSON.stringify(item);
+    console.log('test');
+    chrome.storage.local.set({ [password]: JSON.stringify(item) });
+    delete background.possiblePassword_[tabId];
+    background.refreshPasswordLengths_();
 
-  localStorage[password] = JSON.stringify(item);
-  delete background.possiblePassword_[tabId];
-  background.refreshPasswordLengths_();
+  });
 };
 
 
@@ -861,13 +922,16 @@ background.savePossiblePassword_ = function(tabId) {
  */
 background.refreshPasswordLengths_ = function() {
   background.passwordLengths_ = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const item = background.getLocalStorageItem_(i);
-    if (item) {
-      background.passwordLengths_[item['length']] = true;
+  chrome.storage.local.get(null).then(result => {
+    const length = Object.keys(result).length;
+    for (let i = 0; i < length; i++) {
+      const item = background.getLocalStorageItem_(i);
+      if (item) {
+        background.passwordLengths_[item['length']] = true;
+      }
     }
-  }
-  background.pushToAllTabs_();
+    background.pushToAllTabs_();
+  })
 };
 
 
@@ -916,37 +980,39 @@ background.checkPassword_ = function(tabId, request, state) {
   }
 
   const hash = background.hashPassword_(request.password);
-  if (localStorage[hash]) {
-    const item = JSON.parse(localStorage[hash]);
-
-    if (item['length'] == request.password.length) {
-      console.log('PASSWORD TYPED! ' + request.url);
-
-      if (!background.enterpriseMode_) {  // Consumer mode.
-        // TODO(henryc): This is a workaround for http://cl/105095500,
-        // which introduced a regression where double-warning is displayed
-        // by both keydown and keypress handlers.
-        // There is a more robust fix for this at http://cl/118720482.
-        // But it's pretty sizable, so let's wait for Drew to take a look,
-        // and use this in the meantime.
-        state['otpMode'] = true;
-        background.displayPasswordWarningIfNeeded_(
-            request.url, item['email'], tabId);
-      } else {  // Enterprise mode.
-        if (background.isEmailInDomain_(item['email'])) {
-          console.log('enterprise mode and email matches domain.');
-          background.sendReportPassword_(
-              request, item['email'], item['date'], false);
-          state['hash'] = hash;
-          state['otpCount'] = 0;
+  chrome.storage.local.get(hash).then(item => {
+    if (item) {
+      // const item = JSON.parse(localStorage[hash]);
+  
+      if (item['length'] == request.password.length) {
+        console.log('PASSWORD TYPED! ' + request.url);
+  
+        if (!background.enterpriseMode_) {  // Consumer mode.
+          // TODO(henryc): This is a workaround for http://cl/105095500,
+          // which introduced a regression where double-warning is displayed
+          // by both keydown and keypress handlers.
+          // There is a more robust fix for this at http://cl/118720482.
+          // But it's pretty sizable, so let's wait for Drew to take a look,
+          // and use this in the meantime.
           state['otpMode'] = true;
-          state['otpTime'] = new Date();
           background.displayPasswordWarningIfNeeded_(
               request.url, item['email'], tabId);
+        } else {  // Enterprise mode.
+          if (background.isEmailInDomain_(item['email'])) {
+            console.log('enterprise mode and email matches domain.');
+            background.sendReportPassword_(
+                request, item['email'], item['date'], false);
+            state['hash'] = hash;
+            state['otpCount'] = 0;
+            state['otpMode'] = true;
+            state['otpTime'] = new Date();
+            background.displayPasswordWarningIfNeeded_(
+                request.url, item['email'], tabId);
+          }
         }
       }
     }
-  }
+  });
 };
 
 
@@ -972,7 +1038,7 @@ background.displayPasswordWarningIfNeeded_ = function(url, email, tabId) {
       return;
     }
     // TODO(adhintz) Change to named parameters.
-    const warning_url = chrome.extension.getURL('password_warning.html') + '?' +
+    const warning_url = chrome.runtime.getURL('password_warning.html') + '?' +
         encodeURIComponent(currentHost) + '&' + encodeURIComponent(email) +
         '&' + tabId;
     chrome.tabs.create({'url': warning_url});
@@ -1000,7 +1066,7 @@ background.displayPhishingWarningIfNeeded_ = function(tabId, request) {
           return;
         }
         // TODO(adhintz) Change to named parameters.
-        const warning_url = chrome.extension.getURL('phishing_warning.html') +
+        const warning_url = chrome.runtime.getURL('phishing_warning.html') +
             '?' + tabId + '&' + encodeURIComponent(request.url || '') + '&' +
             encodeURIComponent(currentHost) + '&' +
             encodeURIComponent(request.securityEmailAddress);
@@ -1107,18 +1173,21 @@ background.guessUser_ = function() {
     return '';
   }
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const item = background.getLocalStorageItem_(i);
-    if (item && item['email'] && background.isEmailInDomain_(item['email'])) {
-      return item['email'];
+  chrome.storage.local.get(null).then(result => {
+    const length = Object.keys(result).length;
+    for (let i = 0; i < length; i++) {
+      const item = background.getLocalStorageItem_(i);
+      if (item && item['email'] && background.isEmailInDomain_(item['email'])) {
+        return item['email'];
+      }
     }
-  }
-
-  if (background.isEmailInDomain_(background.signed_in_email_)) {
-    return background.signed_in_email_;
-  } else {
-    return '';
-  }
+  
+    if (background.isEmailInDomain_(background.signed_in_email_)) {
+      return background.signed_in_email_;
+    } else {
+      return '';
+    }
+  });
 };
 
 
@@ -1180,14 +1249,20 @@ background.hashPassword_ = function(password) {
  * @private
  */
 background.getHashSalt_ = function() {
-  if (!(background.SALT_KEY_ in localStorage)) {
-    // Generate a salt and save it.
-    const salt = new Uint32Array(1);
-    window.crypto.getRandomValues(salt);
-    localStorage[background.SALT_KEY_] = salt[0].toString();
-  }
-
-  return localStorage[background.SALT_KEY_];
+  let saltKey;
+  chrome.storage.local.get(background.SALT_KEY_).then(result => {
+    saltKey = result;
+    if (!saltKey) {
+      // Generate a salt and save it.
+      const salt = new Uint32Array(1);
+      window.crypto.getRandomValues(salt);
+      // localStorage[background.SALT_KEY_] = salt[0].toString();
+      chrome.storage.local.set({ [background.SALT_KEY_]: salt[0].toString() });
+    }
+  
+    // return localStorage[background.SALT_KEY_];
+    return saltKey;
+  });
 };
 
 

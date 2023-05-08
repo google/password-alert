@@ -1,44 +1,42 @@
 {
-  "name": "__MSG_extension_name__",
-  "description": "__MSG_extension_description__",
-  "version": "1.28",
-  "default_locale": "en",
-  "minimum_chrome_version": "46",
-  "icons": { "128": "icon128.png" },
-  "permissions": [
-    "identity",
-    "identity.email",
-    "notifications",
-    "storage",
-    "tabs",
-    "<all_urls>"
-  ],
-
-  "storage": {
-    "managed_schema": "managed_policy_schema.json"
-  },
-
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content_script_compiled.js"],
-      "all_frames": true,
-      "run_at": "document_start",
-      "match_about_blank": true
+    "manifest_version": 3,
+    "name": "passalert-test",
+    "description": "extension de password alert test",
+    "version": "2.0",
+    "default_locale": "en",
+    "icons": 
+      {
+        "128": "icon128.png"
+      }
+    ,
+    "host_permissions": [
+      "<all_urls>"
+    ],
+    "permissions": [
+      "identity",
+      "notifications",
+      "storage",
+      "tabs",
+      "scripting"
+    ],
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content_script_compiled.js"],
+        "all_frames": true,
+        "run_at": "document_start"
+      }
+    ],
+    "background": {
+      "service_worker": "background_compiled.js"
+    },
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'",
+      "sandbox": "sandbox allow-scripts; default-src 'none'; script-src 'self'"
+    },
+    "oauth2": {
+      "client_id": "897749729682-2j2fjtnfde4kgi40fvjrp7ude48ooh4n.apps.googleusercontent.com",
+      "scopes": ["email"]
     }
-  ],
-
-  "background": {
-    "scripts": ["background_compiled.js"],
-    "persistent": false
-  },
-
-  "content_security_policy": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://*",
-
-  "manifest_version": 2,
-
-  "oauth2": {
-    "client_id": "897749729682-2j2fjtnfde4kgi40fvjrp7ude48ooh4n.apps.googleusercontent.com",
-    "scopes": ["email"]
   }
-}
+  

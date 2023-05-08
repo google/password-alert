@@ -72,8 +72,8 @@ pc_build_extension() {
   if [ "$1" == "debug" ]; then
     jscompile_pc+=" --debug --formatting=PRETTY_PRINT"
   fi
-  echo -n "." && $jscompile_pc --closure_entry_point "passwordalert.background" --js_output_file "$BUILD_EXT_DIR/background_compiled.js"
-  echo -n "." && $jscompile_pc --closure_entry_point "passwordalert" --js_output_file "$BUILD_EXT_DIR/content_script_compiled.js"
+  echo -n "." && $jscompile_pc --entry_point "passwordalert.background" --js_output_file "$BUILD_EXT_DIR/background_compiled.js" 
+  echo -n "." && $jscompile_pc --entry_point "passwordalert" --js_output_file "$BUILD_EXT_DIR/content_script_compiled.js" 
   echo ""
 
   echo "Copying extension files..."

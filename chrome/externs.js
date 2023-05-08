@@ -29,8 +29,8 @@ var localStorage;
 var JSON;
 
 // var chrome;  // TODO(adhintz) seems to be needed for open source build, but breaks internal build.
-chrome.extension;
-chrome.extension.getURL;
+chrome.runtime;
+chrome.runtime.getURL;
 
 chrome.i18n;
 chrome.i18n.getMessage;

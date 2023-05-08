@@ -1,1 +1,3 @@
-server/privatekey.pem
+chrome/lib/
+chrome/build/
+.git/

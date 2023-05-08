@@ -23,7 +23,7 @@
 
 'use strict';
 
-goog.module('passwordalert.content_script');
+goog.module('passwordalert');
 
 const GoogFormatEmailAddress = goog.require('goog.format.EmailAddress');
 const googString = goog.require('goog.string');
@@ -89,7 +89,10 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/selectchallenge',
   'https://accounts.google.com/signin/challenge',
   'https://accounts.google.com/signin/privacyreminder',
-  'https://accounts.google.com/signin/v2/challenge/ipp'
+  'https://accounts.google.com/signin/v2/challenge/ipp',
+  'https://accounts.google.com/signin/v2/challenge/sk/webauthn',
+  'https://accounts.google.com/signin/v2/challenge/pwd',
+  'https://accounts.google.com/v3/signin/challenge/pwd' // New prefix used when you log-out and log-in again
 ];
 
 
@@ -393,7 +396,8 @@ passwordalert.completePageInitializationIfReady_ = function() {
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+      console.log(456);
+      chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: 456});
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
@@ -420,47 +424,49 @@ passwordalert.completePageInitializationIfReady_ = function() {
         password: changePasswordForm.Passwd.value
       });
     }, true);
-  } else if (googString.startsWith(
-                 passwordalert.url_, passwordalert.GAIA_URL_)) {
-    if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
-      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
-    } else {
-      // Delete any previously considered password in case this is a re-prompt
-      // when an incorrect password is entered, such as a ServiceLoginAuth page.
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
-      const loginForm = document.querySelector('#view_container > form');
-      // The chooser is no longer a gaia_loginform, so verify we're on a
-      // password entry page by finding a form in a view_container.
-      if (loginForm && document.getElementById('Email')) {
-        loginForm.addEventListener(
-            'submit', passwordalert.saveGaiaPassword_, true);
-      } else if (
-          document.getElementById('hiddenEmail') &&
-          document.getElementsByName('password')) {
-        // TODO(adhintz) Avoid adding event listeners if they already exist.
-        document.getElementById('passwordNext')
-            .addEventListener('click', function() {
-              passwordalert.saveGaia2Password_(null);
-            });
-        // Pressing spacebar on the Next button will trigger save.
-        document.getElementById('passwordNext')
-            .addEventListener('keydown', function(evt) {
-              if (evt.keyCode == 32) {
-                passwordalert.saveGaia2Password_(evt);
-              }
-            }, true);
-        // Pressing enter anywhere on the page will trigger save.
-        document.addEventListener('keydown', function(evt) {
-          if (evt.keyCode == 13) {
-            passwordalert.saveGaia2Password_(evt);
-          }
-        }, true);
-        window.onbeforeunload = passwordalert.saveGaia2Password_;
+  } else if (googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
+      if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
+        chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+      } else {
+        // Delete any previously considered password in case this is a re-prompt
+        // when an incorrect password is entered, such as a ServiceLoginAuth page.
+        console.log(789);
+        // modificar acá, antes de ir a la página correcta la url no cambia y hacer q se borre la pwd puesta
+        // chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: 789, passwordalert: passwordalert.url_});
+        const loginForm = document.querySelector('#view_container > form');
+        // The chooser is no longer a gaia_loginform, so verify we're on a
+        // password entry page by finding a form in a view_container.
+        if (loginForm && document.getElementById('Email')) {
+          loginForm.addEventListener(
+              'submit', passwordalert.saveGaiaPassword_, true);
+        } else if (
+            document.getElementById('hiddenEmail') &&
+            document.getElementsByName('password')) {
+          // TODO(adhintz) Avoid adding event listeners if they already exist.
+          document.getElementById('passwordNext')
+              .addEventListener('click', function() {
+                passwordalert.saveGaia2Password_(null);
+              });
+          // Pressing spacebar on the Next button will trigger save.
+          document.getElementById('passwordNext')
+              .addEventListener('keydown', function(evt) {
+                if (evt.keyCode == 32) {
+                  passwordalert.saveGaia2Password_(evt);
+                }
+              }, true);
+          // Pressing enter anywhere on the page will trigger save.
+          document.addEventListener('keydown', function(evt) {
+            if (evt.keyCode == 13) {
+              passwordalert.saveGaia2Password_(evt);
+            }
+          }, true);
+          window.onbeforeunload = passwordalert.saveGaia2Password_;
+        }
       }
-    }
   } else if (googString.startsWith(
                  passwordalert.url_, passwordalert.CHANGE_PASSWORD_URL_)) {
-    chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+    console.log(123);
+    chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: '123'});
     // Need to wait until the change password page has finished loading
     // before listener can be added.
     window.onload = function() {
