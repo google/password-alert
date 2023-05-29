@@ -34,7 +34,6 @@ const safe = goog.require('goog.dom.safe');
 let background = {};
 goog.exportSymbol('background', background);  // for tests only.
 
-
 /**
  * Key for localStorage to store salt value.
  * @private {string}
@@ -568,6 +567,7 @@ background.handleRequest_ = function(request, sender, sendResponse) {
       break;
     case 'statusRequest':
       const state = {passwordLengths: background.passwordLengths_};
+      // sendResponse(state);
       sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
       break;
     case 'looksLikeGoogle':
@@ -575,16 +575,17 @@ background.handleRequest_ = function(request, sender, sendResponse) {
       background.displayPhishingWarningIfNeeded_(sender.tab.id, request);
       break;
     case 'deletePossiblePassword':
-      console.log(request.reason);
-      console.log(request.passwordalert);
+      console.log('deletepossiblepassword');
+      console.log('request.passwordalert',request.passwordalert);
       delete background.possiblePassword_[sender.tab.id];
       break;
     case 'setPossiblePassword':
+      console.log('setpossiblepassword');
       background.setPossiblePassword_(sender.tab.id, request);
       break;
     case 'savePossiblePassword':
+      console.log('savepossiblepassword');
       background.savePossiblePassword_(sender.tab.id);
-      console.log('setpossiblepassword');
       break;
     case 'getEmail':
       sendResponse(background.possiblePassword_[sender.tab.id]['email']);
@@ -759,8 +760,8 @@ background.setPossiblePassword_ = function(tabId, request) {
         background.MINIMUM_PASSWORD_);
     return;
   }
-  console.log(tabId);
-  console.log(request);
+  console.log('tabID: ',tabId);
+  console.log('request',request);
   console.log('Setting possible password for %s, password length of %s', request.email, request.password.length);
   console.log(background.hashPassword_(request.password));
   background.possiblePassword_[tabId] = {
@@ -769,9 +770,8 @@ background.setPossiblePassword_ = function(tabId, request) {
     'length': request.password.length,
     'time': Math.floor(Date.now() / 1000)
   };
-  console.log('guardado ok!!')
-  console.log(background.possiblePassword_);
-  console.log(background.possiblePassword_[tabId]);
+  console.log('Possible password: ',background.possiblePassword_[tabId]);
+  console.log('Tab ID: ',background.possiblePassword_[tabId]);
 };
 
 
@@ -795,18 +795,18 @@ background.getLocalStorageItem_ = function(index) {
   chrome.storage.local.get(null).then(result => {
     let item;
     const keys = Object.keys(result);
+    console.log('keys: ',keys);
 
     if(keys[index] === background.SALT_KEY_) {
       item = null;
     } else {
-      item = JSON.parse(result[keys[index]]);
+      // item = JSON.parse(result[keys[index]]);
+      item= result[keys[index]];
+      console.log('getLocalStorageItem_ : ',item);
     }
     return item;
   })
 };
-
-
-
 
 /**
  * The login was successful, so write the possible password to localStorage.
@@ -814,15 +814,12 @@ background.getLocalStorageItem_ = function(index) {
  * @private
  */
 background.savePossiblePassword_ = function(tabId) {
-  console.log('111');
+  
   const possiblePassword_ = background.possiblePassword_[tabId];
-  console.log("possible password: "); 
-  console.log(background);
-  console.log(tabId);
-  console.log(possiblePassword_);
-  console.log('finnnn')
+  console.log('Possible password: ',possiblePassword_);
+
   if (!possiblePassword_) {
-    console.log('222');
+    console.log('A possible password has not been set.');
     return;
   }
   if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
@@ -832,30 +829,17 @@ background.savePossiblePassword_ = function(tabId) {
   const password = possiblePassword_['password'];
   const length = possiblePassword_['length'];
 
-  console.log('333');
+  
   // Delete old email entries.
-  // for (let i = 0; i < localStorage.length; i++) {
-  //   const item = background.getLocalStorageItem_(i);
-  //   if (item && item['email'] == email) {
-  //     delete item['email'];
-  //     delete item['date'];
-  //     localStorage[localStorage.key(i)] = JSON.stringify(item);
-  //   }
-  // }
-
-  // Get the entire content of storage 
-  chrome.storage.local.get(null).then(result => {
+  chrome.storage.local.get(null).then(result => { 
+    console.log('Local storage content before deleting old email entries: ', result)
     const keys = Object.keys(result);
-    console.log('444');
-    console.log(keys);
     for (let i = 0; i < keys.length; i++) {
       const item = background.getLocalStorageItem_(i);
       if (item && item['email'] == email) {
         delete item['email'];
-        delete item['date'];
+        delete item['date']; 
         chrome.storage.local.set({ [keys[i]] : JSON.stringify(item) });
-        console.log('en el if');
-        // localStorage[localStorage.key(i)] = JSON.stringify(item);
       }
     }
 
@@ -866,27 +850,28 @@ background.savePossiblePassword_ = function(tabId) {
       if (item && !('email' in item)) {
         // Delete the item later.
         // We avoid modifying localStorage while iterating over it.
+        console.log('Deleting item: ',item);
         keysToDelete.push(keys[i]);
       }
     }
-
-    // for (let i = 0; i < keysToDelete.length; i++) {
-    //   // localStorage.removeItem(keysToDelete[i]);
-    //   chrome.storage.local.remove()
-    // }
     chrome.storage.local.remove(keysToDelete);
-    console.log('555');
-
+    
     console.log('Saving password for: ' + email);
     let item;
+    console.log('Result: ',result);
     if (password in result) {
-      item = JSON.parse(result[password]);
+      // item = JSON.parse(result[password]);
+      console.log('password in result: ',password);
+      item=result[password];
+      console.log('item: ',item);
     } else {
       item = {'length': length};
     }
+
     item['email'] = email;
-    item['date'] = new Date();
-    console.log(123)
+    item['date'] = new Date();  
+    console.log('Item before setting password: ',item);
+
     if (background.isNewInstall_) {
       if (background.enterpriseMode_ && !background.shouldInitializePassword_) {
         // If enterprise policy says not to prompt, then don't prompt.
@@ -904,15 +889,42 @@ background.savePossiblePassword_ = function(tabId) {
             });
       }
     }
-  
-    // localStorage[password] = JSON.stringify(item);
-    console.log('test');
-    chrome.storage.local.set({ [password]: JSON.stringify(item) });
-    delete background.possiblePassword_[tabId];
-    background.refreshPasswordLengths_();
-
+ 
+    //chrome.storage.local.set({ [password]: JSON.stringify(item) }, function() {
+    chrome.storage.local.set({ [password]: item }, function() {
+      if (chrome.runtime.lastError) {
+        console.error('Error saving password for: ' + email, chrome.runtime.lastError);
+      } else {
+        console.log('Password saved for: ' + email);
+        console.log(password);
+        // delete background.possiblePassword_[tabId];
+        console.log('lengths_ before',background.passwordLengths_)
+        background.refreshPasswordLengths_();
+        console.log('lengths_ after',background.passwordLengths_)
+      }
+    });
   });
 };
+
+
+// /**
+//  * Updates the value of background.passwordLengths_ and pushes
+//  * new value to all content_script tabs.
+//  * @private
+//  */
+// background.refreshPasswordLengths_ = function() {
+//   background.passwordLengths_ = [];
+//   chrome.storage.local.get(null).then(result => {
+//     const length = Object.keys(result).length;
+//     for (let i = 0; i < length; i++) {
+//       const item = background.getLocalStorageItem_(i);
+//       if (item) {
+//         background.passwordLengths_[item['length']] = true;
+//       }
+//     }
+//     background.pushToAllTabs_();
+//   })
+// };
 
 
 /**
@@ -922,17 +934,21 @@ background.savePossiblePassword_ = function(tabId) {
  */
 background.refreshPasswordLengths_ = function() {
   background.passwordLengths_ = [];
-  chrome.storage.local.get(null).then(result => {
-    const length = Object.keys(result).length;
+  chrome.storage.local.get(null, function(result) {
+    console.log('result in refreshPasswordLengths: ',result)
+    const keys = Object.keys(result);
+    const length = keys.length;
     for (let i = 0; i < length; i++) {
-      const item = background.getLocalStorageItem_(i);
+      const item = background.getLocalStorageItem_(keys[i]);
+      console.log('item keys: ',keys[i]);
       if (item) {
         background.passwordLengths_[item['length']] = true;
       }
     }
     background.pushToAllTabs_();
-  })
+  });
 };
+
 
 
 /**
@@ -1011,6 +1027,8 @@ background.checkPassword_ = function(tabId, request, state) {
           }
         }
       }
+    }else{
+      console.log('no item found');
     }
   });
 };
@@ -1266,6 +1284,30 @@ background.getHashSalt_ = function() {
 };
 
 
+// /**
+//  * Posts status message to all tabs.
+//  * @private
+//  */
+// background.pushToAllTabs_ = function() {
+//   chrome.tabs.query({}, function(tabs) {
+//     for (let i = 0; i < tabs.length; i++) {
+//       background.pushToTab_(tabs[i].id);
+//     }
+//   });
+// };
+
+// /**
+//  * Posts status message to all tabs.
+//  * @private
+//  */
+// background.pushToAllTabs_ = function() {
+//   chrome.tabs.query({}).then(function(tabs) {
+//     for (let i = 0; i < tabs.length; i++) {
+//       background.pushToTab_(tabs[i].id);
+//     }
+//   });
+// };
+
 /**
  * Posts status message to all tabs.
  * @private
@@ -1273,10 +1315,13 @@ background.getHashSalt_ = function() {
 background.pushToAllTabs_ = function() {
   chrome.tabs.query({}, function(tabs) {
     for (let i = 0; i < tabs.length; i++) {
+      console.log('tab ID', tabs[i].id);
       background.pushToTab_(tabs[i].id);
     }
   });
 };
+
+
 
 
 /**
@@ -1288,6 +1333,17 @@ background.pushToTab_ = function(tabId) {
   const state = {passwordLengths: background.passwordLengths_};
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
+
+// /**
+//  * Sends a message with the tab's state to the content_script on a tab.
+//  * @param {number} tabId Tab to receive the message.
+//  * @private
+//  */
+// background.pushToTab_ = function(tabId) {
+//   const state = { passwordLengths: background.passwordLengths_ };
+//   chrome.tabs.sendMessage(tabId, state);
+// };
+
 
 
 // Set this early, or else the install event will not be picked up.
