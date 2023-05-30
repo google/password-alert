@@ -522,6 +522,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
     console.log('response',response)
     passwordalert.stop_();
     passwordalert.start_(response);
+    console.log('PA is running',passwordalert.isRunning_)
   });
 };
 

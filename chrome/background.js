@@ -662,6 +662,7 @@ background.checkAllPasswords_ = function(tabId, request, state) {
       // Perform a check on every length, even if we don't have enough
       // typed characters, to avoid timing attacks.
       if (background.passwordLengths_[i]) {
+        console.log('checkAllPasswords_ ',background.passwordLengths_[i])
         request.password = state['typed'].substr(-1 * i);
         background.checkPassword_(tabId, request, state);
       }
@@ -678,6 +679,7 @@ background.checkAllPasswords_ = function(tabId, request, state) {
  * @private
  */
 background.handleKeydown_ = function(tabId, request) {
+  console.log('watching each key down')
   const state = background.stateKeydown_;
   background.checkOtp_(tabId, request, state);
 
@@ -1032,6 +1034,7 @@ background.checkRateLimit_ = function() {
  * @private
  */
 background.checkPassword_ = function(tabId, request, state) {
+  console.log('checkpassword request: ',request);
   if (!background.checkRateLimit_()) {
     return;  // This limits content_script brute-forcing the password.
   }
@@ -1045,9 +1048,24 @@ background.checkPassword_ = function(tabId, request, state) {
   const hash = background.hashPassword_(request.password);
   chrome.storage.local.get(hash).then(item => {
     if (item) {
+      console.log('item retrieved in checkPassword: ',item);
+      console.log('request.password',request.password);
+      
       // const item = JSON.parse(localStorage[hash]);
+      console.log('hash retrieved in checkPassword: ',hash);
+      
+      let length;
+
+for (const key in item) {
+  if (item.hasOwnProperty(key)) {
+    length = item[key].length;
+    break; // Assuming you only need the first occurrence
+  }
+}
+
+      console.log('item.length',length,'request.password.length',request.password.length);
   
-      if (item['length'] == request.password.length) {
+      if (length == request.password.length) {
         console.log('PASSWORD TYPED! ' + request.url);
   
         if (!background.enterpriseMode_) {  // Consumer mode.
