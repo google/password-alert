@@ -791,22 +791,41 @@ background.setPossiblePassword_ = function(tabId, request) {
 //   return item;
 // };
 
-background.getLocalStorageItem_ = function(index) {
-  chrome.storage.local.get(null).then(result => {
-    let item;
-    const keys = Object.keys(result);
-    console.log('keys: ',keys);
+// background.getLocalStorageItem_ = function(index) {
+//   chrome.storage.local.get(null).then(result => {
+//     let item;
+//     const keys = Object.keys(result);
+//     console.log('keys: ',keys);
 
-    if(keys[index] === background.SALT_KEY_) {
-      item = null;
-    } else {
-      // item = JSON.parse(result[keys[index]]);
-      item= result[keys[index]];
-      console.log('getLocalStorageItem_ : ',item);
-    }
-    return item;
-  })
+//     if(keys[index] === background.SALT_KEY_) {
+//       item = null;
+//     } else {
+//       // item = JSON.parse(result[keys[index]]);
+//       item= result[keys[index]];
+//       console.log('getLocalStorageItem_ : ',item);
+//     }
+//     return item;
+//   })
+// };
+
+background.getLocalStorageItem_ = function(index) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(null, result => {
+      let item;
+      const keys = Object.keys(result);
+      console.log('keys: ', keys);
+
+      if (keys[index] === background.SALT_KEY_) {
+        item = null;
+      } else {
+        item = result[keys[index]];
+        console.log('getLocalStorageItem_ : ', item);
+      }
+      resolve(item);
+    });
+  });
 };
+
 
 /**
  * The login was successful, so write the possible password to localStorage.
@@ -915,9 +934,11 @@ background.savePossiblePassword_ = function(tabId) {
 // background.refreshPasswordLengths_ = function() {
 //   background.passwordLengths_ = [];
 //   chrome.storage.local.get(null).then(result => {
+//     console.log('result in refreshPasswordLengths: ',result)
 //     const length = Object.keys(result).length;
 //     for (let i = 0; i < length; i++) {
 //       const item = background.getLocalStorageItem_(i);
+//       console.log('item: ',item);
 //       if (item) {
 //         background.passwordLengths_[item['length']] = true;
 //       }
@@ -926,28 +947,54 @@ background.savePossiblePassword_ = function(tabId) {
 //   })
 // };
 
-
-/**
- * Updates the value of background.passwordLengths_ and pushes
- * new value to all content_script tabs.
- * @private
- */
 background.refreshPasswordLengths_ = function() {
   background.passwordLengths_ = [];
-  chrome.storage.local.get(null, function(result) {
-    console.log('result in refreshPasswordLengths: ',result)
+  chrome.storage.local.get(null).then(result => {
+    console.log('result in refreshPasswordLengths: ', result);
     const keys = Object.keys(result);
     const length = keys.length;
+    const promises = [];
+
     for (let i = 0; i < length; i++) {
-      const item = background.getLocalStorageItem_(keys[i]);
-      console.log('item keys: ',keys[i]);
-      if (item) {
-        background.passwordLengths_[item['length']] = true;
-      }
+      const promise = background.getLocalStorageItem_(i);
+      promises.push(promise);
     }
-    background.pushToAllTabs_();
+
+    Promise.all(promises).then(items => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item) {
+          background.passwordLengths_[item['length']] = true;
+        }
+      }
+      background.pushToAllTabs_();
+    });
   });
 };
+
+
+
+// /**
+//  * Updates the value of background.passwordLengths_ and pushes
+//  * new value to all content_script tabs.
+//  * @private
+//  */
+// background.refreshPasswordLengths_ = function() {
+//   background.passwordLengths_ = [];
+//   chrome.storage.local.get(null, function(result) {
+//     console.log('result in refreshPasswordLengths: ',result)
+//     const keys = Object.keys(result);
+//     const length = keys.length;
+//     for (let i = 0; i < length; i++) {
+//       const item = background.getLocalStorageItem_(keys[i]);
+//       console.log('item keys: ',keys[i]);
+//       if (item) {
+//         background.passwordLengths_[item['length']] = true;
+//       }
+//     }
+//     background.pushToAllTabs_();
+//   });
+// };
 
 
 
@@ -1296,30 +1343,30 @@ background.getHashSalt_ = function() {
 //   });
 // };
 
-// /**
-//  * Posts status message to all tabs.
-//  * @private
-//  */
-// background.pushToAllTabs_ = function() {
-//   chrome.tabs.query({}).then(function(tabs) {
-//     for (let i = 0; i < tabs.length; i++) {
-//       background.pushToTab_(tabs[i].id);
-//     }
-//   });
-// };
-
 /**
  * Posts status message to all tabs.
  * @private
  */
 background.pushToAllTabs_ = function() {
-  chrome.tabs.query({}, function(tabs) {
+  chrome.tabs.query({}).then(function(tabs) {
     for (let i = 0; i < tabs.length; i++) {
-      console.log('tab ID', tabs[i].id);
       background.pushToTab_(tabs[i].id);
     }
   });
 };
+
+// /**
+//  * Posts status message to all tabs.
+//  * @private
+//  */
+// background.pushToAllTabs_ = function() {
+//   chrome.tabs.query({}, function(tabs) {
+//     for (let i = 0; i < tabs.length; i++) {
+//       console.log('tab ID', tabs[i].id);
+//       background.pushToTab_(tabs[i].id);
+//     }
+//   });
+// };
 
 
 
