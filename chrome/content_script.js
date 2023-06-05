@@ -93,8 +93,8 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/v2/challenge/sk/webauthn',
   'https://accounts.google.com/signin/v2/challenge/pwd',
   'https://accounts.google.com/v3/signin/challenge/pwd', // New prefix used when you log-out and log-in again
-  // todo temp
-  'https://myaccount.google.com/?utm_source=sign_in_no_continue&pli=1'
+  // todo remove
+  'https://accounts.google.com/RotateCookiesPage', // Consumer mode
 ];
 
 
@@ -403,14 +403,12 @@ passwordalert.completePageInitializationIfReady_ = function() {
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
-      console.log(456);
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: 456});
+      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
       // This handles the case where user is redirected to a page that starts
       // with sso url upon a successful sso login.
-      console.log('savePossiblePassword line 411')
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     }
   } else if (googString.startsWith(
@@ -433,28 +431,22 @@ passwordalert.completePageInitializationIfReady_ = function() {
       });
     }, true);
   } else if (googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
-    console.log('111')
-    console.log('Gaia url');
+    console.log('passwordalert.url_', passwordalert.url_)
       if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
-        console.log('is_gaia_correct', passwordalert.url_);
-        console.log('savePossiblePassword line 438')
         chrome.runtime.sendMessage({action: 'savePossiblePassword'});
       } else {
-        console.log('222')
         // Delete any previously considered password in case this is a re-prompt
         // when an incorrect password is entered, such as a ServiceLoginAuth page.
-        console.log('Delete possible password because of incorrect gaia url.');
+        console.log('Deleting possible password because of incorrect gaia url.');
         // todo modificar acá, antes de ir a la página correcta la url no cambia y hacer q se borre la pwd puesta
-        //chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: 789, passwordalert: passwordalert.url_});
+        chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: 789, passwordalert: passwordalert.url_});
         const loginForm = document.querySelector('#view_container > form');
         // The chooser is no longer a gaia_loginform, so verify we're on a
         // password entry page by finding a form in a view_container.
         if (loginForm && document.getElementById('Email')) {
-          console.log('222-1');
           loginForm.addEventListener(
               'submit', passwordalert.saveGaiaPassword_, true);
         } else if (
-            
             document.getElementById('hiddenEmail') &&
             document.getElementsByName('password')) {
           // TODO(adhintz) Avoid adding event listeners if they already exist.
@@ -480,8 +472,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
       }
   } else if (googString.startsWith(
                  passwordalert.url_, passwordalert.CHANGE_PASSWORD_URL_)) {
-    console.log(123);
-    chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: '123'});
+    chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
     // Need to wait until the change password page has finished loading
     // before listener can be added.
     window.onload = function() {
@@ -503,7 +494,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
       }, true);
     };
   } else {  // Not a Google login URL.
-    console.log('Not a login URL.')
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
       chrome.runtime.sendMessage({
@@ -513,13 +503,10 @@ passwordalert.completePageInitializationIfReady_ = function() {
         securityEmailAddress: passwordalert.security_email_address_
       });
     }
-    console.log('savePossiblePassword line 511')
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
   }
 
-  console.log('default status request')
   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
-    console.log('response',response)
     passwordalert.stop_();
     passwordalert.start_(response);
     console.log('PA is running',passwordalert.isRunning_)
@@ -559,7 +546,6 @@ passwordalert.is_gaia_correct_ = function(url) {
  */
 passwordalert.start_ = function(msg) {
   try {
-    console.log('msg',msg,msg.length)
     const state = JSON.parse(msg);
     if (state.passwordLengths && state.passwordLengths == 0) {
       console.log('No passwords to watch')
@@ -706,20 +692,8 @@ passwordalert.saveGaiaPassword_ = function(evt) {
       googString.isEmptyString(googString.makeSafe(password))) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
-  // chrome.runtime.sendMessage(
-  //     {action: 'setPossiblePassword', email: email, password: password});
-
-  // todo test remove later
   chrome.runtime.sendMessage(
-    { action: 'setPossiblePassword', email: email, password: password },
-    function() {
-      // Delay before sending the second message (adjust the delay time as needed)
-      setTimeout(function() {
-        // Second message
-        chrome.runtime.sendMessage({ action: 'savePossiblePassword' });
-      }, 1000); // Delay of 1 second
-    }
-  );
+      {action: 'setPossiblePassword', email: email, password: password});  
 };
 
 
@@ -734,7 +708,6 @@ passwordalert.saveGaia2Password_ = function(evt) {
   const email =
       emailInput ? googString.trim(emailInput.value.toLowerCase()) : '';
   const passwordInputs = document.getElementsByName('password');
-  console.log(passwordInputs)
   if (!passwordInputs || passwordInputs.length != 1) {
     return;
   }
@@ -747,21 +720,8 @@ passwordalert.saveGaia2Password_ = function(evt) {
       googString.isEmptyString(googString.makeSafe(password))) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
-  // chrome.runtime.sendMessage(
-  //     {action: 'setPossiblePassword', email: email, password: password});
-
-  // todo test remove later
   chrome.runtime.sendMessage(
-    { action: 'setPossiblePassword', email: email, password: password },
-    function() {
-      // Delay before sending the second message (adjust the delay time as needed)
-      setTimeout(function() {
-        // Second message
-        chrome.runtime.sendMessage({ action: 'savePossiblePassword' });
-      }, 1000); // Delay of 1 second
-    }
-  );
-
+      {action: 'setPossiblePassword', email: email, password: password});
   
 };
 
