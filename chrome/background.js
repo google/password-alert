@@ -203,6 +203,7 @@ background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
  * @private {boolean}
  */
 background.enterpriseMode_ = false;
+// background.enterpriseMode_ = true;
 
 
 /**

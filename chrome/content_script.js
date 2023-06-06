@@ -92,7 +92,8 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/v2/challenge/ipp',
   'https://accounts.google.com/signin/v2/challenge/sk/webauthn',
   'https://accounts.google.com/signin/v2/challenge/pwd',
-  'https://accounts.google.com/v3/signin/challenge/pwd', // New prefix used when you log-out and log-in again
+  //'https://accounts.google.com/v3/signin/challenge/pwd', // New prefix used when you log-out and log-in again
+  'https://accounts.google.com/signin/v2/challenge/totp',
   // todo remove
   'https://accounts.google.com/RotateCookiesPage', // Consumer mode
 ];
@@ -224,6 +225,7 @@ passwordalert.isRunning_ = false;
  * @private {boolean}
  */
 passwordalert.enterpriseMode_ = false;
+// passwordalert.enterpriseMode_ = true;
 
 
 /**
@@ -438,8 +440,8 @@ passwordalert.completePageInitializationIfReady_ = function() {
         // Delete any previously considered password in case this is a re-prompt
         // when an incorrect password is entered, such as a ServiceLoginAuth page.
         console.log('Deleting possible password because of incorrect gaia url.');
-        // todo modificar acá, antes de ir a la página correcta la url no cambia y hacer q se borre la pwd puesta
-        chrome.runtime.sendMessage({action: 'deletePossiblePassword', reason: 789, passwordalert: passwordalert.url_});
+        
+        chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
         const loginForm = document.querySelector('#view_container > form');
         // The chooser is no longer a gaia_loginform, so verify we're on a
         // password entry page by finding a form in a view_container.
@@ -448,7 +450,8 @@ passwordalert.completePageInitializationIfReady_ = function() {
               'submit', passwordalert.saveGaiaPassword_, true);
         } else if (
             document.getElementById('hiddenEmail') &&
-            document.getElementsByName('password')) {
+            // todo verify form name, for consumer mode replace Passwd for passwords
+            document.getElementsByName('Passwd')) {
           // TODO(adhintz) Avoid adding event listeners if they already exist.
           document.getElementById('passwordNext')
               .addEventListener('click', function() {
@@ -707,7 +710,8 @@ passwordalert.saveGaia2Password_ = function(evt) {
   const emailInput = document.getElementById('hiddenEmail');
   const email =
       emailInput ? googString.trim(emailInput.value.toLowerCase()) : '';
-  const passwordInputs = document.getElementsByName('password');
+  // const passwordInputs = document.getElementsByName('password');
+  const passwordInputs = document.getElementsByName('Passwd');
   if (!passwordInputs || passwordInputs.length != 1) {
     return;
   }
