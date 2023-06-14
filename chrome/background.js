@@ -757,8 +757,7 @@ background.setPossiblePassword_ = function(tabId, request) {
         background.MINIMUM_PASSWORD_);
     return;
   }
-  console.log('Setting possible password for %s, password length of %s', request.email, request.password.length);
-  console.log(background.hashPassword_(request.password));
+  
   background.possiblePassword_[tabId] = {
     'email': request.email,
     'password': background.hashPassword_(request.password),
@@ -784,7 +783,6 @@ background.getLocalStorageItem_ = function(index) {
         item = null;
       } else {
         item = result[keys[index]];
-        console.log('Item retrieved successfully: ', item);
       }
       resolve(item);
     });
@@ -802,7 +800,6 @@ background.savePossiblePassword_ = function(tabId) {
   const possiblePassword_ = background.possiblePassword_[tabId];
   
   if (!possiblePassword_) {
-    console.log('A possible password has not been set.');
     return;
   }
   if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
@@ -837,7 +834,6 @@ background.savePossiblePassword_ = function(tabId) {
     }
     chrome.storage.local.remove(keysToDelete);
     
-    console.log('Saving password for: ' + email);
     let item;
     if (password in result) {
       item=result[password];
@@ -871,9 +867,7 @@ background.savePossiblePassword_ = function(tabId) {
       if (chrome.runtime.lastError) {
         console.error('Error saving password for: ' + email, chrome.runtime.lastError);
       } else {
-        console.log('Password saved for: ' + email);
-        console.log(password);
-
+        
         delete background.possiblePassword_[tabId];
         
         background.refreshPasswordLengths_();
@@ -980,8 +974,8 @@ background.checkPassword_ = function(tabId, request, state) {
           // But it's pretty sizable, so let's wait for Drew to take a look,
           // and use this in the meantime.
           state['otpMode'] = true;
-          background.displayPasswordWarningIfNeeded_(
-              request.url, item['email'], tabId);
+          // background.displayPasswordWarningIfNeeded_(
+          //     request.url, item['email'], tabId);
         } else {  // Enterprise mode.
           if (background.isEmailInDomain_(item['email'])) {
             console.log('enterprise mode and email matches domain.');
@@ -1274,8 +1268,10 @@ background.pushToTab_ = function(tabId) {
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
 
+
 // Set this early, or else the install event will not be picked up.
 chrome.runtime.onInstalled.addListener(background.handleNewInstall_);
+
 
 // Set listener before initializePage_ which calls chrome.storage.managed.get.
 chrome.storage.onChanged.addListener(background.handleManagedPolicyChanges_);

@@ -433,13 +433,11 @@ passwordalert.completePageInitializationIfReady_ = function() {
       });
     }, true);
   } else if (googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
-    console.log('passwordalert.url_', passwordalert.url_)
       if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
         chrome.runtime.sendMessage({action: 'savePossiblePassword'});
       } else {
         // Delete any previously considered password in case this is a re-prompt
         // when an incorrect password is entered, such as a ServiceLoginAuth page.
-        console.log('Deleting possible password because of incorrect gaia url.');
         
         chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
         const loginForm = document.querySelector('#view_container > form');
@@ -527,7 +525,6 @@ passwordalert.is_gaia_correct_ = function(url) {
   //let ret = true;
   passwordalert.GAIA_CORRECT_.forEach(function(prefix) {
     if (googString.startsWith(url, prefix)) {
-      console.log('It is GAIA CORRECT')
       ret = true;
     }
   });
@@ -551,7 +548,6 @@ passwordalert.start_ = function(msg) {
   try {
     const state = JSON.parse(msg);
     if (state.passwordLengths && state.passwordLengths == 0) {
-      console.log('No passwords to watch')
       passwordalert.stop_();  // no passwords, so no need to watch
       return;
     }
