@@ -92,10 +92,8 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/v2/challenge/ipp',
   'https://accounts.google.com/signin/v2/challenge/sk/webauthn',
   'https://accounts.google.com/signin/v2/challenge/pwd',
-  //'https://accounts.google.com/v3/signin/challenge/pwd', // New prefix used when you log-out and log-in again
   'https://accounts.google.com/signin/v2/challenge/totp',
-  // todo remove
-  'https://accounts.google.com/RotateCookiesPage', // Consumer mode
+  'https://accounts.google.com/RotateCookiesPage' // Consumer mode
 ];
 
 
@@ -225,7 +223,6 @@ passwordalert.isRunning_ = false;
  * @private {boolean}
  */
 passwordalert.enterpriseMode_ = false;
-// passwordalert.enterpriseMode_ = true;
 
 
 /**
@@ -392,11 +389,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
 
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
-
-  // if (passwordalert.url_.startsWith(passwordalert.YOUTUBE_CHECK_URL_)) {
-  //   return;
-  // }
-  
   if (googString.startsWith(
           passwordalert.url_, passwordalert.YOUTUBE_CHECK_URL_)) {
     return;
@@ -522,7 +514,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
  */
 passwordalert.is_gaia_correct_ = function(url) {
   let ret = false;
-  //let ret = true;
   passwordalert.GAIA_CORRECT_.forEach(function(prefix) {
     if (googString.startsWith(url, prefix)) {
       ret = true;
@@ -706,7 +697,6 @@ passwordalert.saveGaia2Password_ = function(evt) {
   const emailInput = document.getElementById('hiddenEmail');
   const email =
       emailInput ? googString.trim(emailInput.value.toLowerCase()) : '';
-  // const passwordInputs = document.getElementsByName('password');
   const passwordInputs = document.getElementsByName('Passwd');
   if (!passwordInputs || passwordInputs.length != 1) {
     return;

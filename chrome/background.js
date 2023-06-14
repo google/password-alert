@@ -203,7 +203,6 @@ background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
  * @private {boolean}
  */
 background.enterpriseMode_ = false;
-// background.enterpriseMode_ = true;
 
 
 /**
@@ -568,7 +567,6 @@ background.handleRequest_ = function(request, sender, sendResponse) {
       break;
     case 'statusRequest':
       const state = {passwordLengths: background.passwordLengths_};
-      // sendResponse(state);
       sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
       break;
     case 'looksLikeGoogle':
@@ -633,7 +631,6 @@ background.checkOtp_ = function(tabId, request, state) {
       background.clearOtpMode_(state);
     }
     if (state['otpCount'] >= background.OTP_LENGTH_) {
-      // const item = JSON.parse(localStorage[state.hash]);
       chrome.storage.local.get(state.hash).then(item => {
         console.log('OTP TYPED! ' + request.url);
         background.sendReportPassword_(
@@ -862,7 +859,6 @@ background.savePossiblePassword_ = function(tabId) {
       }
     }
  
-    //chrome.storage.local.set({ [password]: JSON.stringify(item) }, function() {
     chrome.storage.local.set({ [password]: item }, function() {
       if (chrome.runtime.lastError) {
         console.error('Error saving password for: ' + email, chrome.runtime.lastError);
@@ -877,11 +873,11 @@ background.savePossiblePassword_ = function(tabId) {
 };
 
 
-// /**
-//  * Updates the value of background.passwordLengths_ and pushes
-//  * new value to all content_script tabs.
-//  * @private
-//  */
+/**
+ * Updates the value of background.passwordLengths_ and pushes
+ * new value to all content_script tabs.
+ * @private
+ */
 background.refreshPasswordLengths_ = function() {
   background.passwordLengths_ = [];
   chrome.storage.local.get(null).then(result => {
