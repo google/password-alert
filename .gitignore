@@ -2,3 +2,4 @@ chrome/lib/
 chrome/build/
 .git/
 .pre-commit-config.yaml
+.DS_Store
