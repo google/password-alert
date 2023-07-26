@@ -216,7 +216,7 @@ background.corp_email_domain_;
  * Display the consumer mode alert even in enterprise mode.
  * @private {boolean}
  */
-background.displayUserAlert_ = false;
+background.displayUserAlert_ = true;
 
 
 /**
@@ -754,13 +754,14 @@ background.setPossiblePassword_ = function(tabId, request) {
         background.MINIMUM_PASSWORD_);
     return;
   }
-  
+
   background.possiblePassword_[tabId] = {
     'email': request.email,
     'password': background.hashPassword_(request.password),
     'length': request.password.length,
     'time': Math.floor(Date.now() / 1000)
   };
+  console.log('Setting possible password: ' + background.hashPassword_(request.password))
 };
 
 
@@ -864,6 +865,7 @@ background.savePossiblePassword_ = function(tabId) {
         console.error('Error saving password for: ' + email, chrome.runtime.lastError);
       } else {
         
+        console.log('Saving possible password')
         delete background.possiblePassword_[tabId];
         
         background.refreshPasswordLengths_();

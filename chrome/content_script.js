@@ -93,6 +93,10 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/v2/challenge/sk/webauthn',
   'https://accounts.google.com/signin/v2/challenge/pwd',
   'https://accounts.google.com/signin/v2/challenge/totp',
+  'https://accounts.google.com/v3/signin/confirmidentifier',
+  'https://accounts.google.com/v3/signin/identifier',
+  'https://accounts.google.com/v3/signin',
+  'https://accounts.google.com/v3/signin/challenge',
   'https://accounts.google.com/RotateCookiesPage' // Consumer mode
 ];
 
@@ -382,11 +386,139 @@ passwordalert.handleManagedPolicyChanges_ = function(
  * corporate login pages.
  * @private
  */
+// passwordalert.completePageInitializationIfReady_ = function() {
+//   if (!passwordalert.policyLoaded_ || !passwordalert.domContentLoaded_) {
+//     return;
+//   }
+//   console.log('password url: '+passwordalert.url_)
+  
+//   // Ignore YouTube login CheckConnection because the login page makes requests
+//   // to it, but that does not mean the user has successfully authenticated.
+//   if (googString.startsWith(
+//           passwordalert.url_, passwordalert.YOUTUBE_CHECK_URL_)) {
+//     return;
+//   }
+//   if (passwordalert.sso_url_ &&
+//       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
+//     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
+//     if (loginForm) {  // null if the user gets a Password Change Warning.
+//       chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+//       loginForm.addEventListener(
+//           'submit', passwordalert.saveSsoPassword_, true);
+//     } else {
+//       // This handles the case where user is redirected to a page that starts
+//       // with sso url upon a successful sso login.
+//       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+//     }
+//   } else if (googString.startsWith(
+//                  passwordalert.url_,
+//                  passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
+//     // This change password page does not have any email information.
+//     // So we fallback to the email already set in background.js because users
+//     // will be prompted to login before arriving here.
+//     let email;
+//     chrome.runtime.sendMessage({action: 'getEmail'}, function(response) {
+//       email = response;
+//     });
+//     const changePasswordForm =
+//         document.getElementById('gaia_changepasswordform');
+//     changePasswordForm.addEventListener('submit', function() {
+//       chrome.runtime.sendMessage({
+//         action: 'setPossiblePassword',
+//         email: email,
+//         password: changePasswordForm.Passwd.value
+//       });
+//     }, true);
+//   } else if (googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
+//     console.log('url starts with gaia url')
+//       if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
+//         console.log('it is gaia correct, saving possible password')
+//         chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+//       } else {
+//         // Delete any previously considered password in case this is a re-prompt
+//         // when an incorrect password is entered, such as a ServiceLoginAuth page.
+        
+//         chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+//         const loginForm = document.querySelector('#view_container > form');
+//         // The chooser is no longer a gaia_loginform, so verify we're on a
+//         // password entry page by finding a form in a view_container.
+//         if (loginForm && document.getElementById('Email')) {
+//           loginForm.addEventListener(
+//               'submit', passwordalert.saveGaiaPassword_, true);
+//         } else if (
+//             document.getElementById('hiddenEmail') &&
+//             // todo verify form name, for consumer mode replace Passwd for passwords
+//             document.getElementsByName('Passwd')) {
+//           // TODO(adhintz) Avoid adding event listeners if they already exist.
+//           document.getElementById('passwordNext')
+//               .addEventListener('click', function() {
+
+//                 passwordalert.saveGaia2Password_(null);
+//               });
+//           // Pressing spacebar on the Next button will trigger save.
+//           document.getElementById('passwordNext')
+//               .addEventListener('keydown', function(evt) {
+//                 if (evt.keyCode == 32) {
+//                   passwordalert.saveGaia2Password_(evt);
+//                 }
+//               }, true);
+//           // Pressing enter anywhere on the page will trigger save.
+//           document.addEventListener('keydown', function(evt) {
+//             if (evt.keyCode == 13) {
+//               passwordalert.saveGaia2Password_(evt);
+//             }
+//           }, true);
+//           window.onbeforeunload = passwordalert.saveGaia2Password_;
+//         }
+//       }
+//   } else if (googString.startsWith(
+//                  passwordalert.url_, passwordalert.CHANGE_PASSWORD_URL_)) {
+//     chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+//     // Need to wait until the change password page has finished loading
+//     // before listener can be added.
+//     window.onload = function() {
+//       const allButtons = document.querySelectorAll('div[role=button]');
+//       const changePasswordButton = allButtons[allButtons.length - 1];
+//       changePasswordButton.addEventListener(
+//           'click', passwordalert.saveChangedPassword_, true);
+//       // Pressing spacebar on the change password button will trigger save.
+//       changePasswordButton.addEventListener('keydown', function(evt) {
+//         if (evt.keyCode == 32) {
+//           passwordalert.saveChangedPassword_();
+//         }
+//       }, true);
+//       // Pressing enter anywhere on the change password page will trigger save.
+//       document.addEventListener('keydown', function(evt) {
+//         if (evt.keyCode == 13) {
+//           passwordalert.saveChangedPassword_();
+//         }
+//       }, true);
+//     };
+//   } else {  // Not a Google login URL.
+//     if (!passwordalert.whitelistUrl_() &&
+//         passwordalert.looksLikeGooglePageTight_()) {
+//       chrome.runtime.sendMessage({
+//         action: 'looksLikeGoogle',
+//         url: passwordalert.url_,
+//         referer: passwordalert.referrer_,
+//         securityEmailAddress: passwordalert.security_email_address_
+//       });
+//     }
+//     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+//   }
+
+//   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
+//     passwordalert.stop_();
+//     passwordalert.start_(response);
+//     console.log('PA is running',passwordalert.isRunning_)
+//   });
+// };
 passwordalert.completePageInitializationIfReady_ = function() {
   if (!passwordalert.policyLoaded_ || !passwordalert.domContentLoaded_) {
     return;
   }
-
+  console.log('password url: '+passwordalert.url_)
+  
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (googString.startsWith(
@@ -426,11 +558,13 @@ passwordalert.completePageInitializationIfReady_ = function() {
     }, true);
   } else if (googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) {
       if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
+        console.log('Saving Possible Password')
+        // todo remove next line test
+        passwordalert.saveGaia2Password_(null)
         chrome.runtime.sendMessage({action: 'savePossiblePassword'});
       } else {
         // Delete any previously considered password in case this is a re-prompt
         // when an incorrect password is entered, such as a ServiceLoginAuth page.
-        
         chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
         const loginForm = document.querySelector('#view_container > form');
         // The chooser is no longer a gaia_loginform, so verify we're on a
@@ -445,6 +579,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
           // TODO(adhintz) Avoid adding event listeners if they already exist.
           document.getElementById('passwordNext')
               .addEventListener('click', function() {
+
                 passwordalert.saveGaia2Password_(null);
               });
           // Pressing spacebar on the Next button will trigger save.
@@ -512,22 +647,31 @@ passwordalert.completePageInitializationIfReady_ = function() {
  * @return {boolean} True if the URL indicates the password is correct.
  * @private
  */
+// passwordalert.is_gaia_correct_ = function(url) {
+//   let ret = false;
+//   passwordalert.GAIA_CORRECT_.forEach(function(prefix) {
+//     if (googString.startsWith(url, prefix)) {
+//       ret = true;
+//     }
+//   });
+//   if (ret) {  // Filter out exceptions which indicate password is not correct.
+//     passwordalert.GAIA_INCORRECT_.forEach(function(prefix) {
+//       if (googString.startsWith(url, prefix)) {
+//         ret = false;
+//       }
+//     });
+//   }
+//   return ret;
+// };
 passwordalert.is_gaia_correct_ = function(url) {
   let ret = false;
-  passwordalert.GAIA_CORRECT_.forEach(function(prefix) {
-    if (googString.startsWith(url, prefix)) {
-      ret = true;
-    }
-  });
-  if (ret) {  // Filter out exceptions which indicate password is not correct.
-    passwordalert.GAIA_INCORRECT_.forEach(function(prefix) {
-      if (googString.startsWith(url, prefix)) {
-        ret = false;
-      }
-    });
+  if (!!document.getElementById('totpPin')){
+    ret=true
   }
   return ret;
 };
+
+
 
 /**
  * Sets variables to enable watching for passwords being typed. Called when
@@ -649,6 +793,7 @@ passwordalert.handlePaste = function(evt) {
  * @param {!Event} evt Form submit event that triggered this. Not used.
  * @private
  */
+
 passwordalert.saveSsoPassword_ = function(evt) {
   if (passwordalert.validateSso_()) {
     let username =
@@ -781,6 +926,18 @@ passwordalert.validateSso_ = function() {
   }
   return true;
 };
+// passwordalert.validateSso_ = () => {
+//   const { sso_username_selector_, sso_password_selector_ } = passwordalert;
+//   const username = document.querySelector(sso_username_selector_);
+//   const password = document.querySelector(sso_password_selector_);
+  
+//   if ((username && !username.value) || (password && !password.value)) {
+//     console.log('%cSSO data is not filled in.', 'color: red;');
+//     return false;
+//   }
+  
+//   return true;
+// };
 
 
 /**
