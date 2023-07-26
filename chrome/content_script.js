@@ -482,6 +482,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
       }, true);
     };
   } else {  // Not a Google login URL.
+    console.log("######## BEFORE ########")
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
       chrome.runtime.sendMessage({
@@ -491,7 +492,10 @@ passwordalert.completePageInitializationIfReady_ = function() {
         securityEmailAddress: passwordalert.security_email_address_
       });
     }
+    console.log("######## MIDDLE ########")
     chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+    console.log("######## END ########")
+
   }
 
   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {

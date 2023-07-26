@@ -1,4 +1,4 @@
---language_in=ECMASCRIPT6
+--language_in=ECMASCRIPT_2017
 --externs=externs.js
---manage_closure_dependencies
+--dependency_mode=PRUNE
 --js build/deps.js

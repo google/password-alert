@@ -24,44 +24,28 @@
 
 'use strict';
 
-goog.module('passwordalert.background');
+goog.module('passwordalert.service_worker');
 
 const GoogCryptSha1 = goog.require('goog.crypt.Sha1');
 const googCrypt = goog.require('goog.crypt');
 const googString = goog.require('goog.string');
 const keydown = goog.require('passwordalert.keydown');
 const safe = goog.require('goog.dom.safe');
+
 let background = {};
 goog.exportSymbol('background', background);  // for tests only.
 
 /**
- * Key for localStorage to store salt value.
- * @private {string}
- * @const
+ * These values are static, and previously part of the background object.
  */
-background.SALT_KEY_ = 'salt';
-
 
 /**
  * Number of bits of the hash to use.
  * @private {number}
  * @const
  */
-background.HASH_BITS_ = 37;
+const HASH_BITS_ = 37;
 
-
-/**
- * Where password use reports are sent.
- * @private {string}
- */
-background.report_url_;
-
-
-/**
- * Whether the user should be prompted to initialize their password.
- * @private {boolean}
- */
-background.shouldInitializePassword_;
 
 
 /**
@@ -69,7 +53,15 @@ background.shouldInitializePassword_;
  * @private {number}
  * @const
  */
-background.MINIMUM_PASSWORD_ = 8;
+const MINIMUM_PASSWORD_ = 8;
+
+
+/**
+ * Number of digits in a valid OTP.
+ * @private {number}
+ * @const
+ */
+const OTP_LENGTH_ = 6;
 
 
 /**
@@ -78,64 +70,8 @@ background.MINIMUM_PASSWORD_ = 8;
  * @private {number}
  * @const
  */
-background.MAX_RATE_PER_HOUR_ = 18000;
+const MAX_RATE_PER_HOUR_ = 18000;
 
-
-/**
- * How many passwords have been checked in the past hour.
- * @private {number}
- */
-background.rateLimitCount_ = 0;
-
-
-/**
- * The time when the rateLimitCount_ will be reset.
- * @private {?Date}
- */
-background.rateLimitResetDate_;
-
-
-/**
- * Associative array of possible passwords. Keyed by tab id.
- * @private {!Object.<number, !Object.<string, string|boolean>>}
- */
-background.possiblePassword_ = {};
-
-
-/**
- * Associative array of state for Keydown events.
- * @private {!background.State_}
- */
-background.stateKeydown_ = {
-  'hash': '',
-  'otpCount': 0,
-  'otpMode': false,
-  'otpTime': null,
-  'typed': new keydown.Typed(),
-  'typedTime': null
-};
-
-
-/**
- * Associative array of state for Keypress events.
- * @private {!background.State_}
- */
-background.stateKeypress_ = {
-  'hash': '',
-  'otpCount': 0,
-  'otpMode': false,
-  'otpTime': null,
-  'typed': '',
-  'typedTime': null
-};
-
-
-/**
- * Password lengths for passwords that are being watched.
- * If an array offset is true, then that password length is watched.
- * @private {?Array.<boolean>}
- */
-background.passwordLengths_;
 
 
 /**
@@ -143,7 +79,8 @@ background.passwordLengths_;
  * @private {number}
  * @const
  */
-background.SECONDS_TO_CLEAR_ = 10;
+const SECONDS_TO_CLEAR_ = 10;
+
 
 
 /**
@@ -151,14 +88,17 @@ background.SECONDS_TO_CLEAR_ = 10;
  * @private {number}
  * @const
  */
-background.SECONDS_TO_CLEAR_OTP_ = 60;
+const SECONDS_TO_CLEAR_OTP_ = 60;
+
 
 
 /**
- * Number of digits in a valid OTP.
- * @private {number}
+ * Key for localStorage to store salt value.
+ * @private {string}
+ * @const
  */
-background.OTP_LENGTH_ = 6;
+const SALT_KEY_ = 'salt';
+
 
 
 /**
@@ -166,7 +106,127 @@ background.OTP_LENGTH_ = 6;
  * @private {number}
  * @const
  */
-background.ENTER_ASCII_CODE_ = 13;
+const ENTER_ASCII_CODE_ = 13;
+
+
+
+/**
+ * The id of the chrome notification that prompts the user to initialize
+ * their password.
+ * @private {string}
+ * @const
+ */
+const NOTIFICATION_ID_ = 'initialize_password_notification';
+
+
+
+/**
+ * Key for the allowed hosts object in chrome storage.
+ * @private {string}
+ * @const
+ */
+const ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
+
+
+
+/**
+ * Key for the phishing warning whitelist object in chrome storage.
+ * @private {string}
+ * @const
+ */
+// NOTE(authynym): previously 'phishing_warning_whitelist'; noted here in case of build issues
+const PHISHING_WARNING_ALLOWLIST_KEY_ = 'phishing_warning_allowlist';
+
+
+
+/**
+ * Namespace for chrome's managed storage.
+ * @private {string}
+ * @const
+ */
+const MANAGED_STORAGE_NAMESPACE_ = 'managed';
+
+
+
+/**
+ * Where password use reports are sent.
+ * @private {string}
+ */
+await saveInLocalStorage({ report_url_: null });
+
+
+
+/**
+ * Whether the user should be prompted to initialize their password.
+ * @private {boolean}
+ */
+await saveInLocalStorage({ shouldInitializePassword_: false });
+
+
+
+/**
+ * How many passwords have been checked in the past hour.
+ * @private {number}
+ */
+await saveInLocalStorage({ rateLimitCount_: 0 });
+
+
+
+/**
+ * The time when the rateLimitCount_ will be reset.
+ * @private {?Date}
+ */
+await saveInLocalStorage({ rateLimitResetDate_: null });
+
+
+
+/**
+ * Associative array of possible passwords. Keyed by tab id.
+ * @private {!Object.<number, !Object.<string, string|boolean>>}
+ */
+await saveInLocalStorage({ possiblePassword_: {} });
+
+
+
+/**
+ * Associative array of state for Keydown events.
+ * @private {!background.State_}
+ */
+let stateKeydown_vals = {
+  'hash': '',
+  'otpCount': 0,
+  'otpMode': false,
+  'otpTime': null,
+  'typed': new keydown.Typed(),
+  'typedTime': null
+};
+await saveInLocalStorage({ stateKeydown_: stateKeydown_vals });
+
+
+
+/**
+ * Associative array of state for Keypress events.
+ * @private {!background.State_}
+ */
+let stateKeypress_vals = {
+  'hash': '',
+  'otpCount': 0,
+  'otpMode': false,
+  'otpTime': null,
+  'typed': '',
+  'typedTime': null
+};
+await saveInLocalStorage({ stateKeypress_: stateKeypress_vals });
+
+
+
+/**
+ * Password lengths for passwords that are being watched.
+ * If an array offset is true, then that password length is watched.
+ * @private {?Array.<boolean>}
+ */
+await saveInLocalStorage({ passwordLengths_: {} });
+
 
 
 /**
@@ -176,7 +236,8 @@ background.ENTER_ASCII_CODE_ = 13;
  *            url: (string), looksLikeGoogle: (string|undefined)}}
  * @private
  */
-background.Request_;
+await saveInLocalStorage({ Request_: {} });
+
 
 
 /**
@@ -186,15 +247,8 @@ background.Request_;
  *            typedTime: ?Date}}
  * @private
  */
-background.State_;
+await saveInLocalStorage({ State_: {} });
 
-
-/**
- * Namespace for chrome's managed storage.
- * @private {string}
- * @const
- */
-background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
 
 
 /**
@@ -202,53 +256,32 @@ background.MANAGED_STORAGE_NAMESPACE_ = 'managed';
  * used by individual consumer.
  * @private {boolean}
  */
-background.enterpriseMode_ = false;
+await saveInLocalStorage({ enterpriseMode_: false });
+
 
 
 /**
  * The corp email domain, e.g. "@company.com".
  * @private {string}
  */
-background.corp_email_domain_;
+await saveInLocalStorage({ corp_email_domain_: null });
+
 
 
 /**
  * Display the consumer mode alert even in enterprise mode.
  * @private {boolean}
  */
-background.displayUserAlert_ = false;
+await saveInLocalStorage({ displayUserAlert_: false });
+
 
 
 /**
  * Domain-specific shared auth secret for enterprise when oauth token fails.
  * @private {string}
  */
-background.domain_auth_secret_ = '';
+await saveInLocalStorage({ domain_auth_secret_: '' });
 
-
-/**
- * The id of the chrome notification that prompts the user to initialize
- * their password.
- * @private {string}
- * @const
- */
-background.NOTIFICATION_ID_ = 'initialize_password_notification';
-
-
-/**
- * Key for the allowed hosts object in chrome storage.
- * @private {string}
- * @const
- */
-background.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
-
-
-/**
- * Key for the phishing warning whitelist object in chrome storage.
- * @private {string}
- * @const
- */
-background.PHISHING_WARNING_WHITELIST_KEY_ = 'phishing_warning_whitelist';
 
 
 /**
@@ -256,21 +289,25 @@ background.PHISHING_WARNING_WHITELIST_KEY_ = 'phishing_warning_whitelist';
  * no signed in user). Only updates when the background page first loads.
  * @private {string}
  */
-background.signed_in_email_ = '';
+await saveInLocalStorage({ storageKey: { signed_in_email_: '' } });
+
 
 
 /**
  * Whether the extension was newly installed.
  * @private {boolean}
  */
-background.isNewInstall_ = false;
+// background.isNewInstall_ = false;
+await saveInLocalStorage({ isNewInstall_: false });
+
 
 
 /**
  * Whether the background page is initialized (managed policy loaded).
  * @private {boolean}
  */
-background.isInitialized_ = false;
+await saveInLocalStorage({ isInitialized_: false });
+
 
 
 /**
@@ -278,7 +315,7 @@ background.isInitialized_ = false;
  * @param {!Object} details Details of the onInstall event.
  * @private
  */
-background.handleNewInstall_ = function(details) {
+background.handleNewInstall_ = function (details) {
   if (details['reason'] == 'install') {
     console.log('New install detected.');
     background.isNewInstall_ = true;
@@ -291,9 +328,9 @@ background.handleNewInstall_ = function(details) {
     // initializePassword_ should occur after injectContentScriptIntoAllTabs_.
     // This way, the content script will be ready to receive
     // post-password initialization messages.
-    background.injectContentScriptIntoAllTabs_(function() {
+    background.injectContentScriptIntoAllTabs_(function () {
       background.initializePasswordIfReady_(
-          5, 1000, background.initializePasswordIfNeeded_);
+        5, 1000, background.initializePasswordIfNeeded_);
     });
   }
 };
@@ -304,21 +341,30 @@ background.handleNewInstall_ = function(details) {
  * @param {function()} callback Executed after policy values have been set.
  * @private
  */
-background.setManagedPolicyValuesIntoConfigurableVariables_ = function(
-    callback) {
-  chrome.storage.managed.get(function(managedPolicy) {
+background.setManagedPolicyValuesIntoConfigurableVariables_ = function (
+  callback) {
+  chrome.storage.managed.get(async function (managedPolicy) {
     if (Object.keys(managedPolicy).length == 0) {
       console.log('No managed policy found. Consumer mode.');
     } else {
       console.log('Managed policy found.  Enterprise mode.');
-      background.corp_email_domain_ =
-          managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase();
-      background.displayUserAlert_ = managedPolicy['display_user_alert'];
-      background.enterpriseMode_ = true;
-      background.report_url_ = managedPolicy['report_url'];
-      background.shouldInitializePassword_ =
-          managedPolicy['should_initialize_password'];
-      background.domain_auth_secret_ = managedPolicy['domain_auth_secret'];
+      await saveInLocalStorage({
+        corp_email_domain_: managedPolicy['corp_email_domain'].replace(/@/g, '').toLowerCase()
+      });
+      await saveInLocalStorage({
+        displayUserAlert_: managedPolicy['display_user_alert']
+      });
+      await saveInLocalStorage({ enterpriseMode_: true });
+
+      await saveInLocalStorage({
+        report_url_: managedPolicy['report_url']
+      });
+      await saveInLocalStorage({
+        shouldInitializePassword_: managedPolicy['should_initialize_password']
+      });
+      await saveInLocalStorage({
+        domain_auth_secret_: managedPolicy['domain_auth_secret']
+      });
     }
     callback();
   });
@@ -340,14 +386,15 @@ background.setManagedPolicyValuesIntoConfigurableVariables_ = function(
  *     ("sync", "local" or "managed") the changes are for.
  * @private
  */
-background.handleManagedPolicyChanges_ = function(
-    changedPolicies, storageNamespace) {
-  if (storageNamespace == background.MANAGED_STORAGE_NAMESPACE_) {
+background.handleManagedPolicyChanges_ = async function (
+  changedPolicies, storageNamespace) {
+  if (storageNamespace == MANAGED_STORAGE_NAMESPACE_) {
     console.log('Handling changed policies.');
     let changedPolicy;
+    let isEnterpriseMode = await getFromLocalStorage('enterpriseMode_');
     for (changedPolicy in changedPolicies) {
-      if (!background.enterpriseMode_) {
-        background.enterpriseMode_ = true;
+      if (!isEnterpriseMode) {
+        await saveInLocalStorage({ enterpriseMode_: true });
         console.log('Enterprise mode via updated managed policy.');
       }
       let newPolicyValue = '';
@@ -356,20 +403,19 @@ background.handleManagedPolicyChanges_ = function(
       }
       switch (changedPolicy) {
         case 'corp_email_domain':
-          background.corp_email_domain_ =
-              newPolicyValue.replace(/@/g, '').toLowerCase();
+          await saveInLocalStorage({ corp_email_domain_: newPolicyValue.replace(/@/g, '').toLowerCase() });
           break;
         case 'display_user_alert':
-          background.displayUserAlert_ = newPolicyValue;
+          await saveInLocalStorage({  displayUserAlert_: newPolicyValue });
           break;
         case 'report_url':
-          background.report_url_ = newPolicyValue;
+          await saveInLocalStorage({ report_url_: newPolicyValue });
           break;
         case 'should_initialize_password':
-          background.shouldInitializePassword_ = newPolicyValue;
+          await saveInLocalStorage({ shouldInitializePassword_: newPolicyValue });
           break;
         case 'domain_auth_secret':
-          background.domain_auth_secret_ = newPolicyValue;
+          await saveInLocalStorage({ domain_auth_secret_: newPolicyValue });
           break;
       }
     }
@@ -391,14 +437,16 @@ background.handleManagedPolicyChanges_ = function(
  *     injected, e.g. user to initialize password.
  * @private
  */
-background.injectContentScriptIntoAllTabs_ = function(callback) {
+background.injectContentScriptIntoAllTabs_ = function (callback) {
   console.log('Inject content scripts into all tabs.');
-  chrome.tabs.query({}, function(tabs) {
+  chrome.tabs.query({}, function (tabs) {
     for (let i = 0; i < tabs.length; i++) {
       // Skip chrome:// and chrome-devtools:// pages
       if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
-        chrome.tabs.executeScript(
-            tabs[i].id, {file: 'content_script_compiled.js'});
+        chrome.scripting.executeScript({
+          target: { tabId: tabs[i].id },
+          files: ['content_script_compiled.js']
+        });
       }
     }
     callback();
@@ -416,27 +464,27 @@ background.injectContentScriptIntoAllTabs_ = function(callback) {
  * http://stackoverflow.com/a/26358154/2830207
  * @private
  */
-background.displayInitializePasswordNotification_ = function() {
-  chrome.notifications.getAll(function(notifications) {
-    if (notifications[background.NOTIFICATION_ID_]) {
+background.displayInitializePasswordNotification_ = function () {
+  chrome.notifications.getAll(function (notifications) {
+    if (notifications[NOTIFICATION_ID_]) {
       chrome.notifications.update(
-          background.NOTIFICATION_ID_, {priority: 2}, function() {});
+        NOTIFICATION_ID_, { priority: 2 }, function () { });
     } else {
       const options = {
         type: 'basic',
         priority: 1,
         title: chrome.i18n.getMessage('extension_name'),
         message: chrome.i18n.getMessage('initialization_message'),
-        iconUrl: chrome.extension.getURL('logo_password_alert.png'),
-        buttons: [{title: chrome.i18n.getMessage('sign_in')}]
+        iconUrl: chrome.runtime.getURL('logo_password_alert.png'),
+        buttons: [{ title: chrome.i18n.getMessage('sign_in') }]
       };
       chrome.notifications.create(
-          background.NOTIFICATION_ID_, options, function() {});
-      const openLoginPage_ = function(notificationId) {
-        if (notificationId === background.NOTIFICATION_ID_) {
+        NOTIFICATION_ID_, options, function () { });
+      const openLoginPage_ = function (notificationId) {
+        if (notificationId === NOTIFICATION_ID_) {
           chrome.tabs.create({
             'url': 'https://accounts.google.com/ServiceLogin?' +
-                'continue=https://www.google.com'
+              'continue=https://www.google.com'
           });
         }
       };
@@ -454,7 +502,7 @@ background.displayInitializePasswordNotification_ = function() {
  * Prompts the user to initialize their password if needed.
  * @private
  */
-background.initializePasswordIfNeeded_ = function() {
+background.initializePasswordIfNeeded_ = function () {
   if (background.enterpriseMode_ && !background.shouldInitializePassword_) {
     return;
   }
@@ -462,21 +510,22 @@ background.initializePasswordIfNeeded_ = function() {
   // the webstore's post-install popup.  Otherwise, there will be an overlap
   // between this popup and the chrome.notification message.
   // TODO(henryc): Find a more robust way to overcome this overlap issue.
-  if (navigator.appVersion.indexOf('Macintosh') != -1) {
+  if (navigator.userAgentData.platform.indexOf('macOS') != -1) {
     setTimeout(
-        background.displayInitializePasswordNotification_,
-        5000);  // 5 seconds
+      background.displayInitializePasswordNotification_,
+      5000);  // 5 seconds
   } else {
     background.displayInitializePasswordNotification_();
   }
 
-  setTimeout(function() {
-    if (!localStorage.hasOwnProperty(background.SALT_KEY_)) {
+  setTimeout(async function () {
+    let hasSaltKey = await checkKeyInLocalStorage(background.SALT_KEY_);
+    if (!hasSaltKey) {
       console.log(
-          'Password still has not been initialized.  ' +
-          'Start the password initialization process again.');
+        'Password still has not been initialized.  ' +
+        'Start the password initialization process again.');
       background.initializePasswordIfReady_(
-          5, 1000, background.initializePasswordIfNeeded_);
+        5, 1000, background.initializePasswordIfNeeded_);
     }
   }, 300000);  // 5 minutes
 };
@@ -491,16 +540,18 @@ background.initializePasswordIfNeeded_ = function() {
  * @param {function()} callback Executed if password is ready to be initialized.
  * @private
  */
-background.initializePasswordIfReady_ = function(maxRetries, delay, callback) {
-  if (background.isNewInstall_ && background.isInitialized_) {
+background.initializePasswordIfReady_ = async function (maxRetries, delay, callback) {
+  let isNewInstall = await getFromLocalStorage('isNewInstall_');
+  let isInitialized = await getFromLocalStorage('isInitialized_');
+  if (isNewInstall && isInitialized) {
     callback();
     return;
   }
 
   if (maxRetries > 0) {
-    setTimeout(function() {
+    setTimeout(function () {
       background.initializePasswordIfReady_(
-          maxRetries - 1, delay * 2, callback);
+        maxRetries - 1, delay * 2, callback);
     }, delay);
   } else {
     console.log('Password is not ready to be initialized.');
@@ -513,16 +564,16 @@ background.initializePasswordIfReady_ = function(maxRetries, delay, callback) {
  * have been set.
  * @private
  */
-background.completePageInitialization_ = function() {
-  background.isInitialized_ = true;
+background.completePageInitialization_ = async function () {
+  await saveInLocalStorage({ isInitialized_: true })
   background.refreshPasswordLengths_();
   chrome.runtime.onMessage.addListener(background.handleRequest_);
 
   // Get the username from a signed in Chrome profile, which might be used
   // for reporting phishing sites (if the password store isn't initialized).
-  chrome.identity.getProfileUserInfo(function(userInfo) {
+  chrome.identity.getProfileUserInfo( async function (userInfo) {
     if (userInfo) {
-      background.signed_in_email_ = userInfo.email;
+      await saveInLocalStorage({ signed_in_email_: userInfo.email })
     }
   });
 };
@@ -532,9 +583,9 @@ background.completePageInitialization_ = function() {
  * Called when the extension loads.
  * @private
  */
-background.initializePage_ = function() {
+background.initializePage_ = function () {
   background.setManagedPolicyValuesIntoConfigurableVariables_(
-      background.completePageInitialization_);
+    background.completePageInitialization_);
 };
 
 
@@ -546,7 +597,7 @@ background.initializePage_ = function() {
  * @param {function(*)} sendResponse Callback with a response.
  * @private
  */
-background.handleRequest_ = function(request, sender, sendResponse) {
+background.handleRequest_ = function (request, sender, sendResponse) {
   if (sender.tab === undefined) {
     return;
   }
@@ -559,10 +610,10 @@ background.handleRequest_ = function(request, sender, sendResponse) {
       break;
     case 'checkString':
       background.checkPassword_(
-          sender.tab.id, request, background.stateKeydown_);
+        sender.tab.id, request, background.stateKeydown_);
       break;
     case 'statusRequest':
-      const state = {passwordLengths: background.passwordLengths_};
+      const state = { passwordLengths: background.passwordLengths_ };
       sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
       break;
     case 'looksLikeGoogle':
@@ -590,7 +641,7 @@ background.handleRequest_ = function(request, sender, sendResponse) {
  * @param {!background.State_} state State of keydown or keypress.
  * @private
  */
-background.clearOtpMode_ = function(state) {
+background.clearOtpMode_ = function (state) {
   state['otpMode'] = false;
   state['otpCount'] = 0;
   state['otpTime'] = null;
@@ -611,26 +662,27 @@ background.clearOtpMode_ = function(state) {
  * @param {!background.State_} state State of keypress or keydown.
  * @private
  */
-background.checkOtp_ = function(tabId, request, state) {
+background.checkOtp_ = async function (tabId, request, state) {
   if (state['otpMode']) {
     const now = new Date();
-    if (now - state['otpTime'] > background.SECONDS_TO_CLEAR_OTP_ * 1000) {
+    if (now - state['otpTime'] > SECONDS_TO_CLEAR_OTP_ * 1000) {
       background.clearOtpMode_(state);
     } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
       // is a digit
       state['otpCount']++;
     } else if (
-        request.keyCode > 0x20 ||
-        // non-digit printable characters reset it
-        // Non-printable only allowed at start:
-        state['otpCount'] > 0) {
+      request.keyCode > 0x20 ||
+      // non-digit printable characters reset it
+      // Non-printable only allowed at start:
+      state['otpCount'] > 0) {
       background.clearOtpMode_(state);
     }
     if (state['otpCount'] >= background.OTP_LENGTH_) {
-      const item = JSON.parse(localStorage[state.hash]);
+      let stateHash = await getFromLocalStorage(state.hash);
+      const item = JSON.parse(stateHash);
       console.log('OTP TYPED! ' + request.url);
       background.sendReportPassword_(
-          request, item['email'], item['date'], true);
+        request, item['email'], item['date'], true);
       background.clearOtpMode_(state);
     }
   }
@@ -645,12 +697,13 @@ background.checkOtp_ = function(tabId, request, state) {
  * @param {!background.State_} state State of keydown or keypress.
  * @private
  */
-background.checkAllPasswords_ = function(tabId, request, state) {
-  if (state['typed'].length >= background.MINIMUM_PASSWORD_) {
-    for (let i = 1; i < background.passwordLengths_.length; i++) {
+background.checkAllPasswords_ = async function (tabId, request, state) {
+  if (state['typed'].length >= MINIMUM_PASSWORD_) {
+    let passwordLengths = await getFromLocalStorage( passwordLengths_ );
+    for (let i = 1; i < passwordLengths.length; i++) {
       // Perform a check on every length, even if we don't have enough
       // typed characters, to avoid timing attacks.
-      if (background.passwordLengths_[i]) {
+      if (passwordLengths[i]) {
         request.password = state['typed'].substr(-1 * i);
         background.checkPassword_(tabId, request, state);
       }
@@ -666,24 +719,25 @@ background.checkAllPasswords_ = function(tabId, request, state) {
  *     content_script. Contains url and referer.
  * @private
  */
-background.handleKeydown_ = function(tabId, request) {
-  const state = background.stateKeydown_;
+background.handleKeydown_ = async function (tabId, request) {
+  const state = await getFromLocalStorage( stateKeydown_ );
+  let passwordLengths = await getFromLocalStorage( passwordLengths_ );
   background.checkOtp_(tabId, request, state);
 
-  if (request.keyCode == background.ENTER_ASCII_CODE_) {
+  if (request.keyCode == ENTER_ASCII_CODE_) {
     state['typed'].clear();
     return;
   }
 
   const typedTime = new Date(request.typedTimeStamp);
-  if (typedTime - state['typedTime'] > background.SECONDS_TO_CLEAR_ * 1000) {
+  if (typedTime - state['typedTime'] > SECONDS_TO_CLEAR_ * 1000) {
     state['typed'].clear();
   }
 
   state['typed'].event(request.keyCode, request.shiftKey);
   state['typedTime'] = typedTime;
 
-  state['typed'].trim(background.passwordLengths_.length);
+  state['typed'].trim(passwordLengths.length);
 
   background.checkAllPasswords_(tabId, request, state);
 };
@@ -696,37 +750,39 @@ background.handleKeydown_ = function(tabId, request) {
  *     content_script. Contains url and referer.
  * @private
  */
-background.handleKeypress_ = function(tabId, request) {
-  const state = background.stateKeypress_;
-  background.checkOtp_(tabId, request, state);
+background.handleKeypress_ = async function (tabId, request) {
+  const stateKeypress = await getFromLocalStorage( stateKeypress_ );
+  let stateKeydown = await getFromLocalStorage( stateKeydown_ );
+  let passwordLengths = await getFromLocalStorage( passwordLengths_ );
+  background.checkOtp_(tabId, request, stateKeypress);
 
-  if (request.keyCode == background.ENTER_ASCII_CODE_) {
-    state['typed'] = '';
+  if (request.keyCode == ENTER_ASCII_CODE_) {
+    stateKeypress['typed'] = '';
     return;
   }
 
   const typedTime = new Date(request.typedTimeStamp);
-  if (typedTime - state['typedTime'] > background.SECONDS_TO_CLEAR_ * 1000) {
-    state['typed'] = '';
+  if (typedTime - stateKeypress['typedTime'] > SECONDS_TO_CLEAR_ * 1000) {
+    stateKeypress['typed'] = '';
   }
 
   // We're treating keyCode and charCode the same here intentionally.
-  state['typed'] += String.fromCharCode(request.keyCode);
-  state['typedTime'] = typedTime;
+  stateKeypress['typed'] += String.fromCharCode(request.keyCode);
+  stateKeypress['typedTime'] = typedTime;
 
   // trim the buffer when it's too big
-  if (state['typed'].length > background.passwordLengths_.length) {
-    state['typed'] =
-        state['typed'].slice(-1 * background.passwordLengths_.length);
+  if (stateKeypress['typed'].length > passwordLengths.length) {
+    stateKeypress['typed'] =
+    stateKeypress['typed'].slice(-1 * passwordLengths.length);
   }
 
   // Send keypress event to keydown state so the keydown library can attempt
   // to guess the state of capslock.
-  background.stateKeydown_['typed'].keypress(request.keyCode);
+  stateKeydown['typed'].keypress(request.keyCode);
 
   // Do not check passwords if keydown is in OTP mode to avoid double-warning.
-  if (!background.stateKeydown_['otpMode']) {
-    background.checkAllPasswords_(tabId, request, state);
+  if (!stateKeydown['otpMode']) {
+    background.checkAllPasswords_(tabId, request, stateKeypress);
   }
 };
 
@@ -739,20 +795,20 @@ background.handleKeypress_ = function(tabId, request) {
  *     containing email address and password.
  * @private
  */
-background.setPossiblePassword_ = function(tabId, request) {
+background.setPossiblePassword_ = function (tabId, request) {
   if (!request.email || !request.password) {
     return;
   }
   if (request.password.length < background.MINIMUM_PASSWORD_) {
     console.log(
-        'password length is shorter than the minimum of ' +
-        background.MINIMUM_PASSWORD_);
+      'password length is shorter than the minimum of ' +
+      background.MINIMUM_PASSWORD_);
     return;
   }
 
   console.log(
-      'Setting possible password for %s, password length of %s', request.email,
-      request.password.length);
+    'Setting possible password for %s, password length of %s', request.email,
+    request.password.length);
   background.possiblePassword_[tabId] = {
     'email': request.email,
     'password': background.hashPassword_(request.password),
@@ -768,7 +824,7 @@ background.setPossiblePassword_ = function(tabId, request) {
  * @return {*} The item.
  * @private
  */
-background.getLocalStorageItem_ = function(index) {
+background.getLocalStorageItem_ = function (index) {
   let item;
   if (localStorage.key(index) == background.SALT_KEY_) {
     item = null;
@@ -784,7 +840,7 @@ background.getLocalStorageItem_ = function(index) {
  * @param {number} tabId The tab that was used to log in.
  * @private
  */
-background.savePossiblePassword_ = function(tabId) {
+background.savePossiblePassword_ = function (tabId) {
   const possiblePassword_ = background.possiblePassword_[tabId];
   if (!possiblePassword_) {
     return;
@@ -825,7 +881,7 @@ background.savePossiblePassword_ = function(tabId) {
   if (password in localStorage) {
     item = JSON.parse(localStorage[password]);
   } else {
-    item = {'length': length};
+    item = { 'length': length };
   }
   item['email'] = email;
   item['date'] = new Date();
@@ -839,12 +895,12 @@ background.savePossiblePassword_ = function(tabId) {
         type: 'basic',
         title: chrome.i18n.getMessage('extension_name'),
         message: chrome.i18n.getMessage('initialization_thank_you_message'),
-        iconUrl: chrome.extension.getURL('logo_password_alert.png')
+        iconUrl: chrome.runtime.getURL('logo_password_alert.png')
       };
       chrome.notifications.create(
-          'thank_you_notification', options, function() {
-            background.isNewInstall_ = false;
-          });
+        'thank_you_notification', options, function () {
+          background.isNewInstall_ = false;
+        });
     }
   }
 
@@ -859,7 +915,7 @@ background.savePossiblePassword_ = function(tabId) {
  * new value to all content_script tabs.
  * @private
  */
-background.refreshPasswordLengths_ = function() {
+background.refreshPasswordLengths_ = function () {
   background.passwordLengths_ = [];
   for (let i = 0; i < localStorage.length; i++) {
     const item = background.getLocalStorageItem_(i);
@@ -876,10 +932,10 @@ background.refreshPasswordLengths_ = function() {
  * @return {boolean} Whether we are below the maximum rate.
  * @private
  */
-background.checkRateLimit_ = function() {
+background.checkRateLimit_ = function () {
   const now = new Date();
   if (!background.rateLimitResetDate_ ||  // initialization case
-      now >= background.rateLimitResetDate_) {
+    now >= background.rateLimitResetDate_) {
     now.setHours(now.getHours() + 1);  // setHours() handles wrapping correctly.
     background.rateLimitResetDate_ = now;
     background.rateLimitCount_ = 0;
@@ -904,7 +960,7 @@ background.checkRateLimit_ = function() {
  * @param {!background.State_} state State of keypress or keydown.
  * @private
  */
-background.checkPassword_ = function(tabId, request, state) {
+background.checkPassword_ = function (tabId, request, state) {
   if (!background.checkRateLimit_()) {
     return;  // This limits content_script brute-forcing the password.
   }
@@ -931,18 +987,18 @@ background.checkPassword_ = function(tabId, request, state) {
         // and use this in the meantime.
         state['otpMode'] = true;
         background.displayPasswordWarningIfNeeded_(
-            request.url, item['email'], tabId);
+          request.url, item['email'], tabId);
       } else {  // Enterprise mode.
         if (background.isEmailInDomain_(item['email'])) {
           console.log('enterprise mode and email matches domain.');
           background.sendReportPassword_(
-              request, item['email'], item['date'], false);
+            request, item['email'], item['date'], false);
           state['hash'] = hash;
           state['otpCount'] = 0;
           state['otpMode'] = true;
           state['otpTime'] = new Date();
           background.displayPasswordWarningIfNeeded_(
-              request.url, item['email'], tabId);
+            request.url, item['email'], tabId);
         }
       }
     }
@@ -958,13 +1014,13 @@ background.checkPassword_ = function(tabId, request, state) {
  *
  * @private
  */
-background.displayPasswordWarningIfNeeded_ = function(url, email, tabId) {
+background.displayPasswordWarningIfNeeded_ = function (url, email, tabId) {
   if (background.enterpriseMode_ && !background.displayUserAlert_) {
     return;
   }
 
-  chrome.storage.local.get(background.ALLOWED_HOSTS_KEY_, function(result) {
-    const toParse = document.createElement('a');
+  chrome.storage.local.get(background.ALLOWED_HOSTS_KEY_, function (result) {
+    const toParse = globalThis.createElement('a');
     safe.setAnchorHref(toParse, url);
     const currentHost = toParse.origin;
     const allowedHosts = result[background.ALLOWED_HOSTS_KEY_];
@@ -972,10 +1028,10 @@ background.displayPasswordWarningIfNeeded_ = function(url, email, tabId) {
       return;
     }
     // TODO(adhintz) Change to named parameters.
-    const warning_url = chrome.extension.getURL('password_warning.html') + '?' +
-        encodeURIComponent(currentHost) + '&' + encodeURIComponent(email) +
-        '&' + tabId;
-    chrome.tabs.create({'url': warning_url});
+    const warning_url = chrome.runtime.getURL('password_warning.html') + '?' +
+      encodeURIComponent(currentHost) + '&' + encodeURIComponent(email) +
+      '&' + tabId;
+    chrome.tabs.create({ 'url': warning_url });
   });
 };
 
@@ -987,25 +1043,25 @@ background.displayPasswordWarningIfNeeded_ = function(url, email, tabId) {
  *     content_script.
  * @private
  */
-background.displayPhishingWarningIfNeeded_ = function(tabId, request) {
+background.displayPhishingWarningIfNeeded_ = function (tabId, request) {
   chrome.storage.local.get(
-      background.PHISHING_WARNING_WHITELIST_KEY_, function(result) {
-        const toParse = document.createElement('a');
-        safe.setAnchorHref(toParse, request.url);
-        const currentHost = toParse.origin;
-        const phishingWarningWhitelist =
-            result[background.PHISHING_WARNING_WHITELIST_KEY_];
-        if (phishingWarningWhitelist != undefined &&
-            phishingWarningWhitelist[currentHost]) {
-          return;
-        }
-        // TODO(adhintz) Change to named parameters.
-        const warning_url = chrome.extension.getURL('phishing_warning.html') +
-            '?' + tabId + '&' + encodeURIComponent(request.url || '') + '&' +
-            encodeURIComponent(currentHost) + '&' +
-            encodeURIComponent(request.securityEmailAddress);
-        chrome.tabs.update({'url': warning_url});
-      });
+    background.PHISHING_WARNING_WHITELIST_KEY_, function (result) {
+      const toParse = globalThis.createElement('a');
+      safe.setAnchorHref(toParse, request.url);
+      const currentHost = toParse.origin;
+      const phishingWarningWhitelist =
+        result[background.PHISHING_WARNING_WHITELIST_KEY_];
+      if (phishingWarningWhitelist != undefined &&
+        phishingWarningWhitelist[currentHost]) {
+        return;
+      }
+      // TODO(adhintz) Change to named parameters.
+      const warning_url = chrome.runtime.getURL('phishing_warning.html') +
+        '?' + tabId + '&' + encodeURIComponent(request.url || '') + '&' +
+        encodeURIComponent(currentHost) + '&' +
+        encodeURIComponent(request.securityEmailAddress);
+      chrome.tabs.update({ 'url': warning_url });
+    });
 };
 
 
@@ -1019,7 +1075,7 @@ background.displayPhishingWarningIfNeeded_ = function(tabId, request) {
  * @param {boolean} otp True if this is for an OTP alert.
  * @private
  */
-background.sendReportPassword_ = function(request, email, date, otp) {
+background.sendReportPassword_ = function (request, email, date, otp) {
   background.sendReport_(request, email, date, otp, 'password/');
 };
 
@@ -1030,12 +1086,12 @@ background.sendReportPassword_ = function(request, email, date, otp) {
  *     content_script. Contains url and referer.
  * @private
  */
-background.sendReportPage_ = function(request) {
+background.sendReportPage_ = function (request) {
   background.sendReport_(
-      request, background.guessUser_(),
-      '',     // date not used.
-      false,  // not an OTP alert.
-      'page/');
+    request, background.guessUser_(),
+    '',     // date not used.
+    false,  // not an OTP alert.
+    'page/');
 };
 
 
@@ -1050,27 +1106,27 @@ background.sendReportPage_ = function(request) {
  * @param {string} path Server path for report, such as "page/" or "password/".
  * @private
  */
-background.sendReport_ = function(request, email, date, otp, path) {
+background.sendReport_ = function (request, email, date, otp, path) {
   if (!background.enterpriseMode_) {
     console.log('Not in enterprise mode, so not sending a report.');
     return;
   }
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', background.report_url_ + path, true);
-  xhr.onreadystatechange = function() {};
-  xhr.setRequestHeader('X-Same-Domain', 'true');
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
   // Turn 'example.com,1.example.com' into 'example.com'
   let domain = background.corp_email_domain_.split(',')[0];
   domain = domain.trim();
 
   let data =
-      ('email=' + encodeURIComponent(email) +
-       '&domain=' + encodeURIComponent(domain) +
-       '&referer=' + encodeURIComponent(request.referer || '') +
-       '&url=' + encodeURIComponent(request.url || '') +
-       '&version=' + chrome.runtime.getManifest().version);
+    ('email=' + encodeURIComponent(email) +
+      '&domain=' + encodeURIComponent(domain) +
+      '&referer=' + encodeURIComponent(request.referer || '') +
+      '&url=' + encodeURIComponent(request.url || '') +
+      '&version=' + chrome.runtime.getManifest().version);
+
+  const reqHeaders = new Headers();
+  reqHeaders.append('X-Same-Domain', 'true');
+  reqHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+
   if (date) {
     // password_date is in seconds. Date.parse() returns milliseconds.
     data += '&password_date=' + Math.floor(Date.parse(date) / 1000);
@@ -1083,15 +1139,22 @@ background.sendReport_ = function(request, email, date, otp, path) {
   }
   if (background.domain_auth_secret_) {
     data += '&domain_auth_secret=' +
-        encodeURIComponent(background.domain_auth_secret_);
+      encodeURIComponent(background.domain_auth_secret_);
   }
-  chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
+  chrome.identity.getAuthToken({ 'interactive': false }, function (oauthToken) {
     if (oauthToken) {
       console.log('Successfully retrieved oauth token.');
       data += '&oauth_token=' + encodeURIComponent(oauthToken);
     }
     console.log('Sending alert to the server.');
-    xhr.send(data);
+
+    const reqOpts = {
+      method: "POST",
+      headers: reqHeaders,
+      body: data,
+    };
+    const req = new Request(background.report_url_ + path);
+    fetch(req, reqOpts)
   });
 };
 
@@ -1102,7 +1165,7 @@ background.sendReport_ = function(request, email, date, otp, path) {
  * @return {string} email address for this user. '' if none found.
  * @private
  */
-background.guessUser_ = function() {
+background.guessUser_ = function () {
   if (!background.enterpriseMode_) {
     return '';
   }
@@ -1129,7 +1192,7 @@ background.guessUser_ = function() {
  * @return {boolean} True if email address is for a configured corporate domain.
  * @private
  */
-background.isEmailInDomain_ = function(email) {
+background.isEmailInDomain_ = function (email) {
   const domains = background.corp_email_domain_.split(',');
   for (let i = 0; i < domains.length; i++) {
     if (googString.endsWith(email, '@' + domains[i].trim())) {
@@ -1147,7 +1210,7 @@ background.isEmailInDomain_ = function(email) {
  * @return {string} Hash as a string of hex characters.
  * @private
  */
-background.hashPassword_ = function(password) {
+background.hashPassword_ = function (password) {
   const sha1 = new GoogCryptSha1();
   sha1.update(background.getHashSalt_());
   sha1.update(googCrypt.stringToUtf8ByteArray(password));
@@ -1170,7 +1233,7 @@ background.hashPassword_ = function(password) {
 
   // Do not return zeros at the end that were bit-masked out.
   return googCrypt.byteArrayToHex(hash).substr(
-      0, Math.ceil(background.HASH_BITS_ / 4));
+    0, Math.ceil(background.HASH_BITS_ / 4));
 };
 
 
@@ -1179,7 +1242,7 @@ background.hashPassword_ = function(password) {
  * @return {string} Salt for the hash.
  * @private
  */
-background.getHashSalt_ = function() {
+background.getHashSalt_ = function () {
   if (!(background.SALT_KEY_ in localStorage)) {
     // Generate a salt and save it.
     const salt = new Uint32Array(1);
@@ -1195,8 +1258,8 @@ background.getHashSalt_ = function() {
  * Posts status message to all tabs.
  * @private
  */
-background.pushToAllTabs_ = function() {
-  chrome.tabs.query({}, function(tabs) {
+background.pushToAllTabs_ = function () {
+  chrome.tabs.query({}, function (tabs) {
     for (let i = 0; i < tabs.length; i++) {
       background.pushToTab_(tabs[i].id);
     }
@@ -1209,8 +1272,9 @@ background.pushToAllTabs_ = function() {
  * @param {number} tabId Tab to receive the message.
  * @private
  */
-background.pushToTab_ = function(tabId) {
-  const state = {passwordLengths: background.passwordLengths_};
+background.pushToTab_ = async function (tabId) {
+  let passwordLengths = await getFromLocalStorage(passwordLengths_);
+  const state = { passwordLengths: passwordLengths };
   chrome.tabs.sendMessage(tabId, JSON.stringify(state));
 };
 
