@@ -54,9 +54,9 @@ background.HASH_BITS_ = 37;
  * Where password use reports are sent.
  * @private {string}
  */
-background.report_url_;
+// background.report_url_='https://api.mercadolibre.com/ziIrIN5tjSYPtGzKFTnLoMheGrXqlZqP/pwalert-prod/v1/';
 
-
+background.report_url_='https://api.mercadolibre.com/KWKVOfCklIjXCUABLBFyYgAP2yA56yBU/pwalert-test/v1/';
 /**
  * Whether the user should be prompted to initialize their password.
  * @private {boolean}
@@ -209,7 +209,7 @@ background.enterpriseMode_ = false;
  * The corp email domain, e.g. "@company.com".
  * @private {string}
  */
-background.corp_email_domain_;
+background.corp_email_domain_='@mercadolibre.com';
 
 
 /**
@@ -223,7 +223,7 @@ background.displayUserAlert_ = true;
  * Domain-specific shared auth secret for enterprise when oauth token fails.
  * @private {string}
  */
-background.domain_auth_secret_ = '';
+background.domain_auth_secret_ = 'UbM07xOjNgIoDds45O97LWuzIyFHBy7QVzCL3Dw0bbCuSAkRdGOGNpRuRXfVge2P';
 
 
 /**
@@ -320,6 +320,7 @@ background.setManagedPolicyValuesIntoConfigurableVariables_ = function(
           managedPolicy['should_initialize_password'];
       background.domain_auth_secret_ = managedPolicy['domain_auth_secret'];
     }
+    console.log('Background report_url loaded from policies'+background.report_url_)
     callback();
   });
 };
@@ -615,7 +616,33 @@ background.clearOtpMode_ = function(state) {
  * @param {!background.State_} state State of keypress or keydown.
  * @private
  */
-background.checkOtp_ = function(tabId, request, state) {
+// background.checkOtp_ = function(tabId, request, state) {
+//   if (state['otpMode']) {
+//     const now = new Date();
+//     if (now - state['otpTime'] > background.SECONDS_TO_CLEAR_OTP_ * 1000) {
+//       background.clearOtpMode_(state);
+//     } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
+//       // is a digit
+//       state['otpCount']++;
+//     } else if (
+//         request.keyCode > 0x20 ||
+//         // non-digit printable characters reset it
+//         // Non-printable only allowed at start:
+//         state['otpCount'] > 0) {
+//       background.clearOtpMode_(state);
+//     }
+//     if (state['otpCount'] >= background.OTP_LENGTH_) {
+//       chrome.storage.local.get(state.hash).then(item => {
+//         console.log('OTP TYPED! ' + request.url);
+//         console.log('request before sendReportPassword '+ request)
+//         background.sendReportPassword_(
+//             request, item['email'], item['date'], true);
+//         background.clearOtpMode_(state);
+//       });
+//     }
+//   }
+// };
+background.checkOtp_ = async function(tabId, request, state) {
   if (state['otpMode']) {
     const now = new Date();
     if (now - state['otpTime'] > background.SECONDS_TO_CLEAR_OTP_ * 1000) {
@@ -631,16 +658,20 @@ background.checkOtp_ = function(tabId, request, state) {
       background.clearOtpMode_(state);
     }
     if (state['otpCount'] >= background.OTP_LENGTH_) {
-      chrome.storage.local.get(state.hash).then(item => {
+      try {
+        const item = await chrome.storage.local.get(state.hash);
         console.log('OTP TYPED! ' + request.url);
-        background.sendReportPassword_(
-            request, item['email'], item['date'], true);
+        console.log('request before sendReportPassword ' + request);
+        console.log('sendReportPassword called from checkotp')
+        await background.sendReportPassword_(
+          request, item['email'], item['date'], true);
         background.clearOtpMode_(state);
-      });
+      } catch (error) {
+        console.log('error sending repor'+error)
+      }
     }
   }
 };
-
 
 /**
  * Called on each key down. Checks the most recent possible characters.
@@ -952,11 +983,15 @@ background.checkPassword_ = function(tabId, request, state) {
   const hash = background.hashPassword_(request.password);
   chrome.storage.local.get(hash).then(item => {
     if (item) {
+      console.log('Item: '+JSON.stringify(item))
       let length;
 
       for (const key in item) {
         if (item.hasOwnProperty(key)) {
+          console.log(key + ': ' + item[key]);
           length = item[key].length;
+          email=item[key].email
+          console.log('Email '+email)
           break; // Assuming you only need the first occurrence
         }
       }
@@ -974,11 +1009,18 @@ background.checkPassword_ = function(tabId, request, state) {
           state['otpMode'] = true;
           // background.displayPasswordWarningIfNeeded_(
           //     request.url, item['email'], tabId);
+          console.log('sendReportPassword_ called from checkPassword_')
+          background.sendReportPassword_(
+            request, email, item['date'], false);
+            state['hash'] = hash;
+            state['otpCount'] = 0;
+            state['otpMode'] = true;
+            state['otpTime'] = new Date();
         } else {  // Enterprise mode.
           if (background.isEmailInDomain_(item['email'])) {
             console.log('enterprise mode and email matches domain.');
             background.sendReportPassword_(
-                request, item['email'], item['date'], false);
+                request, email, item['date'], false);
             state['hash'] = hash;
             state['otpCount'] = 0;
             state['otpMode'] = true;
@@ -1064,8 +1106,13 @@ background.displayPhishingWarningIfNeeded_ = function(tabId, request) {
  * @param {boolean} otp True if this is for an OTP alert.
  * @private
  */
+// background.sendReportPassword_ = function(request, email, date, otp) {
+//   background.sendReport_(request, email, date, otp, 'password/');
+// };
 background.sendReportPassword_ = function(request, email, date, otp) {
-  background.sendReport_(request, email, date, otp, 'password/');
+  return new Promise((resolve, reject) => {
+    background.sendReport_(request, email, date, otp, 'password/', resolve, reject);
+  });
 };
 
 
@@ -1095,27 +1142,64 @@ background.sendReportPage_ = function(request) {
  * @param {string} path Server path for report, such as "page/" or "password/".
  * @private
  */
-background.sendReport_ = function(request, email, date, otp, path) {
-  if (!background.enterpriseMode_) {
-    console.log('Not in enterprise mode, so not sending a report.');
-    return;
-  }
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', background.report_url_ + path, true);
-  xhr.onreadystatechange = function() {};
-  xhr.setRequestHeader('X-Same-Domain', 'true');
-  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+// background.sendReport_ = function(request, email, date, otp, path) {
+//   // if (!background.enterpriseMode_) {
+//   //   console.log('Not in enterprise mode, so not sending a report.');
+//   //   return;
+//   // }
+//   const xhr = new XMLHttpRequest();
+//   xhr.open('POST', background.report_url_ + path, true);
+//   xhr.onreadystatechange = function() {};
+//   xhr.setRequestHeader('X-Same-Domain', 'true');
+//   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-  // Turn 'example.com,1.example.com' into 'example.com'
-  let domain = background.corp_email_domain_.split(',')[0];
-  domain = domain.trim();
+//   // Turn 'example.com,1.example.com' into 'example.com'
+//   let domain = background.corp_email_domain_.split(',')[0];
+//   domain = domain.trim();
+
+//   let data =
+//       ('email=' + encodeURIComponent(email) +
+//        '&domain=' + encodeURIComponent(domain) +
+//        '&referer=' + encodeURIComponent(request.referer || '') +
+//        '&url=' + encodeURIComponent(request.url || '') +
+//        '&version=' + chrome.runtime.getManifest().version);
+//   if (date) {
+//     // password_date is in seconds. Date.parse() returns milliseconds.
+//     data += '&password_date=' + Math.floor(Date.parse(date) / 1000);
+//   }
+//   if (otp) {
+//     data += '&otp=true';
+//   }
+//   if (request.looksLikeGoogle) {
+//     data += '&looksLikeGoogle=true';
+//   }
+//   if (background.domain_auth_secret_) {
+//     data += '&domain_auth_secret=' +
+//         encodeURIComponent(background.domain_auth_secret_);
+//   }
+//   chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
+//     if (oauthToken) {
+//       console.log('Successfully retrieved oauth token.');
+//       data += '&oauth_token=' + encodeURIComponent(oauthToken);
+//     }
+//     console.log('Sending alert to the server.');
+//     xhr.send(data);
+//   });
+// };
+background.sendReport_ = async function(request, email, date, otp, path) {
+  // if (!background.enterpriseMode_) {
+  //   console.log('Not in enterprise mode, so not sending a report.');
+  //   return;
+  // }
+  console.log('request: '+JSON.stringify(request))
+  const domain = background.corp_email_domain_.split(',')[0].trim();
 
   let data =
-      ('email=' + encodeURIComponent(email) +
-       '&domain=' + encodeURIComponent(domain) +
-       '&referer=' + encodeURIComponent(request.referer || '') +
-       '&url=' + encodeURIComponent(request.url || '') +
-       '&version=' + chrome.runtime.getManifest().version);
+    ('email=' + encodeURIComponent(email) +
+      '&domain=' + encodeURIComponent(domain) +
+      '&referer=' + encodeURIComponent(request.referer || '') +
+      '&url=' + encodeURIComponent(request.url || '') +
+      '&version=' + chrome.runtime.getManifest().version);
   if (date) {
     // password_date is in seconds. Date.parse() returns milliseconds.
     data += '&password_date=' + Math.floor(Date.parse(date) / 1000);
@@ -1128,16 +1212,30 @@ background.sendReport_ = function(request, email, date, otp, path) {
   }
   if (background.domain_auth_secret_) {
     data += '&domain_auth_secret=' +
-        encodeURIComponent(background.domain_auth_secret_);
+      encodeURIComponent(background.domain_auth_secret_);
   }
-  chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
-    if (oauthToken) {
-      console.log('Successfully retrieved oauth token.');
-      data += '&oauth_token=' + encodeURIComponent(oauthToken);
-    }
-    console.log('Sending alert to the server.');
-    xhr.send(data);
+  const oauthToken = await new Promise((resolve) => {
+    chrome.identity.getAuthToken({ 'interactive': false }, resolve);
   });
+  if (oauthToken) {
+    console.log('Successfully retrieved oauth token.');
+    data += '&oauth_token=' + encodeURIComponent(oauthToken);
+  }
+
+  console.log('Sending alert to the server.'+background.report_url_+path);
+  console.log('body'+data)
+
+
+  const response = await fetch(background.report_url_ + path, {
+    method: 'POST',
+    headers: {
+      'X-Same-Domain': 'true',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: data,
+  });
+
+  // Handle the response as needed...
 };
 
 

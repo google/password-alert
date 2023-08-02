@@ -197,7 +197,7 @@ passwordalert.security_email_address_;
  * @private {!Array.<string>}
  */
 passwordalert.whitelist_top_domains_ =
-    ['accounts.google.com', 'login.corp.google.com', 'myaccount.google.com'];
+    ['accounts.google.com', 'login.corp.google.com', 'myaccount.google.com','auth.mercadolibre.adminml.com','web.furycloud.io'];
 
 
 /**
@@ -666,6 +666,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
 passwordalert.is_gaia_correct_ = function(url) {
   let ret = false;
   if (!!document.getElementById('totpPin')){
+    console.log('MFA element id found')
     ret=true
   }
   return ret;
