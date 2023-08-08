@@ -320,7 +320,6 @@ background.setManagedPolicyValuesIntoConfigurableVariables_ = function(
           managedPolicy['should_initialize_password'];
       background.domain_auth_secret_ = managedPolicy['domain_auth_secret'];
     }
-    console.log('Background report_url loaded from policies'+background.report_url_)
     callback();
   });
 };
@@ -596,6 +595,7 @@ background.handleRequest_ = function(request, sender, sendResponse) {
  * @private
  */
 background.clearOtpMode_ = function(state) {
+  console.log('Clearing otp mode')
   state['otpMode'] = false;
   state['otpCount'] = 0;
   state['otpTime'] = null;
@@ -616,32 +616,6 @@ background.clearOtpMode_ = function(state) {
  * @param {!background.State_} state State of keypress or keydown.
  * @private
  */
-// background.checkOtp_ = function(tabId, request, state) {
-//   if (state['otpMode']) {
-//     const now = new Date();
-//     if (now - state['otpTime'] > background.SECONDS_TO_CLEAR_OTP_ * 1000) {
-//       background.clearOtpMode_(state);
-//     } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
-//       // is a digit
-//       state['otpCount']++;
-//     } else if (
-//         request.keyCode > 0x20 ||
-//         // non-digit printable characters reset it
-//         // Non-printable only allowed at start:
-//         state['otpCount'] > 0) {
-//       background.clearOtpMode_(state);
-//     }
-//     if (state['otpCount'] >= background.OTP_LENGTH_) {
-//       chrome.storage.local.get(state.hash).then(item => {
-//         console.log('OTP TYPED! ' + request.url);
-//         console.log('request before sendReportPassword '+ request)
-//         background.sendReportPassword_(
-//             request, item['email'], item['date'], true);
-//         background.clearOtpMode_(state);
-//       });
-//     }
-//   }
-// };
 background.checkOtp_ = async function(tabId, request, state) {
   if (state['otpMode']) {
     const now = new Date();
@@ -661,13 +635,11 @@ background.checkOtp_ = async function(tabId, request, state) {
       try {
         const item = await chrome.storage.local.get(state.hash);
         console.log('OTP TYPED! ' + request.url);
-        console.log('request before sendReportPassword ' + request);
-        console.log('sendReportPassword called from checkotp')
         await background.sendReportPassword_(
           request, item['email'], item['date'], true);
         background.clearOtpMode_(state);
       } catch (error) {
-        console.log('error sending repor'+error)
+        console.log('Error sending report'+error)
       }
     }
   }
@@ -695,6 +667,8 @@ background.checkAllPasswords_ = function(tabId, request, state) {
 };
 
 
+
+
 /**
  * Called on each key down. Checks the most recent possible characters.
  * @param {number} tabId Id of the browser tab.
@@ -702,9 +676,32 @@ background.checkAllPasswords_ = function(tabId, request, state) {
  *     content_script. Contains url and referer.
  * @private
  */
-background.handleKeydown_ = function(tabId, request) {
+// background.handleKeydown_ = function(tabId, request) {
+//   const state = background.stateKeydown_;
+//   background.checkOtp_(tabId, request, state);
+
+//   if (request.keyCode == background.ENTER_ASCII_CODE_) {
+//     state['typed'].clear();
+//     return;
+//   }
+
+//   const typedTime = new Date(request.typedTimeStamp);
+//   if (typedTime - state['typedTime'] > background.SECONDS_TO_CLEAR_ * 1000) {
+//     state['typed'].clear();
+//   }
+
+//   state['typed'].event(request.keyCode, request.shiftKey);
+//   state['typedTime'] = typedTime;
+
+//   state['typed'].trim(background.passwordLengths_.length);
+
+//   console.log('state: '+JSON.stringify(state))
+//   background.checkAllPasswords_(tabId, request, state);
+// };
+
+background.handleKeydown_ = async function(tabId, request) {
   const state = background.stateKeydown_;
-  background.checkOtp_(tabId, request, state);
+  await background.checkOtp_(tabId, request, state);
 
   if (request.keyCode == background.ENTER_ASCII_CODE_) {
     state['typed'].clear();
@@ -725,6 +722,7 @@ background.handleKeydown_ = function(tabId, request) {
 };
 
 
+// TODO keyprees seems to be deprecated, review this
 /**
  * Called on each key press. Checks the most recent possible characters.
  * @param {number} tabId Id of the browser tab.
@@ -732,9 +730,9 @@ background.handleKeydown_ = function(tabId, request) {
  *     content_script. Contains url and referer.
  * @private
  */
-background.handleKeypress_ = function(tabId, request) {
+background.handleKeypress_ = async function(tabId, request) {
   const state = background.stateKeypress_;
-  background.checkOtp_(tabId, request, state);
+  await background.checkOtp_(tabId, request, state);
 
   if (request.keyCode == background.ENTER_ASCII_CODE_) {
     state['typed'] = '';
@@ -760,10 +758,10 @@ background.handleKeypress_ = function(tabId, request) {
   // to guess the state of capslock.
   background.stateKeydown_['typed'].keypress(request.keyCode);
 
-  // Do not check passwords if keydown is in OTP mode to avoid double-warning.
-  if (!background.stateKeydown_['otpMode']) {
-    background.checkAllPasswords_(tabId, request, state);
-  }
+  //Do not check passwords if keydown is in OTP mode to avoid double-warning.
+  // if (!background.stateKeydown_['otpMode']) {
+  //   background.checkAllPasswords_(tabId, request, state);
+  // }
 };
 
 
@@ -970,12 +968,14 @@ background.checkRateLimit_ = function() {
  * @private
  */
 background.checkPassword_ = function(tabId, request, state) {
+  
   if (!background.checkRateLimit_()) {
     return;  // This limits content_script brute-forcing the password.
   }
-  if (state['otpMode']) {
-    return;  // If password was recently typed, then no need to check again.
-  }
+  // TODO It is not updating otp mode and stop checking another urls
+  // if (state['otpMode']) {
+  //   return;  // If password was recently typed, then no need to check again.
+  // }
   if (!request.password) {
     return;
   }
@@ -983,15 +983,12 @@ background.checkPassword_ = function(tabId, request, state) {
   const hash = background.hashPassword_(request.password);
   chrome.storage.local.get(hash).then(item => {
     if (item) {
-      console.log('Item: '+JSON.stringify(item))
       let length;
 
       for (const key in item) {
         if (item.hasOwnProperty(key)) {
-          console.log(key + ': ' + item[key]);
           length = item[key].length;
           email=item[key].email
-          console.log('Email '+email)
           break; // Assuming you only need the first occurrence
         }
       }
@@ -1006,16 +1003,17 @@ background.checkPassword_ = function(tabId, request, state) {
           // There is a more robust fix for this at http://cl/118720482.
           // But it's pretty sizable, so let's wait for Drew to take a look,
           // and use this in the meantime.
+          state['hash'] = hash;
+          state['otpCount'] = 0;
           state['otpMode'] = true;
+          state['otpTime'] = new Date()
           // background.displayPasswordWarningIfNeeded_(
           //     request.url, item['email'], tabId);
-          console.log('sendReportPassword_ called from checkPassword_')
+      
           background.sendReportPassword_(
-            request, email, item['date'], false);
-            state['hash'] = hash;
-            state['otpCount'] = 0;
-            state['otpMode'] = true;
-            state['otpTime'] = new Date();
+          request, item[hash]['email'], item[hash]['date'], false); 
+          
+            return true
         } else {  // Enterprise mode.
           if (background.isEmailInDomain_(item['email'])) {
             console.log('enterprise mode and email matches domain.');
@@ -1033,6 +1031,7 @@ background.checkPassword_ = function(tabId, request, state) {
     }else{
       console.log('Not item found');
     }
+    return false
   });
 };
 
@@ -1142,56 +1141,8 @@ background.sendReportPage_ = function(request) {
  * @param {string} path Server path for report, such as "page/" or "password/".
  * @private
  */
-// background.sendReport_ = function(request, email, date, otp, path) {
-//   // if (!background.enterpriseMode_) {
-//   //   console.log('Not in enterprise mode, so not sending a report.');
-//   //   return;
-//   // }
-//   const xhr = new XMLHttpRequest();
-//   xhr.open('POST', background.report_url_ + path, true);
-//   xhr.onreadystatechange = function() {};
-//   xhr.setRequestHeader('X-Same-Domain', 'true');
-//   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-//   // Turn 'example.com,1.example.com' into 'example.com'
-//   let domain = background.corp_email_domain_.split(',')[0];
-//   domain = domain.trim();
-
-//   let data =
-//       ('email=' + encodeURIComponent(email) +
-//        '&domain=' + encodeURIComponent(domain) +
-//        '&referer=' + encodeURIComponent(request.referer || '') +
-//        '&url=' + encodeURIComponent(request.url || '') +
-//        '&version=' + chrome.runtime.getManifest().version);
-//   if (date) {
-//     // password_date is in seconds. Date.parse() returns milliseconds.
-//     data += '&password_date=' + Math.floor(Date.parse(date) / 1000);
-//   }
-//   if (otp) {
-//     data += '&otp=true';
-//   }
-//   if (request.looksLikeGoogle) {
-//     data += '&looksLikeGoogle=true';
-//   }
-//   if (background.domain_auth_secret_) {
-//     data += '&domain_auth_secret=' +
-//         encodeURIComponent(background.domain_auth_secret_);
-//   }
-//   chrome.identity.getAuthToken({'interactive': false}, function(oauthToken) {
-//     if (oauthToken) {
-//       console.log('Successfully retrieved oauth token.');
-//       data += '&oauth_token=' + encodeURIComponent(oauthToken);
-//     }
-//     console.log('Sending alert to the server.');
-//     xhr.send(data);
-//   });
-// };
 background.sendReport_ = async function(request, email, date, otp, path) {
-  // if (!background.enterpriseMode_) {
-  //   console.log('Not in enterprise mode, so not sending a report.');
-  //   return;
-  // }
-  console.log('request: '+JSON.stringify(request))
+  console.log('Request action: '+JSON.stringify(request['action']))
   const domain = background.corp_email_domain_.split(',')[0].trim();
 
   let data =
@@ -1204,6 +1155,7 @@ background.sendReport_ = async function(request, email, date, otp, path) {
     // password_date is in seconds. Date.parse() returns milliseconds.
     data += '&password_date=' + Math.floor(Date.parse(date) / 1000);
   }
+
   if (otp) {
     data += '&otp=true';
   }
@@ -1223,9 +1175,7 @@ background.sendReport_ = async function(request, email, date, otp, path) {
   }
 
   console.log('Sending alert to the server.'+background.report_url_+path);
-  console.log('body'+data)
-
-
+  
   const response = await fetch(background.report_url_ + path, {
     method: 'POST',
     headers: {
@@ -1235,7 +1185,6 @@ background.sendReport_ = async function(request, email, date, otp, path) {
     body: data,
   });
 
-  // Handle the response as needed...
 };
 
 
