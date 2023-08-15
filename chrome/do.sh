@@ -66,7 +66,7 @@ pc_build_extension() {
   jscompile_pc+=" --js='./service_worker.js'"
   jscompile_pc+=" --js='./content_script.js'"
   jscompile_pc+=" --js='./keydown.js'"
-  jscompile_pc+=" --js='./storage.js'"
+
 
   # compile javascript files
   echo "Compiling JS files..."
@@ -104,7 +104,7 @@ pc_generate_jsdeps() {
   echo "Generating build/deps.js file..."
   mkdir -p "$BUILD_DIR"
   $PYTHON_CMD lib/closure-library/closure/bin/build/depswriter.py \
-    service_worker.js content_script.js keydown.js storage.js\
+    service_worker.js content_script.js keydown.js\
     > "$BUILD_DIR/deps.js"
 }
 
