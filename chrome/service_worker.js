@@ -557,7 +557,7 @@ background.completePageInitialization_ = function () {
             background.signed_in_email_ = userInfo.email;
         }
     });
-    console.log('page init complete')
+    console.log('page init complete');
 };
 
  /**
@@ -635,6 +635,8 @@ background.handleRequest_ = function (request, sender, sendResponse) {
         case 'getEmail':
             sendResponse(background.possiblePassword_[sender.tab.id]['email']);
             break;
+        default:
+            console.log('cannot handle request action: ' + request.action + '. action is undefined.');
     }
     // do all this async.
     return true;
@@ -944,11 +946,8 @@ background.checkRateLimit_ = function () {
 
     background.rateLimitCount_++;
 
-    if (background.rateLimitCount_ <= background.MAX_RATE_PER_HOUR_) {
-        return true;
-    } else {
-        return false;  // rate exceeded
-    }
+    // rate exceeded?
+    return background.rateLimitCount_ <= background.MAX_RATE_PER_HOUR_;
 };
 
 
@@ -1021,8 +1020,6 @@ background.displayPasswordWarningIfNeeded_ = function (url, email, tabId) {
     }
 
     chrome.storage.local.get(background.ALLOWED_HOSTS_KEY_, function (result) {
-        // const toParse = globalThis.createElement('a');
-        // safe.setAnchorHref(toParse, url);
         let u = new URL(url);
         const currentHost = u.origin;
         const allowedHosts = result[background.ALLOWED_HOSTS_KEY_];
@@ -1048,8 +1045,6 @@ background.displayPasswordWarningIfNeeded_ = function (url, email, tabId) {
 background.displayPhishingWarningIfNeeded_ = function (tabId, request) {
     chrome.storage.local.get(
         background.PHISHING_WARNING_WHITELIST_KEY_, function (result) {
-            // const toParse = globalThis.createElement('a');
-            // safe.setAnchorHref(toParse, request.url);
             let u = new URL(url);
             const currentHost = u.origin;
             const phishingWarningWhitelist =
@@ -1119,6 +1114,8 @@ background.sendReport_ = function (request, email, date, otp, path) {
     let domain = background.corp_email_domain_.split(',')[0];
     domain = domain.trim();
 
+    // TODO(authynym) convert this and other uses of encodeURIComponent
+    // to use URLSearchParams instead
     let data =
         ('email=' + encodeURIComponent(email) +
             '&domain=' + encodeURIComponent(domain) +
@@ -1144,7 +1141,7 @@ background.sendReport_ = function (request, email, date, otp, path) {
         data += '&domain_auth_secret=' +
             encodeURIComponent(background.domain_auth_secret_);
     }
-    chrome.identity.getAuthToken({ 'interactive': false }, function (oauthToken) {
+    chrome.identity.getAuthToken( function (oauthToken) {
         if (oauthToken) {
             console.log('Successfully retrieved oauth token.');
             data += '&oauth_token=' + encodeURIComponent(oauthToken);
@@ -1156,7 +1153,7 @@ background.sendReport_ = function (request, email, date, otp, path) {
             headers: reqHeaders,
             body: data,
         };
-        const req = new Request(background.report_url_ + path);
+        const req = background.report_url_ + path;
         fetch(req, reqOpts)
     });
 };
@@ -1249,7 +1246,7 @@ background.getHashSalt_ = function () {
     if (!(background.SALT_KEY_ in storageCache)) {
         // Generate a salt and save it.
         const salt = new Uint32Array(1);
-        window.crypto.getRandomValues(salt);
+        crypto.getRandomValues(salt);
         storageCache[background.SALT_KEY_] = salt[0].toString();
     }
 
