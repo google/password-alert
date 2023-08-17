@@ -405,7 +405,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
                  passwordalert.url_,
                  passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
     // This change password page does not have any email information.
-    // So we fallback to the email already set in background.js because users
+    // So we fallback to the email already set in service_worker.js because users
     // will be prompted to login before arriving here.
     let email;
     chrome.runtime.sendMessage({action: 'getEmail'}, function(response) {
@@ -482,7 +482,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
       }, true);
     };
   } else {  // Not a Google login URL.
-    console.log("######## BEFORE ########")
     if (!passwordalert.whitelistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
       chrome.runtime.sendMessage({
@@ -492,13 +491,15 @@ passwordalert.completePageInitializationIfReady_ = function() {
         securityEmailAddress: passwordalert.security_email_address_
       });
     }
-    console.log("######## MIDDLE ########")
-    chrome.runtime.sendMessage({action: 'savePossiblePassword'});
-    console.log("######## END ########")
-
+    chrome.runtime.sendMessage({action: 'savePossiblePassword'}, response => {
+      if(chrome.runtime.lastError){
+        console.log('completePageInitializationIfReady_ ', chrome.runtime.lastError);
+      }
+    });
   }
 
   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
+    console.log("received response from service_worker: ", response);
     passwordalert.stop_();
     passwordalert.start_(response);
   });
@@ -901,6 +902,7 @@ chrome.runtime.onMessage.addListener(
      * @param {string} msg JSON object containing valid password lengths.
      */
     function(msg) {
+      console.log("received message from service_worker: ", msg);
       passwordalert.stop_();
       passwordalert.start_(msg);
     });

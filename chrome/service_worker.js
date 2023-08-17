@@ -20,6 +20,7 @@
  * to see if they're the user's password. Populates chrome.storage.local with partial
  * hashes of the user's password.
  * @author adhintz@google.com (Drew Hintz)
+ * @maintainer adamjnichols@google.com (Adam Nichols)
  */
 
 'use strict';
@@ -34,23 +35,27 @@ const safe = goog.require('goog.dom.safe');
 let background = {};
 goog.exportSymbol('background', background);  // for tests only.
 
-const cacheData = {};
+background.storageCache = {};
 
-const storageCache = new Proxy(cacheData, {
+background.storageCache = new Proxy(background.storageCache, {
   set: async function (target, key, value) {
-    chrome.storage.local.set( { 'cacheData' : storageCache }, function (_) {
-        console.log('persisted storageCache to chrome.local.storage on update.');
+    let r = Reflect.set(target, key, value);
+    await chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
+        console.log('persisted storageCache to chrome.local.storage on update: %s', result);
+        background.refreshPasswordLengths_();
     });
-    return Reflect.set(...arguments);
-
+    return r;
   },
-  deleteProperty: async function(target, prop) {
+  deleteProperty: function(target, prop) {
     if (prop in target) {
-        delete target[prop];
-        chrome.storage.local.set( { 'cacheData' : storageCache }, function (_) {
-            console.log('persisted storageCache to chrome.local.storage on delete.');
+        let r = Reflect.deleteProperty(target, prop)
+        // delete target[prop];
+        chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
+            console.log('persisted storageCache to chrome.local.storage on delete: %s', result);
+            background.refreshPasswordLengths_();
         });
-      }
+        return r;
+    }
   },
   get: function (target, prop, receiver) {
     return Reflect.get(...arguments);
@@ -59,9 +64,6 @@ const storageCache = new Proxy(cacheData, {
     return Reflect.getOwnPropertyDescriptor(...arguments);
   }
 });
-
-
-goog.exportSymbol('storageCache', storageCache);  // for tests only.
 
 
 /**
@@ -459,7 +461,7 @@ background.displayInitializePasswordNotification_ = function () {
                 priority: 1,
                 title: chrome.i18n.getMessage('extension_name'),
                 message: chrome.i18n.getMessage('initialization_message'),
-                iconUrl: chrome.extension.getURL('logo_password_alert.png'),
+                iconUrl: chrome.runtime.getURL('logo_password_alert.png'),
                 buttons: [{ title: chrome.i18n.getMessage('sign_in') }]
             };
             chrome.notifications.create(
@@ -503,7 +505,7 @@ background.initializePasswordIfNeeded_ = function () {
     }
 
     setTimeout(function () {
-        if (!storageCache.hasOwnProperty(background.SALT_KEY_)) {
+        if (!background.storageCache.hasOwnProperty(background.SALT_KEY_)) {
             console.log(
                 'Password still has not been initialized.  ' +
                 'Start the password initialization process again.');
@@ -543,12 +545,17 @@ background.initializePasswordIfReady_ = function (maxRetries, delay, callback) {
 /**
  * Complete page initialization.  This is executed after managed policy values
  * have been set.
+ * 
  * @private
  */
-background.completePageInitialization_ = function () {
-    background.isInitialized_ = true;
-    background.refreshPasswordLengths_();
-    chrome.runtime.onMessage.addListener(background.handleRequest_);
+background.completePageInitialization_ = async function () {
+    background.checkForCacheData_().then((response) => {
+        if(response) {
+            background.isInitialized_ = true;
+            background.refreshPasswordLengths_();
+            chrome.runtime.onMessage.addListener(background.handleRequest_);
+        };
+    });
 
     // Get the username from a signed in Chrome profile, which might be used
     // for reporting phishing sites (if the password store isn't initialized).
@@ -562,16 +569,20 @@ background.completePageInitialization_ = function () {
 
  /**
   * Check for existing cacheData object in chrome.storage.local
+  * 
   * @private
   */
- const checkForCacheData_ = async function() {
+ background.checkForCacheData_ = async function() {
     return new Promise((resolve, reject) => {
       try {
         chrome.storage.local.get('cacheData', function(value) {
             if (typeof value['cacheData'] === "undefined") {
-                resolve(false);
+                console.log('nothing in local storage to load into cache.')
+                resolve(true);
             } else {
-                this.cacheData = value['cacheData'];
+                background.storageCache = value['cacheData'];
+                background.injectContentScriptIntoAllTabs_(background.refreshPasswordLengths_);  // let pages know we have passwords
+                console.log('local storage loaded into cache successfully. length: ', Object.keys(background.storageCache).length)
                 resolve(true)
             }
         });
@@ -604,6 +615,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
     if (sender.tab === undefined) {
         return;
     }
+    console.log("received %s from %s. possiblePassword_: %s", request.action, sender.tab.id, JSON.stringify(background.possiblePassword_));
     switch (request.action) {
         case 'handleKeypress':
             background.handleKeypress_(sender.tab.id, request);
@@ -639,7 +651,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
             console.log('cannot handle request action: ' + request.action + '. action is undefined.');
     }
     // do all this async.
-    return true;
+    // return true;
 };
 
 
@@ -685,7 +697,7 @@ background.checkOtp_ = function (tabId, request, state) {
             background.clearOtpMode_(state);
         }
         if (state['otpCount'] >= background.OTP_LENGTH_) {
-            const item = JSON.parse(storageCache[state.hash]);
+            const item = JSON.parse(background.storageCache[state.hash]);
             console.log('OTP TYPED! ' + request.url);
             background.sendReportPassword_(
                 request, item['email'], item['date'], true);
@@ -809,8 +821,8 @@ background.setPossiblePassword_ = function (tabId, request) {
     }
 
     console.log(
-        'Setting possible password for %s, password length of %s', request.email,
-        request.password.length);
+        'Setting possible password for %s, password length of %s from tab %s', request.email,
+        request.password.length, tabId);
     background.possiblePassword_[tabId] = {
         'email': request.email,
         'password': background.hashPassword_(request.password),
@@ -828,11 +840,12 @@ background.setPossiblePassword_ = function (tabId, request) {
  * @private
  */
 background.getStorageCacheItem_ = function (index) {
+    console.log("got index: %s", index)
     let item;
-    if (Object.keys(storageCache)[index] == background.SALT_KEY_) {
+    if (Object.keys(background.storageCache)[index] == background.SALT_KEY_) {
         item = null;
     } else {
-        item = JSON.parse(storageCache[Object.keys(storageCache)[index]]);
+        item = JSON.parse(background.storageCache[Object.keys(background.storageCache)[index]]);
     }
     return item;
 };
@@ -846,6 +859,7 @@ background.getStorageCacheItem_ = function (index) {
 background.savePossiblePassword_ = function (tabId) {
     const possiblePassword_ = background.possiblePassword_[tabId];
     if (!possiblePassword_) {
+        console.log("tried to save possible password, but not found in background");
         return;
     }
     if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
@@ -856,33 +870,33 @@ background.savePossiblePassword_ = function (tabId) {
     const length = possiblePassword_['length'];
 
     // Delete old email entries.
-    for (let i = 0; i < Object.keys(storageCache).length; i++) {
+    for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
         const item = background.getStorageCacheItem_(i);
         if (item && item['email'] == email) {
             delete item['email'];
             delete item['date'];
-            storageCache[Object.keys(storageCache)[i]] = JSON.stringify(item);
+            background.storageCache[Object.keys(background.storageCache)[i]] = JSON.stringify(item);
         }
     }
 
     // Delete any entries that now have no emails.
     const keysToDelete = [];
-    for (let i = 0; i < Object.keys(storageCache).length; i++) {
+    for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
         const item = background.getStorageCacheItem_(i);
-        if (item && !('email' in item)) {
+        if (item && !(item.hasOwnProperty('email'))) {
             // Delete the item later.
             // We avoid modifying storageCache while iterating over it.
-            keysToDelete.push(Object.keys(storageCache)[i]);
+            keysToDelete.push(Object.keys(background.storageCache)[i]);
         }
     }
     for (let i = 0; i < keysToDelete.length; i++) {
-        storageCache.delete(keysToDelete[i]);
+        delete background.storageCache[keysToDelete[i]];
     }
 
     console.log('Saving password for: ' + email);
     let item;
-    if (password in storageCache) {
-        item = JSON.parse(storageCache[password]);
+    if (password in background.storageCache) {
+        item = JSON.parse(background.storageCache[password]);
     } else {
         item = { 'length': length };
     }
@@ -907,9 +921,9 @@ background.savePossiblePassword_ = function (tabId) {
         }
     }
 
-    storageCache[password] = JSON.stringify(item);
+    background.storageCache[password] = JSON.stringify(item);
     delete background.possiblePassword_[tabId];
-    background.refreshPasswordLengths_();
+    // NOTE: we used to update passwordLengths here, but this has been moved to the async function in storageCache proxy
 };
 
 
@@ -920,12 +934,14 @@ background.savePossiblePassword_ = function (tabId) {
  */
 background.refreshPasswordLengths_ = function () {
     background.passwordLengths_ = [];
-    for (let i = 0; i < Object.keys(storageCache).length; i++) {
+    for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
+        console.log("i = %s", i);
         const item = background.getStorageCacheItem_(i);
         if (item) {
             background.passwordLengths_[item['length']] = true;
         }
     }
+    console.log("pushing passwordLengths of ", background.passwordLengths_.length);
     background.pushToAllTabs_();
 };
 
@@ -972,8 +988,8 @@ background.checkPassword_ = function (tabId, request, state) {
     }
 
     const hash = background.hashPassword_(request.password);
-    if (storageCache[hash]) {
-        const item = JSON.parse(storageCache[hash]);
+    if (background.storageCache[hash]) {
+        const item = JSON.parse(background.storageCache[hash]);
 
         if (item['length'] == request.password.length) {
             console.log('PASSWORD TYPED! ' + request.url);
@@ -1114,7 +1130,7 @@ background.sendReport_ = function (request, email, date, otp, path) {
     let domain = background.corp_email_domain_.split(',')[0];
     domain = domain.trim();
 
-    // TODO(authynym) convert this and other uses of encodeURIComponent
+    // TODO: convert this and other uses of encodeURIComponent
     // to use URLSearchParams instead
     let data =
         ('email=' + encodeURIComponent(email) +
@@ -1170,7 +1186,7 @@ background.guessUser_ = function () {
         return '';
     }
 
-    for (let i = 0; i < Object.keys(storageCache).length; i++) {
+    for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
         const item = background.getStorageCacheItem_(i);
         if (item && item['email'] && background.isEmailInDomain_(item['email'])) {
             return item['email'];
@@ -1243,14 +1259,14 @@ background.hashPassword_ = function (password) {
  * @private
  */
 background.getHashSalt_ = function () {
-    if (!(background.SALT_KEY_ in storageCache)) {
+    if (!(background.SALT_KEY_ in background.storageCache)) {
         // Generate a salt and save it.
         const salt = new Uint32Array(1);
         crypto.getRandomValues(salt);
-        storageCache[background.SALT_KEY_] = salt[0].toString();
+        background.storageCache[background.SALT_KEY_] = salt[0].toString();
     }
 
-    return storageCache[background.SALT_KEY_];
+    return background.storageCache[background.SALT_KEY_];
 };
 
 
@@ -1274,7 +1290,11 @@ background.pushToAllTabs_ = function () {
  */
 background.pushToTab_ = function (tabId) {
     const state = { passwordLengths: background.passwordLengths_ };
-    chrome.tabs.sendMessage(tabId, JSON.stringify(state));
+    chrome.tabs.sendMessage(tabId, JSON.stringify(state), response => {
+        if(chrome.runtime.lastError){
+          console.log('pushToTab_ ', tabId, chrome.runtime.lastError);
+        }
+      });
 };
 
 
@@ -1284,13 +1304,4 @@ chrome.runtime.onInstalled.addListener(background.handleNewInstall_);
 // Set listener before initializePage_ which calls chrome.storage.managed.get.
 chrome.storage.onChanged.addListener(background.handleManagedPolicyChanges_);
 
-// Initialize our cached storage before we do stuff.
-chrome.runtime.onStartup.addListener(() => {
-  (async () => {
-    await checkForCacheData_();
-    background.initializePage_();
-  })();
-  return true;
-});
-
-
+background.initializePage_();
