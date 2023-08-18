@@ -41,10 +41,6 @@
     "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://*"
   },
 
-  "externally_connectable": {
-    "matches":["<all_urls>"]
-  },
-
   "manifest_version": 3,
 
   "oauth2": {

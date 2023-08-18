@@ -37,10 +37,14 @@ goog.exportSymbol('background', background);  // for tests only.
 
 background.storageCache = {};
 
+// With Chrome Manifest v3, localStorage was deprecated in favor of chrome.storage.local.
+// Where previously, the use of localStorage would persist across browser sessions, 
+// we must now manually persist that data at a periodic interval. We accomplish this here
+// by proxying the cache object and asynchronously writing it to storage on change.
 background.storageCache = new Proxy(background.storageCache, {
   set: async function (target, key, value) {
     let r = Reflect.set(target, key, value);
-    await chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
+    chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
         console.log('persisted storageCache to chrome.local.storage on update: %s', result);
         background.refreshPasswordLengths_();
     });
@@ -49,7 +53,6 @@ background.storageCache = new Proxy(background.storageCache, {
   deleteProperty: function(target, prop) {
     if (prop in target) {
         let r = Reflect.deleteProperty(target, prop)
-        // delete target[prop];
         chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
             console.log('persisted storageCache to chrome.local.storage on delete: %s', result);
             background.refreshPasswordLengths_();
@@ -86,7 +89,7 @@ background.HASH_BITS_ = 37;
  * Where password use reports are sent.
  * @private {string}
  */
-background.report_url_ = "http://example.com";
+background.report_url_;
 
 
 /**
@@ -549,13 +552,12 @@ background.initializePasswordIfReady_ = function (maxRetries, delay, callback) {
  * @private
  */
 background.completePageInitialization_ = async function () {
-    background.checkForCacheData_().then((response) => {
-        if(response) {
-            background.isInitialized_ = true;
-            background.refreshPasswordLengths_();
-            chrome.runtime.onMessage.addListener(background.handleRequest_);
-        };
-    });
+    const response = await background.checkForCacheData_();
+    if(response) {
+        background.isInitialized_ = true;
+        background.refreshPasswordLengths_();
+        chrome.runtime.onMessage.addListener(background.handleRequest_);
+    };
 
     // Get the username from a signed in Chrome profile, which might be used
     // for reporting phishing sites (if the password store isn't initialized).
@@ -628,7 +630,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
                 sender.tab.id, request, background.stateKeydown_);
             break;
         case 'statusRequest':
-            const state = { passwordLengths: background.passwordLengths_ };
+            const state = { passwordStored: ( background.passwordLengths_.length > 0 ) };
             sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
             break;
         case 'looksLikeGoogle':
@@ -639,19 +641,17 @@ background.handleRequest_ = function (request, sender, sendResponse) {
             delete background.possiblePassword_[sender.tab.id];
             break;
         case 'setPossiblePassword':
-            background.setPossiblePassword_(sender.tab.id, request);
+            background.setPossiblePassword_(sender.tab.id, request, true);
+            break;
+        case 'setPossiblePasswordWithoutEmail':
+            background.setPossiblePassword_(sender.tab.id, request, false);
             break;
         case 'savePossiblePassword':
             background.savePossiblePassword_(sender.tab.id);
             break;
-        case 'getEmail':
-            sendResponse(background.possiblePassword_[sender.tab.id]['email']);
-            break;
         default:
             console.log('cannot handle request action: ' + request.action + '. action is undefined.');
     }
-    // do all this async.
-    // return true;
 };
 
 
@@ -807,10 +807,11 @@ background.handleKeypress_ = function (tabId, request) {
  * @param {number} tabId The tab that was used to log in.
  * @param {!background.Request_} request Request object
  *     containing email address and password.
+ * @param {boolean} hasEmail Request object has an email value
  * @private
  */
-background.setPossiblePassword_ = function (tabId, request) {
-    if (!request.email || !request.password) {
+background.setPossiblePassword_ = function (tabId, request, hasEmail) {
+    if ((hasEmail && !request.email) || !request.password) {
         return;
     }
     if (request.password.length < background.MINIMUM_PASSWORD_) {
@@ -820,11 +821,18 @@ background.setPossiblePassword_ = function (tabId, request) {
         return;
     }
 
+    let email;
+    if (!hasEmail) {
+        email = background.possiblePassword_[sender.tab.id]['email']
+    } else {
+        email = request.email;
+    }
+
     console.log(
-        'Setting possible password for %s, password length of %s from tab %s', request.email,
-        request.password.length, tabId);
+        'Setting possible password for %s, password length of %s from tab %s (inferred: %s)', email,
+        request.password.length, tabId, !hasEmail);
     background.possiblePassword_[tabId] = {
-        'email': request.email,
+        'email': email,
         'password': background.hashPassword_(request.password),
         'length': request.password.length,
         'time': Math.floor(Date.now() / 1000)
@@ -923,7 +931,6 @@ background.savePossiblePassword_ = function (tabId) {
 
     background.storageCache[password] = JSON.stringify(item);
     delete background.possiblePassword_[tabId];
-    // NOTE: we used to update passwordLengths here, but this has been moved to the async function in storageCache proxy
 };
 
 
@@ -994,13 +1001,7 @@ background.checkPassword_ = function (tabId, request, state) {
         if (item['length'] == request.password.length) {
             console.log('PASSWORD TYPED! ' + request.url);
 
-            if (!background.enterpriseMode_) {  // Consumer mode.
-                // TODO(henryc): This is a workaround for http://cl/105095500,
-                // which introduced a regression where double-warning is displayed
-                // by both keydown and keypress handlers.
-                // There is a more robust fix for this at http://cl/118720482.
-                // But it's pretty sizable, so let's wait for Drew to take a look,
-                // and use this in the meantime.
+            if (!background.enterpriseMode_) {  
                 state['otpMode'] = true;
                 background.displayPasswordWarningIfNeeded_(
                     request.url, item['email'], tabId);
