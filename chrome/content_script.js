@@ -390,7 +390,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
   if (!passwordalert.policyLoaded_ || !passwordalert.domContentLoaded_) {
     return;
   }
-  console.log('password url: '+passwordalert.url_)
   
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
@@ -509,7 +508,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
     passwordalert.stop_();
     passwordalert.start_(response);
-    console.log('PA is running',passwordalert.isRunning_)
+    // console.log('PA is running',passwordalert.isRunning_)
   });
 };
 
@@ -543,8 +542,6 @@ passwordalert.is_gaia_correct_ = function(url) {
   }
   return ret;
 };
-
-
 
 /**
  * Sets variables to enable watching for passwords being typed. Called when

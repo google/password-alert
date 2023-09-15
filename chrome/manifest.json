@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Alerta de Contraseña",
     "description": "La extensión Alerta de Contraseña detecta contraseñas ingresadas en páginas no autorizadas.",
-    "version": "2.0.2",
+    "version": "2.0.4",
     "default_locale": "en",
     "icons": 
       {
@@ -19,9 +19,6 @@
       "tabs",
       "scripting"
     ],
-    "storage": {
-      "managed_schema": "managed_policy_schema.json"
-    },
     "content_scripts": [
       {
         "matches": ["<all_urls>"],

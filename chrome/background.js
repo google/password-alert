@@ -790,7 +790,7 @@ background.setPossiblePassword_ = function(tabId, request) {
     'length': request.password.length,
     'time': Math.floor(Date.now() / 1000)
   };
-  console.log('Setting possible password: ' + background.hashPassword_(request.password))
+  console.log('Setting possible password');
 };
 
 
@@ -972,7 +972,6 @@ background.checkPassword_ = function(tabId, request, state) {
   if (!background.checkRateLimit_()) {
     return;  // This limits content_script brute-forcing the password.
   }
-  // TODO It is not updating otp mode and stop checking another urls
   // if (state['otpMode']) {
   //   return;  // If password was recently typed, then no need to check again.
   // }
@@ -1174,7 +1173,8 @@ background.sendReport_ = async function(request, email, date, otp, path) {
     data += '&oauth_token=' + encodeURIComponent(oauthToken);
   }
 
-  console.log('Sending alert to the server.'+background.report_url_+path);
+  console.log('Sending alert to the server');
+  // console.log(background.report_url_+path)
   
   const response = await fetch(background.report_url_ + path, {
     method: 'POST',
