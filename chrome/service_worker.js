@@ -45,7 +45,7 @@ background.storageCache = new Proxy(background.storageCache, {
   set: async function (target, key, value) {
     let r = Reflect.set(target, key, value);
     chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
-        console.log('persisted storageCache to chrome.local.storage on update: %s', result);
+        console.log('persisted storageCache to chrome.local.storage on update');
         background.refreshPasswordLengths_();
     });
     return r;
@@ -54,7 +54,7 @@ background.storageCache = new Proxy(background.storageCache, {
     if (prop in target) {
         let r = Reflect.deleteProperty(target, prop)
         chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
-            console.log('persisted storageCache to chrome.local.storage on delete: %s', result);
+            console.log('persisted storageCache to chrome.local.storage on delete');
             background.refreshPasswordLengths_();
         });
         return r;
@@ -617,7 +617,6 @@ background.handleRequest_ = function (request, sender, sendResponse) {
     if (sender.tab === undefined) {
         return;
     }
-    console.log("received %s from %s. possiblePassword_: %s", request.action, sender.tab.id, JSON.stringify(background.possiblePassword_));
     switch (request.action) {
         case 'handleKeypress':
             background.handleKeypress_(sender.tab.id, request);
@@ -848,7 +847,6 @@ background.setPossiblePassword_ = function (tabId, request, hasEmail) {
  * @private
  */
 background.getStorageCacheItem_ = function (index) {
-    console.log("got index: %s", index)
     let item;
     if (Object.keys(background.storageCache)[index] == background.SALT_KEY_) {
         item = null;
@@ -867,7 +865,6 @@ background.getStorageCacheItem_ = function (index) {
 background.savePossiblePassword_ = function (tabId) {
     const possiblePassword_ = background.possiblePassword_[tabId];
     if (!possiblePassword_) {
-        console.log("tried to save possible password, but not found in background");
         return;
     }
     if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
@@ -942,13 +939,11 @@ background.savePossiblePassword_ = function (tabId) {
 background.refreshPasswordLengths_ = function () {
     background.passwordLengths_ = [];
     for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
-        console.log("i = %s", i);
         const item = background.getStorageCacheItem_(i);
         if (item) {
             background.passwordLengths_[item['length']] = true;
         }
     }
-    console.log("pushing passwordLengths of ", background.passwordLengths_.length);
     background.pushToAllTabs_();
 };
 

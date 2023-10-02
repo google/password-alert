@@ -533,7 +533,6 @@ passwordalert.is_gaia_correct_ = function(url) {
 passwordalert.start_ = function(msg) {
   try {
     const state = JSON.parse(msg);
-    // if (state.passwordLengths && state.passwordLengths == 0) {
     if (!state.passwordStored) {
       passwordalert.stop_();  // no passwords, so no need to watch
       return;
