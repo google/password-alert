@@ -495,7 +495,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
   }
 
   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
-    console.log("received response from service_worker: ", response);
     passwordalert.stop_();
     passwordalert.start_(response);
   });
@@ -898,7 +897,6 @@ chrome.runtime.onMessage.addListener(
      * @param {string} msg JSON object containing valid password lengths.
      */
     function(msg) {
-      console.log("received message from service_worker: ", msg);
       passwordalert.stop_();
       passwordalert.start_(msg);
     });
