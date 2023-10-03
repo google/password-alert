@@ -1,16 +1,20 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
-  "version": "1.28",
+  "version": "1.29",
   "default_locale": "en",
   "minimum_chrome_version": "46",
   "icons": { "128": "icon128.png" },
   "permissions": [
+    "alarms",
     "identity",
     "identity.email",
     "notifications",
+    "scripting",
     "storage",
-    "tabs",
+    "tabs"
+  ],
+  "host_permissions": [
     "<all_urls>"
   ],
 
@@ -29,13 +33,15 @@
   ],
 
   "background": {
-    "scripts": ["background_compiled.js"],
-    "persistent": false
+    "service_worker": "service_worker_compiled.js",
+    "type": "module"
   },
 
-  "content_security_policy": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://*",
+  "content_security_policy": {
+    "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://*"
+  },
 
-  "manifest_version": 2,
+  "manifest_version": 3,
 
   "oauth2": {
     "client_id": "897749729682-2j2fjtnfde4kgi40fvjrp7ude48ooh4n.apps.googleusercontent.com",

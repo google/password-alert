@@ -29,8 +29,8 @@ var localStorage;
 var JSON;
 
 // var chrome;  // TODO(adhintz) seems to be needed for open source build, but breaks internal build.
-chrome.extension;
-chrome.extension.getURL;
+
+var chrome;
 
 chrome.i18n;
 chrome.i18n.getMessage;
@@ -53,9 +53,13 @@ chrome.storage.managed;
 chrome.storage.onChanged;
 chrome.storage.onChanged.addListener;
 
+chrome.scripting
+chrome.scripting.executeScript;
+
 // When updating values here, also update extension_stubs.js for tests.
 chrome.runtime;
 chrome.runtime.getManifest;
+chrome.runtime.getURL;
 chrome.runtime.onInstalled;
 chrome.runtime.onMessage;
 chrome.runtime.onMessage.addListener;
@@ -63,7 +67,6 @@ chrome.runtime.sendMessage;
 
 chrome.tabs;
 chrome.tabs.create;
-chrome.tabs.executeScript;
 chrome.tabs.get;
 chrome.tabs.highlight;
 chrome.tabs.query;

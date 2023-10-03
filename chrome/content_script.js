@@ -405,18 +405,14 @@ passwordalert.completePageInitializationIfReady_ = function() {
                  passwordalert.url_,
                  passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
     // This change password page does not have any email information.
-    // So we fallback to the email already set in background.js because users
+    // So we fallback to the email already set in service_worker.js because users
     // will be prompted to login before arriving here.
-    let email;
-    chrome.runtime.sendMessage({action: 'getEmail'}, function(response) {
-      email = response;
-    });
+
     const changePasswordForm =
         document.getElementById('gaia_changepasswordform');
     changePasswordForm.addEventListener('submit', function() {
       chrome.runtime.sendMessage({
-        action: 'setPossiblePassword',
-        email: email,
+        action: 'setPossiblePasswordWithoutEmail',
         password: changePasswordForm.Passwd.value
       });
     }, true);
@@ -491,7 +487,11 @@ passwordalert.completePageInitializationIfReady_ = function() {
         securityEmailAddress: passwordalert.security_email_address_
       });
     }
-    chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+    chrome.runtime.sendMessage({action: 'savePossiblePassword'}, response => {
+      if(chrome.runtime.lastError){
+        console.log('completePageInitializationIfReady_ ', chrome.runtime.lastError);
+      }
+    });
   }
 
   chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
@@ -532,7 +532,7 @@ passwordalert.is_gaia_correct_ = function(url) {
 passwordalert.start_ = function(msg) {
   try {
     const state = JSON.parse(msg);
-    if (state.passwordLengths && state.passwordLengths == 0) {
+    if (!state.passwordStored) {
       passwordalert.stop_();  // no passwords, so no need to watch
       return;
     }

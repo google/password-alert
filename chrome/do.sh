@@ -63,17 +63,18 @@ pc_build_extension() {
   do
     jscompile_pc+=" --js='$var/**.js' --js='!$var/**_test.js'"
   done
-  jscompile_pc+=" --js='./background.js'"
+  jscompile_pc+=" --js='./service_worker.js'"
   jscompile_pc+=" --js='./content_script.js'"
   jscompile_pc+=" --js='./keydown.js'"
+
 
   # compile javascript files
   echo "Compiling JS files..."
   if [ "$1" == "debug" ]; then
     jscompile_pc+=" --debug --formatting=PRETTY_PRINT"
   fi
-  echo -n "." && $jscompile_pc --closure_entry_point "passwordalert.background" --js_output_file "$BUILD_EXT_DIR/background_compiled.js"
-  echo -n "." && $jscompile_pc --closure_entry_point "passwordalert" --js_output_file "$BUILD_EXT_DIR/content_script_compiled.js"
+  echo -n "." && $jscompile_pc --entry_point "passwordalert.background" --js_output_file "$BUILD_EXT_DIR/service_worker_compiled.js"
+  echo -n "." && $jscompile_pc --entry_point "passwordalert.content_script" --js_output_file "$BUILD_EXT_DIR/content_script_compiled.js"
   echo ""
 
   echo "Copying extension files..."
@@ -103,7 +104,7 @@ pc_generate_jsdeps() {
   echo "Generating build/deps.js file..."
   mkdir -p "$BUILD_DIR"
   $PYTHON_CMD lib/closure-library/closure/bin/build/depswriter.py \
-    background.js content_script.js keydown.js \
+    service_worker.js content_script.js keydown.js\
     > "$BUILD_DIR/deps.js"
 }
 
