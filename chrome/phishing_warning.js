@@ -88,17 +88,17 @@ document.getElementById('back').onclick = function() {
 };
 
 
-PHISHING_WARNING_WHITELIST_KEY_ = 'phishing_warning_whitelist';
+PHISHING_WARNING_ALLOWLIST_KEY_ = 'phishing_warning_allowlist';
 
 
 /**
- * If a user decides to visit the site, the site will be whitelisted from
+ * If a user decides to visit the site, the site will be allowlist from
  * future phishing warnings.  The saved object in chrome storage has the
  * below structure. The top-level key is used as the argument for
  * StorageArea get(), and the associated value will be an inner object that
  * has all the host details.
  *
- * {phishing_warning_whitelist:
+ * {phishing_warning_allowlist:
  *     {https://www.example1.com: true,
  *      https://www.example2.com: true}
  * }
@@ -109,12 +109,12 @@ document.getElementById('visit_this_site').onclick = function() {
   chrome.tabs.get(phishingTabId, function(tab) {
     chrome.tabs.highlight({'tabs': tab.index}, function() {});
     chrome.storage.local.get(
-        PHISHING_WARNING_WHITELIST_KEY_,
+        PHISHING_WARNING_ALLOWLIST_KEY_,
         function(result) {
-          if (result[PHISHING_WARNING_WHITELIST_KEY_] === undefined) {
-            result[PHISHING_WARNING_WHITELIST_KEY_] = {};
+          if (result[PHISHING_WARNING_ALLOWLIST_KEY_] === undefined) {
+            result[PHISHING_WARNING_ALLOWLIST_KEY_] = {};
           }
-          result[PHISHING_WARNING_WHITELIST_KEY_][host] = true;
+          result[PHISHING_WARNING_ALLOWLIST_KEY_][host] = true;
           chrome.storage.local.set(result);
           window.history.back();
         });
