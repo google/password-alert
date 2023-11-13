@@ -28,7 +28,7 @@
   "sso_username_selector": {
     "Value": "#loginForm #username"
   },
-  "whitelist_top_domains": {
+  "allowlist_top_domains": {
     "Value": ["legit-site.example.com",
               "localhost"]
   },

@@ -16,7 +16,7 @@
     "sso_password_selector": {"type": "string"},
     "sso_url": {"type": "string"},
     "sso_username_selector": {"type": "string"},
-    "whitelist_top_domains": {
+    "allowlist_top_domains": {
       "type": "array",
       "items": {"type": "string"}
     },

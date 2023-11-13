@@ -279,11 +279,11 @@ background.ALLOWED_HOSTS_KEY_ = 'allowed_hosts';
 
 
 /**
- * Key for the phishing warning whitelist object in chrome storage.
+ * Key for the phishing warning allowlist object in chrome storage.
  * @private {string}
  * @const
  */
-background.PHISHING_WARNING_WHITELIST_KEY_ = 'phishing_warning_whitelist';
+background.PHISHING_WARNING_ALLOWLIST_KEY_ = 'phishing_warning_allowlist';
 
 
 /**
@@ -1056,13 +1056,13 @@ background.displayPasswordWarningIfNeeded_ = function (url, email, tabId) {
  */
 background.displayPhishingWarningIfNeeded_ = function (tabId, request) {
     chrome.storage.local.get(
-        background.PHISHING_WARNING_WHITELIST_KEY_, function (result) {
+        background.PHISHING_WARNING_ALLOWLIST_KEY_, function (result) {
             let u = new URL(url);
             const currentHost = u.origin;
-            const phishingWarningWhitelist =
-                result[background.PHISHING_WARNING_WHITELIST_KEY_];
-            if (phishingWarningWhitelist != undefined &&
-                phishingWarningWhitelist[currentHost]) {
+            const phishingWarningAllowlist =
+                result[background.PHISHING_WARNING_ALLOWLIST_KEY_];
+            if (phishingWarningAllowlist != undefined &&
+                phishingWarningAllowlist[currentHost]) {
                 return;
             }
             // TODO(adhintz) Change to named parameters.

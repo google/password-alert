@@ -114,30 +114,30 @@ testSuite({
     assertTrue(passwordalert.isRunning_);
   },
 
-  testWhitelist() {
+  testAllowlist() {
     passwordalert.url_ = 'https://foo.corp.google.com/';
-    passwordalert.whitelist_top_domains_ =
+    passwordalert.allowlist_top_domains_ =
         ['.borg.google.com', '.corp.google.com'];
-    assertTrue(passwordalert.whitelistUrl_());
+    assertTrue(passwordalert.allowlistUrl_());
     passwordalert.url_ =
         'https://foo.corp.google.com.evil.com/login.corp.google.com/';
-    assertFalse(passwordalert.whitelistUrl_());
+    assertFalse(passwordalert.allowlistUrl_());
   },
 
   /**
-   * Make sure if user whitelists example.com, then evilexample.com
-   * will not pass the whitelist.
+   * Make sure if user allowlists example.com, then evilexample.com
+   * will not pass the allowlist.
    */
-  testWhitelistSuffix() {
+  testAllowlistSuffix() {
     passwordalert.url_ = 'https://company.com/';
-    passwordalert.whitelist_top_domains_ = ['company.com'];
-    assertTrue(passwordalert.whitelistUrl_());
+    passwordalert.allowlist_top_domains_ = ['company.com'];
+    assertTrue(passwordalert.allowlistUrl_());
 
     passwordalert.url_ = 'https://evilcompany.com/';
-    passwordalert.whitelist_top_domains_ = ['company.com'];
-    assertFalse(passwordalert.whitelistUrl_());
-    passwordalert.whitelist_top_domains_ = ['.company.com'];
-    assertFalse(passwordalert.whitelistUrl_());
+    passwordalert.allowlist_top_domains_ = ['company.com'];
+    assertFalse(passwordalert.allowlistUrl_());
+    passwordalert.allowlist_top_domains_ = ['.company.com'];
+    assertFalse(passwordalert.allowlistUrl_());
   },
 
   testIsEmailInDomain() {

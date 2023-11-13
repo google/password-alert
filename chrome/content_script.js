@@ -183,12 +183,12 @@ passwordalert.security_email_address_;
 
 
 /**
- * Whitelist of domain suffixes that are not phishing or checked for password.
+ * Allowlist of domain suffixes that are not phishing or checked for password.
  * Default values are for Google login pages. https is not specified, however
  * these default domains are preloaded HSTS in Chrome.
  * @private {!Array.<string>}
  */
-passwordalert.whitelist_top_domains_ =
+passwordalert.allowlist_top_domains_ =
     ['accounts.google.com', 'login.corp.google.com', 'myaccount.google.com'];
 
 
@@ -268,11 +268,11 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
 
       // For the policies below, we want to append the user-provided policies
       // to the extension-provided defaults.
-      if (managedPolicy['whitelist_top_domains']) {
+      if (managedPolicy['allowlist_top_domains']) {
         Array.prototype.push.apply(
-            passwordalert.whitelist_top_domains_,
+            passwordalert.allowlist_top_domains_,
             // filter empty values
-            managedPolicy['whitelist_top_domains'].filter(String));
+            managedPolicy['allowlist_top_domains'].filter(String));
       }
       if (managedPolicy['corp_html']) {
         Array.prototype.push.apply(
@@ -356,12 +356,12 @@ passwordalert.handleManagedPolicyChanges_ = function(
         case 'sso_username_selector':
           passwordalert.sso_username_selector_ = newPolicyValue;
           break;
-        case 'whitelist_top_domains':
-          passwordalert.whitelist_top_domains_ = subtractArray(
-              passwordalert.whitelist_top_domains_,
+        case 'allowlist_top_domains':
+          passwordalert.allowlist_top_domains_ = subtractArray(
+              passwordalert.allowlist_top_domains_,
               oldPolicyValue.filter(String));  // filter empty values
           Array.prototype.push.apply(
-              passwordalert.whitelist_top_domains_,
+              passwordalert.allowlist_top_domains_,
               newPolicyValue.filter(String));  // filter empty values
           break;
       }
@@ -441,13 +441,13 @@ passwordalert.completePageInitializationIfReady_ = function() {
         // Pressing spacebar on the Next button will trigger save.
         document.getElementById('passwordNext')
             .addEventListener('keydown', function(evt) {
-              if (evt.keyCode == 32) {
+              if (evt.key == 'Space') {
                 passwordalert.saveGaia2Password_(evt);
               }
             }, true);
         // Pressing enter anywhere on the page will trigger save.
         document.addEventListener('keydown', function(evt) {
-          if (evt.keyCode == 13) {
+          if (evt.key == 'Enter') {
             passwordalert.saveGaia2Password_(evt);
           }
         }, true);
@@ -466,19 +466,19 @@ passwordalert.completePageInitializationIfReady_ = function() {
           'click', passwordalert.saveChangedPassword_, true);
       // Pressing spacebar on the change password button will trigger save.
       changePasswordButton.addEventListener('keydown', function(evt) {
-        if (evt.keyCode == 32) {
+        if (evt.key == 'Space') {
           passwordalert.saveChangedPassword_();
         }
       }, true);
       // Pressing enter anywhere on the change password page will trigger save.
       document.addEventListener('keydown', function(evt) {
-        if (evt.keyCode == 13) {
+        if (evt.key == 'Enter') {
           passwordalert.saveChangedPassword_();
         }
       }, true);
     };
   } else {  // Not a Google login URL.
-    if (!passwordalert.whitelistUrl_() &&
+    if (!passwordalert.allowlistUrl_() &&
         passwordalert.looksLikeGooglePageTight_()) {
       chrome.runtime.sendMessage({
         action: 'looksLikeGoogle',
@@ -487,7 +487,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
         securityEmailAddress: passwordalert.security_email_address_
       });
     }
-    chrome.runtime.sendMessage({action: 'savePossiblePassword'}, response => {
+    chrome.runtime.sendMessage({action: 'savePossiblePassword'}, _ => {
       if(chrome.runtime.lastError){
         console.log('completePageInitializationIfReady_ ', chrome.runtime.lastError);
       }
@@ -542,7 +542,7 @@ passwordalert.start_ = function(msg) {
   if ((passwordalert.sso_url_ &&
        googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) ||
       googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_) ||
-      passwordalert.whitelistUrl_()) {
+      passwordalert.allowlistUrl_()) {
     passwordalert.stop_();  // safe URL, so no need to watch it
     return;
   }
@@ -822,28 +822,28 @@ passwordalert.looksLikeGooglePageTight_ = function() {
 
 
 /**
- * Detects if the page is whitelisted as not a phishing page or for password
+ * Detects if the page is allowlisted as not a phishing page or for password
  * typing.
  *
- * Make sure if user whitelists example.com, then evilexample.com
- * will not pass the whitelist.
+ * Make sure if user allowlists example.com, then evilexample.com
+ * will not pass the allowlist.
  *
- * @return {boolean} True if this page is whitelisted.
+ * @return {boolean} True if this page is allowlisted.
  * @private
  */
-passwordalert.whitelistUrl_ = function() {
+passwordalert.allowlistUrl_ = function() {
   const domain = googUriUtils.getDomain(passwordalert.url_) || '';
-  for (let i = 0; i < passwordalert.whitelist_top_domains_.length; i++) {
-    const whitelisted_domain = passwordalert.whitelist_top_domains_[i];
-    if (domain == whitelisted_domain) {
+  for (let i = 0; i < passwordalert.allowlist_top_domains_.length; i++) {
+    const allowlisted_domain = passwordalert.allowlist_top_domains_[i];
+    if (domain == allowlisted_domain) {
       return true;
     }
 
-    let whitelisted_domain_as_suffix = whitelisted_domain;
-    if (!googString.startsWith(whitelisted_domain, '.')) {
-      whitelisted_domain_as_suffix = '.' + whitelisted_domain_as_suffix;
+    let allowlisted_domain_as_suffix = allowlisted_domain;
+    if (!googString.startsWith(allowlisted_domain, '.')) {
+      allowlisted_domain_as_suffix = '.' + allowlisted_domain_as_suffix;
     }
-    if (googString.endsWith(domain, whitelisted_domain_as_suffix)) {
+    if (googString.endsWith(domain, allowlisted_domain_as_suffix)) {
       return true;
     }
   }
