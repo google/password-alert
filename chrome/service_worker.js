@@ -1285,7 +1285,7 @@ background.pushToAllTabs_ = function () {
  * @private
  */
 background.pushToTab_ = function (tabId) {
-    const state = { passwordLengths: background.passwordLengths_ };
+    const state = { passwordStored: ( background.passwordLengths_.length > 0 ) };
     chrome.tabs.sendMessage(tabId, JSON.stringify(state), response => {
         if(chrome.runtime.lastError){
           console.log('pushToTab_ ', tabId, chrome.runtime.lastError);
