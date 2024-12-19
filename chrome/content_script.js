@@ -894,11 +894,14 @@ window.addEventListener('paste', passwordalert.handlePaste, true);
 
 chrome.runtime.onMessage.addListener(
     /**
-     * @param {string} msg JSON object containing valid password lengths.
+     * @param {any} msg JSON object containing valid password lengths.
+     * @param {MessageSender} the unused sender
+     * @param {function} The function which sends the response
      */
-    function(msg) {
+    function(msg, unusedSender, sendResponse) {
       passwordalert.stop_();
       passwordalert.start_(msg);
+      sendResponse("ok");
     });
 
 document.addEventListener('DOMContentLoaded', passwordalert.domReadyCheck_);
