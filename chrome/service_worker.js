@@ -433,7 +433,7 @@ background.injectContentScriptIntoAllTabs_ = function (callback) {
             // Skip chrome:// and chrome-devtools:// pages
             if (tabs[i].url.lastIndexOf('chrome', 0) != 0) {
                 chrome.scripting.executeScript({
-                    target: { tabId: tabs[i].id },
+                    target: { 'tabId': tabs[i].id },
                     files: ['content_script_compiled.js']
                 });
             }
