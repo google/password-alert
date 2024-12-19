@@ -1,7 +1,7 @@
 Password Alert
 ====================
 
-Password Alert helps detect and protect against phishing attacks. If you enter your Google password into anywhere other than accounts.google.com, you’ll receive an alert, so you can change your password if needed. Password Alert works like a spellchecker, comparing your keystrokes within the Chrome browser to your password to help you avoid mistakes. It doesn’t store your password or actual keystrokes, or send either to any remote system beyond your computer -- instead, it locally saves a fingerprint of your password, and compares that fingerprint to the fingerprint of what you’re typing.
+Password Alert helps detect and protect against phishing attacks. If you enter your Google password into anywhere other than accounts.google.com (or another allowlisted domain), you’ll receive an alert, so you can change your password if needed. Password Alert works like a spellchecker, comparing your keystrokes within the Chrome browser to your password to help you avoid mistakes. It doesn’t store your password or actual keystrokes, or send either to any remote system beyond your computer -- instead, it locally saves a fingerprint of your password, and compares that fingerprint to the fingerprint of what you’re typing.
 
 Separately, Password Alert also tries to detect fake Google login pages to alert you before you’ve typed in your password. To do so, Password Alert checks the HTML of each page you visit to ascertain whether it appears to be impersonating a Google login page. Google for Work enterprises can configure it to protect their own custom single sign-on (SSO) pages.
 
