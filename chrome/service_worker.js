@@ -351,7 +351,7 @@ background.setManagedPolicyValuesIntoConfigurableVariables_ = function (
             background.displayUserAlert_ = managedPolicy['display_user_alert'];
             background.enterpriseMode_ = true;
             background.report_url_ = managedPolicy['report_url'];
-            background.shouldInitializePassword_ =
+            background.shouldInitializePassword_ = 
                 managedPolicy['should_initialize_password'];
             background.domain_auth_secret_ = managedPolicy['domain_auth_secret'];
         }
@@ -454,6 +454,7 @@ background.injectContentScriptIntoAllTabs_ = function (callback) {
  * @private
  */
 background.displayInitializePasswordNotification_ = function () {
+    console.log("Starting extension initialization prompt");
     chrome.notifications.getAll(function (notifications) {
         if (notifications[background.NOTIFICATION_ID_]) {
             chrome.notifications.update(
@@ -557,6 +558,7 @@ background.completePageInitialization_ = async function () {
         background.isInitialized_ = true;
         background.refreshPasswordLengths_();
         chrome.runtime.onMessage.addListener(background.handleRequest_);
+
     };
 
     // Get the username from a signed in Chrome profile, which might be used
@@ -868,11 +870,13 @@ background.savePossiblePassword_ = function (tabId) {
         return;
     }
     if ((Math.floor(Date.now() / 1000) - possiblePassword_['time']) > 60) {
+        console.log("Login took too long");
         return;  // If login took more than 60 seconds, ignore it.
     }
     const email = possiblePassword_['email'];
     const password = possiblePassword_['password'];
     const length = possiblePassword_['length'];
+
 
     // Delete old email entries.
     for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
@@ -912,7 +916,9 @@ background.savePossiblePassword_ = function (tabId) {
         if (background.enterpriseMode_ && !background.shouldInitializePassword_) {
             // If enterprise policy says not to prompt, then don't prompt.
             background.isNewInstall_ = false;
+            console.log("Policy says not to prompt");
         } else {
+            console.log("policy says prompt");
             const options = {
                 type: 'basic',
                 title: chrome.i18n.getMessage('extension_name'),

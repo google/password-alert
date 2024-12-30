@@ -158,13 +158,16 @@ passwordalert.corp_html_ = [
  */
 passwordalert.corp_html_tight_ = [
   // From https://accounts.google.com/ServiceLogin
-  ('<input id="Passwd" name="Passwd" placeholder="Password" class="" ' +
+  ('<input id="pw" name="pw" placeholder="Password" class="" ' +
    'type="password">'),
-  ('<input id="Passwd" name="Passwd" type="password" placeholder="Password" ' +
+  ('<input id="pw" name="pw" type="password" placeholder="Password" ' +
    'class="">'),
   '<input id="signIn" name="signIn" class="rc-button rc-button-submit" ',
-  // From https://accounts.google.com/b/0/EditPasswd?hl=en
-  '<div class="editpasswdpage main content clearfix">'
+  // From https://accounts.google.com/b/0/Editpw?hl=en
+  '<div class="editpwpage main content clearfix">',
+  // From https://login.corp.google.com
+  // '<input type="submit" name="signInButton" id="signInButton" value="Sign in"',
+  // '<input id="password" name="pw" type="password" class="">'
 ];
 
 
@@ -393,13 +396,12 @@ passwordalert.completePageInitializationIfReady_ = function() {
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
-      // This handles the case where user is redirected to a page that starts
-      // with sso url upon a successful sso login.
-      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+      // Deletes possible password if the user gets a password change warning
+      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
     }
   } else if (googString.startsWith(
                  passwordalert.url_,
@@ -413,7 +415,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
     changePasswordForm.addEventListener('submit', function() {
       chrome.runtime.sendMessage({
         action: 'setPossiblePasswordWithoutEmail',
-        password: changePasswordForm.Passwd.value
+        password: changePasswordForm.pw.value
       });
     }, true);
   } else if (googString.startsWith(
@@ -657,6 +659,7 @@ passwordalert.saveSsoPassword_ = function(evt) {
   }
 };
 
+
 // TODO(adhintz) See if the old GAIA login page is used any where.
 // If not, delete this function.
 /**
@@ -670,7 +673,7 @@ passwordalert.saveGaiaPassword_ = function(evt) {
   const email = loginForm.Email ?
       googString.trim(loginForm.Email.value.toLowerCase()) :
       '';
-  const password = loginForm.Passwd ? loginForm.Passwd.value : '';
+  const password = loginForm.pw ? loginForm.pw.value : '';
   if ((passwordalert.enterpriseMode_ &&
        !passwordalert.isEmailInDomain_(email)) ||
       googString.isEmptyString(googString.makeSafe(password))) {
@@ -867,7 +870,6 @@ passwordalert.domReadyCheck_ = function() {
         new MutationObserver(passwordalert.completePageInitializationIfReady_);
     observer.observe(document.body, config);
   }
-
   passwordalert.completePageInitializationIfReady_();
 };
 
@@ -885,8 +887,15 @@ if (url == 'about:blank') {
 
 // Listen for policy changes and then set initial managed policy:
 chrome.storage.onChanged.addListener(passwordalert.handleManagedPolicyChanges_);
-passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(
-    passwordalert.completePageInitializationIfReady_);
+passwordalert.setManagedPolicyValuesIntoConfigurableVariables_(function() {
+  if (passwordalert.policyLoaded_) {
+    passwordalert.completePageInitializationIfReady_();
+  } else {
+    passwordalert.policyLoaded_.addListener(
+        passwordalert.completePageInitializationIfReady_);
+  }
+});
+
 
 window.addEventListener('keypress', passwordalert.handleKeypress, true);
 window.addEventListener('keydown', passwordalert.handleKeydown, true);
@@ -910,3 +919,4 @@ if (document.readyState == 'interactive' || document.readyState == 'complete' ||
     document.readyState == 'loaded') {
   passwordalert.domReadyCheck_();
 }
+
