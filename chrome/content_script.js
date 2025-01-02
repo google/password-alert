@@ -393,13 +393,12 @@ passwordalert.completePageInitializationIfReady_ = function() {
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
+      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
-      // This handles the case where user is redirected to a page that starts
-      // with sso url upon a successful sso login.
-      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+      // This handles the case where user doesn't successfully login to SSO
+      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
     }
   } else if (googString.startsWith(
                  passwordalert.url_,
