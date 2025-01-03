@@ -393,12 +393,9 @@ passwordalert.completePageInitializationIfReady_ = function() {
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
-      // This handles the case where user is redirected to a page that starts
-      // with sso url upon a successful sso login.
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     }
   } else if (googString.startsWith(
@@ -421,9 +418,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
     if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
       chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     } else {
-      // Delete any previously considered password in case this is a re-prompt
-      // when an incorrect password is entered, such as a ServiceLoginAuth page.
-      chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
       const loginForm = document.querySelector('#view_container > form');
       // The chooser is no longer a gaia_loginform, so verify we're on a
       // password entry page by finding a form in a view_container.
@@ -456,7 +450,6 @@ passwordalert.completePageInitializationIfReady_ = function() {
     }
   } else if (googString.startsWith(
                  passwordalert.url_, passwordalert.CHANGE_PASSWORD_URL_)) {
-    chrome.runtime.sendMessage({action: 'deletePossiblePassword'});
     // Need to wait until the change password page has finished loading
     // before listener can be added.
     window.onload = function() {
