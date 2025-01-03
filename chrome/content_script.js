@@ -393,11 +393,10 @@ passwordalert.completePageInitializationIfReady_ = function() {
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm) {  // null if the user gets a Password Change Warning.
-      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
-      break;
+      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
     }
   } else if (googString.startsWith(
                  passwordalert.url_,
