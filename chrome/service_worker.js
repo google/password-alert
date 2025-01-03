@@ -636,9 +636,6 @@ background.handleRequest_ = function (request, sender, sendResponse) {
             background.sendReportPage_(request);
             background.displayPhishingWarningIfNeeded_(sender.tab.id, request);
             break;
-        case 'deletePossiblePassword':
-            delete background.possiblePassword_[sender.tab.id];
-            break;
         case 'setPossiblePassword':
             background.setPossiblePassword_(sender.tab.id, request, true);
             break;
