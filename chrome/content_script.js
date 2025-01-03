@@ -396,7 +396,9 @@ passwordalert.completePageInitializationIfReady_ = function() {
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
-      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+      // This handles the case where user is redirected to a page that starts
+      // with sso url upon a successful sso login.
+      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'sso_url_ without login form', url: passwordalert.url_});
     }
   } else if (googString.startsWith(
                  passwordalert.url_,
@@ -410,13 +412,15 @@ passwordalert.completePageInitializationIfReady_ = function() {
     changePasswordForm.addEventListener('submit', function() {
       chrome.runtime.sendMessage({
         action: 'setPossiblePasswordWithoutEmail',
-        password: changePasswordForm.Passwd.value
+        password: changePasswordForm.Passwd.value,
+        context: 'change password',
+        url: passwordalert.url_
       });
     }, true);
   } else if (googString.startsWith(
                  passwordalert.url_, passwordalert.GAIA_URL_)) {
     if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
-      chrome.runtime.sendMessage({action: 'savePossiblePassword'});
+      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'gaia correct', url: passwordalert.url_});
     } else {
       const loginForm = document.querySelector('#view_container > form');
       // The chooser is no longer a gaia_loginform, so verify we're on a
@@ -477,17 +481,18 @@ passwordalert.completePageInitializationIfReady_ = function() {
         action: 'looksLikeGoogle',
         url: passwordalert.url_,
         referer: passwordalert.referrer_,
-        securityEmailAddress: passwordalert.security_email_address_
+        securityEmailAddress: passwordalert.security_email_address_,
+        context: 'possible phish'
       });
     }
-    chrome.runtime.sendMessage({action: 'savePossiblePassword'}, _ => {
+    chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'default', url: passwordalert.url_}, _ => {
       if(chrome.runtime.lastError){
         console.log('completePageInitializationIfReady_ ', chrome.runtime.lastError);
       }
     });
   }
 
-  chrome.runtime.sendMessage({action: 'statusRequest'}, function(response) {
+  chrome.runtime.sendMessage({action: 'statusRequest', context: 'default', url: passwordalert.url_}, function(response) {
     passwordalert.stop_();
     passwordalert.start_(response);
   });
@@ -583,7 +588,8 @@ passwordalert.handleKeypress = function(evt) {
     typedTimeStamp: evt.timeStamp,
     url: passwordalert.url_,
     referer: passwordalert.referrer_,
-    looksLikeGoogle: passwordalert.looksLikeGooglePage_()
+    looksLikeGoogle: passwordalert.looksLikeGooglePage_(),
+    context: 'key press handler'
   });
 };
 
@@ -605,7 +611,8 @@ passwordalert.handleKeydown = function(evt) {
     typedTimeStamp: evt.timeStamp,
     url: passwordalert.url_,
     referer: passwordalert.referrer_,
-    looksLikeGoogle: passwordalert.looksLikeGooglePage_()
+    looksLikeGoogle: passwordalert.looksLikeGooglePage_(),
+    context: 'key down handler'
   });
 };
 
@@ -625,7 +632,8 @@ passwordalert.handlePaste = function(evt) {
     password: evt.clipboardData.getData('text/plain').trim(),
     url: passwordalert.url_,
     referer: passwordalert.referrer_,
-    looksLikeGoogle: passwordalert.looksLikeGooglePage_()
+    looksLikeGoogle: passwordalert.looksLikeGooglePage_(),
+    context: 'paste handler'
   });
 };
 
@@ -646,7 +654,7 @@ passwordalert.saveSsoPassword_ = function(evt) {
       username += '@' + passwordalert.corp_email_domain_.split(',')[0].trim();
     }
     chrome.runtime.sendMessage(
-        {action: 'setPossiblePassword', email: username, password: password});
+        {action: 'setPossiblePassword', email: username, password: password, context: 'set password from sso', url: passwordalert.url_});
   }
 };
 
@@ -670,7 +678,7 @@ passwordalert.saveGaiaPassword_ = function(evt) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage(
-      {action: 'setPossiblePassword', email: email, password: password});
+      {action: 'setPossiblePassword', email: email, password: password, context: 'set password from gaia', url: passwordalert.url_});
 };
 
 
@@ -698,7 +706,7 @@ passwordalert.saveGaia2Password_ = function(evt) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage(
-      {action: 'setPossiblePassword', email: email, password: password});
+      {action: 'setPossiblePassword', email: email, password: password, context: 'set password from gaia 2', url: passwordalert.url_});
 };
 
 
@@ -727,7 +735,9 @@ passwordalert.saveChangedPassword_ = function() {
         action: 'setPossiblePassword',
         email: email,
         password:
-            document.querySelector('input[aria-label="New password"]').value
+            document.querySelector('input[aria-label="New password"]').value,
+        context: 'set changed gaia password',
+        url: passwordalert.url_
       });
       return;
     }

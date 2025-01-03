@@ -617,6 +617,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
     if (sender.tab === undefined) {
         return;
     }
+    console.log("Request from tab:", sender.tab.id, "action:", request.action, "context:", request.context, "url:", request.url);
     switch (request.action) {
         case 'handleKeypress':
             background.handleKeypress_(sender.tab.id, request);
