@@ -20,6 +20,7 @@ goog.module('chrome_api_stubs');
 /**
  * @fileoverview Stubs for Chrome APIs. Used only by tests.
  * @author adhintz@google.com (Drew Hintz)
+ * @suppress{lintChecks}
  */
 
 var chrome = {};
@@ -41,18 +42,26 @@ chrome.tabs.sendMessage = function() {};
 
 chrome.storage = {};
 chrome.storage.managed = {};
-chrome.storage.local = {};
-chrome.storage.local.get = function() {
-  return {
-    'allowed_hosts': {'alwaysignore.example.com': true}
-  };
-};
 chrome.storage.managed.get = function() {
   return {
     'sso_url': 'https://login.example.com/',
     'report_url': 'https://passwordalert.example.com/report/'
   };
 };
+chrome.storage.local = {};
+chrome.storage.local.get = function(str) {
+  return chrome.storage.local[str];
+};
+chrome.storage.local.set = function(obj, callback) {
+  for (const property in obj) {
+    chrome.storage.local[property] = obj[property];
+  }
+  callback(null);
+};
+chrome.storage.local.remove = function(str) {
+  delete chrome.storage.local[str];
+};
+
 chrome.storage.onChanged = {};
 chrome.storage.onChanged.addListener = function() {};
 
