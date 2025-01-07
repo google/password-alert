@@ -937,7 +937,7 @@ chrome.runtime.onMessage.addListener(
     /**
      * @param {!any} msg JSON object containing valid password lengths.
      * @param {!MessageSender} unusedSender the unused sender
-     * @param {!function} sendResponse The function which sends the response
+     * @param {function(string)} sendResponse The function which sends the response
      */
     function(msg, unusedSender, sendResponse) {
       passwordalert.stop_();
