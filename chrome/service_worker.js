@@ -31,7 +31,6 @@ const GoogCryptSha1 = goog.require('goog.crypt.Sha1');
 const googCrypt = goog.require('goog.crypt');
 const googString = goog.require('goog.string');
 const keydown = goog.require('passwordalert.keydown');
-const safe = goog.require('goog.dom.safe');
 let background = {};
 goog.exportSymbol('background', background);  // for tests only.
 
