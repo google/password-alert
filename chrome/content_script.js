@@ -191,6 +191,11 @@ passwordalert.security_email_address_;
 passwordalert.allowlist_top_domains_ =
     ['accounts.google.com', 'login.corp.google.com', 'myaccount.google.com'];
 
+/**
+ * List of domains which may generate an alert as 'report_only'
+ * @private {!Array.<string>}
+ */
+passwordalert.report_only_domains_ = [];
 
 /**
  * The URL for the current page.
@@ -282,6 +287,11 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
         Array.prototype.push.apply(
             passwordalert.corp_html_tight_, managedPolicy['corp_html_tight']);
       }
+      if (managedPolicy['report_only_domains']) {
+        Array.prototype.push.apply(
+          passwordalert.report_only_domains_,
+           managedPolicy['report_only_domains'].filter(String));
+      }
     }
     passwordalert.policyLoaded_ = true;
     callback();
@@ -363,6 +373,12 @@ passwordalert.handleManagedPolicyChanges_ = function(
           Array.prototype.push.apply(
               passwordalert.allowlist_top_domains_,
               newPolicyValue.filter(String));  // filter empty values
+          break;
+        case 'report_only_domains':
+          passwordalert.report_only_domains_ = subtractArray(passwordalert.report_only_domains_, oldPolicyValue.filter(String));
+          Array.prototype.push.apply(
+            passwordalert.report_only_domains_,
+            newPolicyValue.filter(String));
           break;
       }
     }
@@ -825,6 +841,33 @@ passwordalert.looksLikeGooglePageTight_ = function() {
 
 
 /**
+ * Check if the current tab is in the supplied list of domains.
+ *
+ * @param {!Array<string>} List of domains to check.
+ * @return {boolean} True if this page is in domain list.
+ * @private
+ */
+passwordalert.isTabInDomains_ = function(domains) {
+  const tab_domain = googUriUtils.getDomain(passwordalert.url_) || '';
+  for (let i = 0; i < domains.length; i++) {
+    const domain = domains[i];
+    if (domain == tab_domain) {
+      return true;
+    }
+
+    let domain_as_suffix = domain;
+    if (!googString.startsWith(domain, '.')) {
+      domain_as_suffix = '.' + domain_as_suffix;
+    }
+    if (googString.endsWith(domain, domain_as_suffix)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
+/**
  * Detects if the page is allowlisted as not a phishing page or for password
  * typing.
  *
@@ -835,22 +878,17 @@ passwordalert.looksLikeGooglePageTight_ = function() {
  * @private
  */
 passwordalert.allowlistUrl_ = function() {
-  const domain = googUriUtils.getDomain(passwordalert.url_) || '';
-  for (let i = 0; i < passwordalert.allowlist_top_domains_.length; i++) {
-    const allowlisted_domain = passwordalert.allowlist_top_domains_[i];
-    if (domain == allowlisted_domain) {
-      return true;
-    }
+  return passwordalert.isTabInDomains_(passwordalert.allowlist_top_domains_);
+};
 
-    let allowlisted_domain_as_suffix = allowlisted_domain;
-    if (!googString.startsWith(allowlisted_domain, '.')) {
-      allowlisted_domain_as_suffix = '.' + allowlisted_domain_as_suffix;
-    }
-    if (googString.endsWith(domain, allowlisted_domain_as_suffix)) {
-      return true;
-    }
-  }
-  return false;
+/**
+ * Check if the current tab is a report only url.
+ * 
+ * @return {boolean} True if the domain is a report only URL.
+ * @private
+ */
+passwordalert.reportOnlyUrl_ = function() {
+  return passwordalert.isTabInDomains_(passwordalert.report_only_domains_);
 };
 
 /**

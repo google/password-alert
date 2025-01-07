@@ -32,6 +32,9 @@
     "Value": ["legit-site.example.com",
               "localhost"]
   },
+  "report_only_domains": {
+    "Value": ["internal.example.com"]
+  },
   "report_url": {
     "Value": "https://example.appspot.com/report/"
   },
