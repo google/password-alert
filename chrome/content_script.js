@@ -883,7 +883,7 @@ passwordalert.allowlistUrl_ = function() {
 
 /**
  * Check if the current tab is a report only url.
- * 
+ *
  * @return {boolean} True if the domain is a report only URL.
  * @private
  */

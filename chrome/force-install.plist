@@ -34,7 +34,7 @@
     <key>PayloadVersion</key>
     <integer>1</integer>
    </dict>
-  </array> 
+  </array>
  <key>PayloadDescription</key>
  <string>Google Chrome Forced Install Extension</string>
  <key>PayloadDisplayName</key>
