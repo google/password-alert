@@ -50,7 +50,7 @@ testSuite({
   setUp() {
     background.possiblePassword_ = {};
     background.passwordLengths_ = [];
-    localStorage.clear();
+    chrome.storage.local.remove('cacheData');
     background.refreshPasswordLengths_();
     background.rateLimitCount_ = 0;
   },
@@ -74,7 +74,7 @@ testSuite({
     background.handleRequest_(requestSet, sender);
     assertNotUndefined(background.possiblePassword_[42]);
     background.handleRequest_(requestSave, sender);
-    assertNotNull(localStorage.getItem(background.hashPassword_(password)));
+    assertNotNull(background.storageCache[background.hashPassword_(password)]);
     assertTrue(background.passwordLengths_[password.length]);
     assertUndefined(background.possiblePassword_[42]);
 
@@ -82,15 +82,15 @@ testSuite({
     requestSet.password = 'short';
     background.handleRequest_(requestSet, sender);
     background.handleRequest_(requestSave, sender);
-    assertNull(localStorage.getItem(background.hashPassword_('short')));
+    assertUndefined(background.storageCache[background.hashPassword_('short')]);
 
     // Set and save new password for existing email.
     const passwordNew = 'foopassword2';
     requestSet.password = passwordNew;
     background.handleRequest_(requestSet, sender);
     background.handleRequest_(requestSave, sender);
-    assertNull(localStorage.getItem(background.hashPassword_(password)));
-    assertNotNull(localStorage.getItem(background.hashPassword_(passwordNew)));
+    assertUndefined(background.storageCache[background.hashPassword_(password)]);
+    assertNotNull(background.storageCache[background.hashPassword_(passwordNew)]);
 
     // Test with other tab id. Does not change saved password information.
     const passwordOther = 'foopassword3';
@@ -98,7 +98,7 @@ testSuite({
     background.handleRequest_(requestSet, sender);
     sender.tab.id = 99;
     background.handleRequest_(requestSave, sender);
-    assertNull(localStorage.getItem(background.hashPassword_(passwordOther)));
+    assertUndefined(background.storageCache[background.hashPassword_(passwordOther)]);
 
     // Save Chromium password with different password.
     const passwordChromium = 'chromiumpasswordislongpassword';
@@ -107,7 +107,7 @@ testSuite({
     background.handleRequest_(requestSet, sender);
     background.handleRequest_(requestSave, sender);
     assertNotNull(
-        localStorage.getItem(background.hashPassword_(passwordChromium)));
+        background.storageCache[background.hashPassword_(passwordChromium)]);
     assertTrue(background.passwordLengths_[passwordChromium.length]);
 
     // Save Chromium password with new password that is the same as new Google
@@ -116,29 +116,29 @@ testSuite({
     requestSet.email = 'adhintz@chromium.org';
     background.handleRequest_(requestSet, sender);
     background.handleRequest_(requestSave, sender);
-    let item = localStorage.getItem(background.hashPassword_(passwordNew));
+    let item = background.storageCache[background.hashPassword_(passwordNew)];
     assertNotNull(item);
     item = JSON.parse(item);
     assertEquals(item['email'], requestSet.email);
     assertNull(
-        localStorage.getItem(background.hashPassword_(passwordChromium)));
+        background.storageCache[background.hashPassword_(passwordChromium)]);
   },
 
 
   testRefreshPasswordLengths() {
-    localStorage['fooseven'] = JSON.stringify(
+    background.storageCache['fooseven'] = JSON.stringify(
         {'length': 7, 'email': 'adhintz+7@google.com', 'date': new Date()});
     background.refreshPasswordLengths_();
     assertTrue(background.passwordLengths_[7]);
     assertFalse(Boolean(background.passwordLengths_[6]));
 
-    localStorage['foosix'] = JSON.stringify(
+    background.storageCache['foosix'] = JSON.stringify(
         {'length': 6, 'email': 'adhintz+6@google.com', 'date': new Date()});
     background.refreshPasswordLengths_();
     assertTrue(background.passwordLengths_[7]);
     assertTrue(background.passwordLengths_[6]);
 
-    delete localStorage['fooseven'];
+    delete background.storageCache['fooseven'];
     background.refreshPasswordLengths_();
     assertTrue(background.passwordLengths_[6]);
     assertFalse(Boolean(background.passwordLengths_[7]));
@@ -160,7 +160,7 @@ testSuite({
 
 
   testHashPassword() {
-    localStorage[background.SALT_KEY_] = '';
+    background.storageCache[background.SALT_KEY_] = '';
     background.HASH_BITS_ = 37;
     assertEquals('0beec7b5e8', background.hashPassword_('foo'));
 
@@ -281,7 +281,7 @@ testSuite({
 
     background.checkPassword_ = function(tabId, request, state) {
       if (request.password == 'pw') {
-        localStorage['pwhash'] =
+        background.storageCache['pwhash'] =
             JSON.stringify({'email': 'adhintz@google.com', 'date': 1});
         state['hash'] = 'pwhash';
         state['otpCount'] = 0;
@@ -312,6 +312,8 @@ testSuite({
     assertEquals(0, background.stateKeydown_['otpCount']);
     assertNull(background.stateKeydown_['otpTime']);
 
+    // Clear 'typed' before attempting the new test.
+    background.stateKeydown_.typed = new keydown.Typed();
     // Test space and tabs at beginning of otp are allowed.
     sendKeydownRequest(TAB_ID1, 'p', now);
     sendKeydownRequest(TAB_ID1, 'w', now);
@@ -327,14 +329,14 @@ testSuite({
   },
 
   testGuessUser() {
-    localStorage['guessuser2'] = JSON.stringify(
+    background.storageCache['guessuser2'] = JSON.stringify(
         {'length': 7, 'email': 'adhintz+2@example.com', 'date': new Date()});
-    localStorage['guessuser1'] = JSON.stringify({
+    background.storageCache['guessuser1'] = JSON.stringify({
       'length': 7,
       'email': 'adhintz@guessuser.google.com',
       'date': new Date()
     });
-    localStorage['guessuser0'] = JSON.stringify(
+    background.storageCache['guessuser0'] = JSON.stringify(
         {'length': 7, 'email': 'adhintz@example.com', 'date': new Date()});
     background.enterpriseMode_ = true;
     background.corp_email_domain_ = 'guessuser.google.com';

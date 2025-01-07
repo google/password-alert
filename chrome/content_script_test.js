@@ -93,7 +93,7 @@ testSuite({
   },
 
   testStart() {
-    const msg = '{"passwordLengths":[null,null,true,null,true]}';
+    const msg = '{"passwordStored": true}';
 
     // passwordalert.sso_url_ is undefined by default.
     passwordalert.url_ = 'https://login.example.com/request?' +
@@ -114,6 +114,10 @@ testSuite({
     assertTrue(passwordalert.isRunning_);
   },
 
+  /**
+   * Make sure if user allowlists company.com, then evilexample.com
+   * will not pass the allowlist.
+   */
   testAllowlist() {
     passwordalert.url_ = 'https://foo.corp.google.com/';
     passwordalert.allowlist_top_domains_ =
@@ -125,7 +129,7 @@ testSuite({
   },
 
   /**
-   * Make sure if user allowlists example.com, then evilexample.com
+   * Make sure if user allowlists company.com, then evilexample.com
    * will not pass the allowlist.
    */
   testAllowlistSuffix() {
@@ -138,6 +142,36 @@ testSuite({
     assertFalse(passwordalert.allowlistUrl_());
     passwordalert.allowlist_top_domains_ = ['.company.com'];
     assertFalse(passwordalert.allowlistUrl_());
+  },
+
+  /**
+   * Make sure if user puts company.com as report only, then evilexample.com
+   * will not pass the report only check.
+   */
+  testReportOnlyDomains() {
+    passwordalert.url_ = 'https://foo.corp.google.com/';
+    passwordalert.report_only_domains_ =
+        ['.borg.google.com', '.corp.google.com'];
+    assertTrue(passwordalert.reportOnlyUrl_());
+    passwordalert.url_ =
+        'https://foo.corp.google.com.evil.com/login.corp.google.com/';
+    assertFalse(passwordalert.reportOnlyUrl_());
+  },
+
+  /**
+   * Make sure if user puts company.com as report only, then evilexample.com
+   * will not pass the report only check.
+   */
+  testReportOnlyDomainsSuffix() {
+    passwordalert.url_ = 'https://company.com/';
+    passwordalert.report_only_domains_ = ['company.com'];
+    assertTrue(passwordalert.reportOnlyUrl_());
+
+    passwordalert.url_ = 'https://evilcompany.com/';
+    passwordalert.report_only_domains_ = ['company.com'];
+    assertFalse(passwordalert.reportOnlyUrl_());
+    passwordalert.report_only_domains_ = ['.company.com'];
+    assertFalse(passwordalert.reportOnlyUrl_());
   },
 
   testIsEmailInDomain() {

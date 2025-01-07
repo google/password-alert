@@ -49,6 +49,7 @@ chrome.notifications.onClicked;
 chrome.notifications.onClicked.addListener;
 
 chrome.storage;
+chrome.storage.local;
 chrome.storage.managed;
 chrome.storage.onChanged;
 chrome.storage.onChanged.addListener;

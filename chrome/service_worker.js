@@ -20,7 +20,7 @@
  * to see if they're the user's password. Populates chrome.storage.local with partial
  * hashes of the user's password.
  * @author adhintz@google.com (Drew Hintz)
- * @maintainer adamjnichols@google.com (Adam Nichols)
+ * @maintainer lbd@google.com (Benjamin Donnelly)
  */
 
 'use strict';
@@ -44,7 +44,8 @@ background.storageCache = {};
 background.storageCache = new Proxy(background.storageCache, {
   set: async function (target, key, value) {
     let r = Reflect.set(target, key, value);
-    chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
+    chrome.storage.local.set( 
+      {'cacheData': background.storageCache}, function (result) {
         console.log('persisted storageCache to chrome.local.storage on update');
         background.refreshPasswordLengths_();
     });
@@ -53,8 +54,10 @@ background.storageCache = new Proxy(background.storageCache, {
   deleteProperty: function(target, prop) {
     if (prop in target) {
         let r = Reflect.deleteProperty(target, prop)
-        chrome.storage.local.set( { 'cacheData' : background.storageCache }, function (result) {
-            console.log('persisted storageCache to chrome.local.storage on delete');
+        chrome.storage.local.set(
+          {'cacheData': background.storageCache}, function (result) {
+            console.log(
+              'persisted storageCache to chrome.local.storage on delete');
             background.refreshPasswordLengths_();
         });
         return r;
@@ -583,9 +586,13 @@ background.completePageInitialization_ = async function () {
                 resolve(true);
             } else {
                 background.storageCache = value['cacheData'];
-                background.injectContentScriptIntoAllTabs_(background.refreshPasswordLengths_);  // let pages know we have passwords
-                console.log('local storage loaded into cache successfully. length: ', Object.keys(background.storageCache).length)
-                resolve(true)
+                background.injectContentScriptIntoAllTabs_(
+                  background.refreshPasswordLengths_);  // let pages know we have
+                                                        //  passwords
+                console.log(
+                  'local storage loaded into cache successfully. length: ',
+                  Object.keys(background.storageCache).length);
+                resolve(true);
             }
         });
       } catch (ex) {
@@ -630,7 +637,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
                 sender.tab.id, request, background.stateKeydown_);
             break;
         case 'statusRequest':
-            const state = { passwordStored: ( background.passwordLengths_.length > 0 ) };
+            const state = {passwordStored: (background.passwordLengths_.length > 0 ) };
             sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
             break;
         case 'looksLikeGoogle':
@@ -647,7 +654,9 @@ background.handleRequest_ = function (request, sender, sendResponse) {
             background.savePossiblePassword_(sender.tab.id);
             break;
         default:
-            console.log('cannot handle request action: ' + request.action + '. action is undefined.');
+            console.log(
+              'cannot handle request action: ' + request.action +
+              '. action is undefined.');
     }
 };
 
@@ -849,7 +858,8 @@ background.getStorageCacheItem_ = function (index) {
     if (Object.keys(background.storageCache)[index] == background.SALT_KEY_) {
         item = null;
     } else {
-        item = JSON.parse(background.storageCache[Object.keys(background.storageCache)[index]]);
+        item = JSON.parse(
+          background.storageCache[Object.keys(background.storageCache)[index]]);
     }
     return item;
 };
@@ -878,7 +888,8 @@ background.savePossiblePassword_ = function (tabId) {
         if (item && item['email'] == email) {
             delete item['email'];
             delete item['date'];
-            background.storageCache[Object.keys(background.storageCache)[i]] = JSON.stringify(item);
+            background.storageCache[Object.keys(background.storageCache)[i]] =
+              JSON.stringify(item);
         }
     }
 
