@@ -42,7 +42,7 @@ chrome.tabs.sendMessage = function() {};
 
 chrome.storage = {};
 chrome.storage.managed = {};
-chrome.storage.managed.get = function() {
+chrome.storage.managed.get = function(obj) {
   return {
     'sso_url': 'https://login.example.com/',
     'report_url': 'https://passwordalert.example.com/report/'
@@ -52,6 +52,7 @@ chrome.storage.local = {};
 chrome.storage.local.get = function(str) {
   return chrome.storage.local[str];
 };
+
 chrome.storage.local.set = function(obj, callback) {
   for (const property in obj) {
     chrome.storage.local[property] = obj[property];
