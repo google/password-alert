@@ -20,7 +20,6 @@
  * to see if they're the user's password. Populates chrome.storage.local with partial
  * hashes of the user's password.
  * @author adhintz@google.com (Drew Hintz)
- * @maintainer lbd@google.com (Benjamin Donnelly)
  */
 
 'use strict';
@@ -52,7 +51,7 @@ background.storageCache = new Proxy(background.storageCache, {
   },
   deleteProperty: function(target, prop) {
     if (prop in target) {
-        let r = Reflect.deleteProperty(target, prop)
+        let r = Reflect.deleteProperty(target, prop);
         chrome.storage.local.set(
           {'cacheData': background.storageCache}, function (result) {
             console.log(
@@ -559,7 +558,7 @@ background.completePageInitialization_ = async function () {
         background.isInitialized_ = true;
         background.refreshPasswordLengths_();
         chrome.runtime.onMessage.addListener(background.handleRequest_);
-    };
+    }
 
     // Get the username from a signed in Chrome profile, which might be used
     // for reporting phishing sites (if the password store isn't initialized).
@@ -573,7 +572,8 @@ background.completePageInitialization_ = async function () {
 
  /**
   * Check for existing cacheData object in chrome.storage.local
-  *
+  * 
+  * @return {Promise}
   * @private
   */
  background.checkForCacheData_ = async function() {
@@ -581,7 +581,7 @@ background.completePageInitialization_ = async function () {
       try {
         chrome.storage.local.get('cacheData', function(value) {
             if (typeof value['cacheData'] === "undefined") {
-                console.log('nothing in local storage to load into cache.')
+                console.log('nothing in local storage to load into cache.');
                 resolve(true);
             } else {
                 background.storageCache = value['cacheData'];
@@ -828,7 +828,7 @@ background.setPossiblePassword_ = function (tabId, request, hasEmail) {
 
     let email;
     if (!hasEmail) {
-        email = background.possiblePassword_[sender.tab.id]['email']
+        email = background.possiblePassword_[sender.tab.id]['email'];
     } else {
         email = request.email;
     }
@@ -1174,7 +1174,7 @@ background.sendReport_ = function (request, email, date, otp, path) {
             body: data,
         };
         const req = background.report_url_ + path;
-        fetch(req, reqOpts)
+        fetch(req, reqOpts);
     });
 };
 

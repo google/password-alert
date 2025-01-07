@@ -843,7 +843,7 @@ passwordalert.looksLikeGooglePageTight_ = function() {
 /**
  * Check if the current tab is in the supplied list of domains.
  *
- * @param {!Array<string>} List of domains to check.
+ * @param {!Array<string>} domain List of domains to check.
  * @return {boolean} True if this page is in domain list.
  * @private
  */
@@ -935,9 +935,9 @@ window.addEventListener('paste', passwordalert.handlePaste, true);
 
 chrome.runtime.onMessage.addListener(
     /**
-     * @param {any} msg JSON object containing valid password lengths.
-     * @param {MessageSender} the unused sender
-     * @param {function} The function which sends the response
+     * @param {!any} msg JSON object containing valid password lengths.
+     * @param {!MessageSender} unusedSender the unused sender
+     * @param {!function} sendResponse The function which sends the response
      */
     function(msg, unusedSender, sendResponse) {
       passwordalert.stop_();
