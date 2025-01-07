@@ -843,7 +843,7 @@ passwordalert.looksLikeGooglePageTight_ = function() {
 /**
  * Check if the current tab is in the supplied list of domains.
  *
- * @param {!Array<string>} domain List of domains to check.
+ * @param {!Array<string>} domains List of domains to check.
  * @return {boolean} True if this page is in domain list.
  * @private
  */
