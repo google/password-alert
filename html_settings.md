@@ -6,7 +6,7 @@ The HTML snippets configuration provides extra alerting and protection against f
 # SSO Page HTML (corp_html)
 If you type your password and these snippets of HTML are present, then the LooksLikeGoogle bit in the alert is set to TRUE and the email to the security team contains a "Looks like phishing!" line. This helps you distinguish between alerts that are due to accidents and password reuse from alerts that are due to intentional phishing attacks.
 
-This setting should have somewhat generic HTML from your SSO login page. They should be relatively unique, but do not have to be absolutely unique. Here are a few examples based on the main Google login page: 
+This setting should have somewhat generic HTML from your SSO login page. They should be relatively unique, but do not have to be absolutely unique. Here are a few examples based on the main Google login page:
 ```
 One account. All of Google.
 Sign in with your Google Account

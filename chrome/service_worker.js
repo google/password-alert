@@ -31,20 +31,19 @@ const GoogCryptSha1 = goog.require('goog.crypt.Sha1');
 const googCrypt = goog.require('goog.crypt');
 const googString = goog.require('goog.string');
 const keydown = goog.require('passwordalert.keydown');
-const safe = goog.require('goog.dom.safe');
 let background = {};
 goog.exportSymbol('background', background);  // for tests only.
 
 background.storageCache = {};
 
 // With Chrome Manifest v3, localStorage was deprecated in favor of chrome.storage.local.
-// Where previously, the use of localStorage would persist across browser sessions, 
+// Where previously, the use of localStorage would persist across browser sessions,
 // we must now manually persist that data at a periodic interval. We accomplish this here
 // by proxying the cache object and asynchronously writing it to storage on change.
 background.storageCache = new Proxy(background.storageCache, {
   set: async function (target, key, value) {
     let r = Reflect.set(target, key, value);
-    chrome.storage.local.set( 
+    chrome.storage.local.set(
       {'cacheData': background.storageCache}, function (result) {
         console.log('persisted storageCache to chrome.local.storage on update');
         background.refreshPasswordLengths_();
@@ -551,7 +550,7 @@ background.initializePasswordIfReady_ = function (maxRetries, delay, callback) {
 /**
  * Complete page initialization.  This is executed after managed policy values
  * have been set.
- * 
+ *
  * @private
  */
 background.completePageInitialization_ = async function () {
@@ -574,7 +573,7 @@ background.completePageInitialization_ = async function () {
 
  /**
   * Check for existing cacheData object in chrome.storage.local
-  * 
+  *
   * @private
   */
  background.checkForCacheData_ = async function() {
@@ -1005,7 +1004,7 @@ background.checkPassword_ = function (tabId, request, state) {
         if (item['length'] == request.password.length) {
             console.log('PASSWORD TYPED! ' + request.url);
 
-            if (!background.enterpriseMode_) {  
+            if (!background.enterpriseMode_) {
                 state['otpMode'] = true;
                 background.displayPasswordWarningIfNeeded_(
                     request.url, item['email'], tabId);
