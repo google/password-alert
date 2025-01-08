@@ -855,11 +855,12 @@ passwordalert.isTabInDomains_ = function(domains) {
       return true;
     }
 
+
     let domain_as_suffix = domain;
-    if (!googString.startsWith(domain, '.')) {
+    if (!googString.startsWith(domain_as_suffix, '.')) {
       domain_as_suffix = '.' + domain_as_suffix;
     }
-    if (googString.endsWith(domain, domain_as_suffix)) {
+    if (googString.endsWith(tab_domain, domain_as_suffix)) {
       return true;
     }
   }
