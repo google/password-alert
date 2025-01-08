@@ -120,12 +120,13 @@ testSuite({
     assertNotNull(item);
     item = JSON.parse(item);
     assertEquals(item['email'], requestSet.email);
-    assertNull(
+    assertUndefined(
         background.storageCache[background.hashPassword_(passwordChromium)]);
   },
 
 
   testRefreshPasswordLengths() {
+    background.storageCache = {};
     background.storageCache['fooseven'] = JSON.stringify(
         {'length': 7, 'email': 'adhintz+7@google.com', 'date': new Date()});
     background.refreshPasswordLengths_();
@@ -164,7 +165,7 @@ testSuite({
     background.HASH_BITS_ = 37;
     assertEquals('0beec7b5e8', background.hashPassword_('foo'));
 
-    localStorage.removeItem(background.SALT_KEY_);
+    background.storageCache[background.SALT_KEY_] = '1';
     assertNotEquals('0beec7b5e8', background.hashPassword_('foo'));
   },
 
