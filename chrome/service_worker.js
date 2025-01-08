@@ -1065,7 +1065,7 @@ background.displayPasswordWarningIfNeeded_ = function (url, email, tabId) {
 background.displayPhishingWarningIfNeeded_ = function (tabId, request) {
     chrome.storage.local.get(
         background.PHISHING_WARNING_ALLOWLIST_KEY_, function (result) {
-            let u = new URL(url);
+            let u = new URL(request.url);
             const currentHost = u.origin;
             const phishingWarningAllowlist =
                 result[background.PHISHING_WARNING_ALLOWLIST_KEY_];
