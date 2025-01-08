@@ -572,8 +572,8 @@ background.completePageInitialization_ = async function () {
 
  /**
   * Check for existing cacheData object in chrome.storage.local
-  * 
-  * @return {Promise}
+  *
+  * @return {!Promise}
   * @private
   */
  background.checkForCacheData_ = async function() {

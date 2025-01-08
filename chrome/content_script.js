@@ -855,11 +855,12 @@ passwordalert.isTabInDomains_ = function(domains) {
       return true;
     }
 
+
     let domain_as_suffix = domain;
-    if (!googString.startsWith(domain, '.')) {
+    if (!googString.startsWith(domain_as_suffix, '.')) {
       domain_as_suffix = '.' + domain_as_suffix;
     }
-    if (googString.endsWith(domain, domain_as_suffix)) {
+    if (googString.endsWith(tab_domain, domain_as_suffix)) {
       return true;
     }
   }
@@ -937,7 +938,7 @@ chrome.runtime.onMessage.addListener(
     /**
      * @param {!any} msg JSON object containing valid password lengths.
      * @param {!MessageSender} unusedSender the unused sender
-     * @param {!function} sendResponse The function which sends the response
+     * @param {function(string)} sendResponse The function which sends the response
      */
     function(msg, unusedSender, sendResponse) {
       passwordalert.stop_();
