@@ -40,7 +40,7 @@ background.storageCache = {};
 // we must now manually persist that data at a periodic interval. We accomplish this here
 // by proxying the cache object and asynchronously writing it to storage on change.
 background.storageCache = new Proxy(background.storageCache, {
-  set: async function (target, key, value) {
+  set: function (target, key, value) {
     let r = Reflect.set(target, key, value);
     chrome.storage.local.set(
       {'cacheData': background.storageCache}, function (result) {
