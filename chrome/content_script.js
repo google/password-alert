@@ -546,7 +546,7 @@ passwordalert.is_gaia_correct_ = function(url) {
 passwordalert.start_ = function(msg) {
   try {
     const state = JSON.parse(msg);
-    if (!state.passwordStored) {
+    if (!state['passwordStored']) {
       passwordalert.stop_();  // no passwords, so no need to watch
       return;
     }
@@ -855,7 +855,6 @@ passwordalert.isTabInDomains_ = function(domains) {
       return true;
     }
 
-
     let domain_as_suffix = domain;
     if (!googString.startsWith(domain_as_suffix, '.')) {
       domain_as_suffix = '.' + domain_as_suffix;
@@ -936,7 +935,7 @@ window.addEventListener('paste', passwordalert.handlePaste, true);
 
 chrome.runtime.onMessage.addListener(
     /**
-     * @param {!any} msg JSON object containing valid password lengths.
+     * @param {string} msg JSON object containing valid password lengths.
      * @param {!MessageSender} unusedSender the unused sender
      * @param {function(string)} sendResponse The function which sends the response
      */
