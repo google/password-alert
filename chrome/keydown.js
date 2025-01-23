@@ -96,7 +96,6 @@ const MAP_ = {
 
 /**
  * Class to keep track of typed keycodes and characters.
- * @this {Typed}
  * @param {string=} opt_chars Initial characters, used for testing.
  * @constructor
  */

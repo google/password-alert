@@ -636,7 +636,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
                 sender.tab.id, request, background.stateKeydown_);
             break;
         case 'statusRequest':
-            const state = {passwordStored: (background.passwordLengths_.length > 0 ) };
+            const state = {'passwordStored': (background.passwordLengths_.length > 0 ) };
             sendResponse(JSON.stringify(state));  // Needed for pre-loaded pages.
             break;
         case 'looksLikeGoogle':
@@ -1050,7 +1050,7 @@ background.displayPasswordWarningIfNeeded_ = function (url, email, tabId) {
         const warning_url = chrome.runtime.getURL('password_warning.html') + '?' +
             encodeURIComponent(currentHost) + '&' + encodeURIComponent(email) +
             '&' + tabId;
-        chrome.tabs.create({ 'url': warning_url });
+        chrome.tabs.create({'url': warning_url});
     });
 };
 
@@ -1293,7 +1293,7 @@ background.pushToAllTabs_ = function () {
  * @private
  */
 background.pushToTab_ = function (tabId) {
-    const state = { passwordStored: ( background.passwordLengths_.length > 0 ) };
+    const state = {'passwordStored': ( background.passwordLengths_.length > 0)};
     chrome.tabs.sendMessage(tabId, JSON.stringify(state), response => {
         if(response) {
           console.log('pushToTab_', tabId, response);
