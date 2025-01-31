@@ -1,6 +1,7 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
+  "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDE8pGVpFseBm5fHxvovnGK44YvKgHLd4qW0MJQFT1u+SnoAgfh1TWW+LumniRdd2pDYyBn4PiwiK0QlwVHCc36fT+xARuuCJDn6upNVH3FGP/Yzen8v9I05EhEqgAgk0rem5y/0dAg9lQUfv0bIM1L73TVgkvN1RliFY8mDVbXdQIDAQAB",
   "version": "1.29",
   "default_locale": "en",
   "minimum_chrome_version": "88",

@@ -816,7 +816,7 @@ background.handleKeypress_ = function (tabId, request) {
  * @private
  */
 background.setPossiblePassword_ = function (tabId, request, hasEmail) {
-    if ((hasEmail && !request.email) || !request.password) {
+    if ((hasEmail && !request.password) || !request.password ){
         return;
     }
     if (request.password.length < background.MINIMUM_PASSWORD_) {
@@ -880,7 +880,7 @@ background.savePossiblePassword_ = function (tabId) {
     const email = possiblePassword_['email'];
     const password = possiblePassword_['password'];
     const length = possiblePassword_['length'];
-
+    
     // Delete old email entries.
     for (let i = 0; i < Object.keys(background.storageCache).length; i++) {
         const item = background.getStorageCacheItem_(i);
