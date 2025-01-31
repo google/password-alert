@@ -95,8 +95,7 @@ passwordalert.GAIA_CORRECT_ = [
   'https://accounts.google.com/signin/selectchallenge',
   'https://accounts.google.com/signin/challenge',
   'https://accounts.google.com/signin/privacyreminder',
-  'https://accounts.google.com/signin/v2/challenge/ipp',
-  'https://accounts.google.com/continue'
+  'https://accounts.google.com/signin/v2/challenge/ipp'
 ];
 
 
