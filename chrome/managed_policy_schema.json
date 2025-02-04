@@ -20,6 +20,10 @@
       "type": "array",
       "items": {"type": "string"}
     },
+    "whitelist_top_domains": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
     "report_only_domains": {
       "type": "array",
       "items": {"type": "string"}
