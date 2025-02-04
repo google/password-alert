@@ -1078,7 +1078,7 @@ background.displayPhishingWarningIfNeeded_ = function (tabId, request) {
                 '?' + tabId + '&' + encodeURIComponent(request.url || '') + '&' +
                 encodeURIComponent(currentHost) + '&' +
                 encodeURIComponent(request.securityEmailAddress);
-            chrome.tabs.update({ 'url': warning_url });
+            chrome.tabs.update({'url': warning_url});
         });
 };
 
@@ -1293,7 +1293,7 @@ background.pushToAllTabs_ = function () {
  * @private
  */
 background.pushToTab_ = function (tabId) {
-    const state = {'passwordStored': ( background.passwordLengths_.length > 0)};
+    const state = {'passwordStored': (background.passwordLengths_.length > 0)};
     chrome.tabs.sendMessage(tabId, JSON.stringify(state), response => {
         if(response) {
           console.log('pushToTab_', tabId, response);
