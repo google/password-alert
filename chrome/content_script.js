@@ -286,7 +286,7 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
         Array.prototype.push.apply(
             passwordalert.allowlist_top_domains_,
             // filter empty values
-            managedPolicy['allowlist_top_domains'].filter(String));
+            managedPolicy['whitelist_top_domains'].filter(String));
       }
       if (managedPolicy['corp_html']) {
         Array.prototype.push.apply(
