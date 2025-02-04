@@ -58,6 +58,11 @@ passwordalert.sso_password_selector_;
  */
 passwordalert.sso_username_selector_;
 
+/**
+ * Selector for preset username element on the SSO login page.
+ * @private {string}
+ */
+passwordalert.sso_preset_selector_;
 
 /**
  * The corp email domain, e.g. "company.com".
@@ -270,7 +275,9 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
       passwordalert.sso_url_ = managedPolicy['sso_url'];
       passwordalert.sso_username_selector_ =
           managedPolicy['sso_username_selector'];
-
+      passwordalert.sso_preset_selector_ =
+          managedPolicy['sso_preset_selector'];
+      
       // For the policies below, we want to append the user-provided policies
       // to the extension-provided defaults.
       if (managedPolicy['allowlist_top_domains']) {
@@ -366,6 +373,9 @@ passwordalert.handleManagedPolicyChanges_ = function(
         case 'sso_username_selector':
           passwordalert.sso_username_selector_ = newPolicyValue;
           break;
+        case 'sso_preset_selector':
+          passwordalert.sso_preset_selector_ = newPolicyValue;
+          break;
         case 'allowlist_top_domains':
           passwordalert.allowlist_top_domains_ = subtractArray(
               passwordalert.allowlist_top_domains_,
@@ -407,8 +417,17 @@ passwordalert.completePageInitializationIfReady_ = function() {
   }
   if (passwordalert.sso_url_ &&
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
-    const loginForm = document.querySelector(passwordalert.sso_form_selector_);
-    if (loginForm) {  // null if the user gets a Password Change Warning.
+    let loginForm;
+    loginForm = document.querySelector(passwordalert.sso_form_selector_);
+    
+    if(!loginForm){
+      loginForm = document.getElementById('loginForm');
+    }
+    if(loginForm){
+      submit = document.getElementById('signInButton');
+      if(submit){
+        submit.addEventListener('click', passwordalert.saveSsoPassword_, true);
+      } // null if the user gets a Password Change Warning.
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
@@ -662,15 +681,19 @@ passwordalert.handlePaste = function(evt) {
  */
 passwordalert.saveSsoPassword_ = function(evt) {
   if (passwordalert.validateSso_()) {
-    let username =
-        document.querySelector(passwordalert.sso_username_selector_).value;
-    const password =
-        document.querySelector(passwordalert.sso_password_selector_).value;
-    if (username.indexOf('@') == -1) {
-      username += '@' + passwordalert.corp_email_domain_.split(',')[0].trim();
-    }
-    chrome.runtime.sendMessage(
-        {action: 'setPossiblePassword', email: username, password: password, context: 'set password from sso', url: passwordalert.url_});
+    let username;
+    const password = document.querySelector(passwordalert.sso_password_selector_)?.value;
+    const usernameElement = document.querySelector(passwordalert.sso_username_selector_)?.value;
+    const presetElement = document.getElementById('u')?.value;
+    if ((usernameElement == null) && (presetElement == null)) {
+        chrome.runtime.sendMessage({action: 'setPossiblePasswordWithoutEmail', password: password, context: 'set password without email', url: passwordalert.url_});
+    } else {
+        username = (usernameElement != null) ? usernameElement : (presetElement != null) ? presetElement : null;
+        if (username && username.indexOf('@') == -1) {
+          username += '@' + passwordalert.corp_email_domain_.split(',')[0].trim();
+        }
+        chrome.runtime.sendMessage({action: 'setPossiblePassword', email: username, password: password, context: 'set password from sso', url: passwordalert.url_});
+      }
   }
 };
 
@@ -785,8 +808,11 @@ passwordalert.isEmailInDomain_ = function(email) {
  * @private
  */
 passwordalert.validateSso_ = function() {
-  const username = document.querySelector(passwordalert.sso_username_selector_);
+  let username;
+  const usernameElement = document.querySelector(passwordalert.sso_username_selector_);
+  const presetElement = document.querySelector(passwordalert.sso_preset_selector_);
   const password = document.querySelector(passwordalert.sso_password_selector_);
+  username = usernameElement || presetElement;
   if ((username && !username.value) || (password && !password.value)) {
     console.log('SSO data is not filled in.');
     return false;
