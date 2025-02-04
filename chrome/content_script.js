@@ -279,6 +279,15 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
             // filter empty values
             managedPolicy['allowlist_top_domains'].filter(String));
       }
+      // Included for backwards compatibility.
+      // The intention is to give a warning period then to remove this value.
+      if (managedPolicy['whitelist_top_domains']) {
+        console.log("The managed policy value 'whitelist_top_domains' is deprecated.  Please move to 'allowlist_top_domains' immediately.");
+        Array.prototype.push.apply(
+            passwordalert.allowlist_top_domains_,
+            // filter empty values
+            managedPolicy['whitelist_top_domains'].filter(String));
+      }
       if (managedPolicy['corp_html']) {
         Array.prototype.push.apply(
             passwordalert.corp_html_, managedPolicy['corp_html']);
