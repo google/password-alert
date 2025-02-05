@@ -148,7 +148,8 @@ background.stateKeydown_ = {
     'otpMode': false,
     'otpTime': null,
     'typed': new keydown.Typed(),
-    'typedTime': null
+    'typedTime': null,
+    'url': ''
 };
 
 
@@ -162,7 +163,8 @@ background.stateKeypress_ = {
     'otpMode': false,
     'otpTime': null,
     'typed': '',
-    'typedTime': null
+    'typedTime': null,
+    'url': ''
 };
 
 
@@ -219,7 +221,7 @@ background.Request_;
  * State of keypress or keydown events.
  * @typedef {{hash: string, otpCount: number, otpMode: boolean,
  *            otpTime: ?Date, typed: (!keydown.Typed|string),
- *            typedTime: ?Date}}
+ *            typedTime: ?Date, url: string}}
  * @private
  */
 background.State_;
@@ -750,6 +752,11 @@ background.handleKeydown_ = function (tabId, request) {
         return;
     }
 
+    if (request.url != state['url']) {
+      state['typed'].clear();
+      state['url'] = request.url;
+    }
+
     const typedTime = new Date(request.typedTimeStamp);
     if (typedTime - state['typedTime'] > background.SECONDS_TO_CLEAR_ * 1000) {
         state['typed'].clear();
@@ -778,6 +785,12 @@ background.handleKeypress_ = function (tabId, request) {
     if (request.keyCode == background.ENTER_ASCII_CODE_) {
         state['typed'] = '';
         return;
+    }
+
+    // If we transition URLs we want to empty the buffer
+    if (request.url != state['url']) {
+      state['typed'] = '';
+      state['url'] = request.url;
     }
 
     const typedTime = new Date(request.typedTimeStamp);
