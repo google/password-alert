@@ -1,4 +1,7 @@
 --language_in=ECMASCRIPT_NEXT
+--language_out=ECMASCRIPT6_STRICT
+--generate_exports
 --externs=externs.js
 --dependency_mode=PRUNE
+--isolation_mode=IIFE
 --js build/deps.js
