@@ -499,7 +499,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'default', url: passwordalert.url_()}, _ => {
       if(chrome.runtime.lastError){
-        console.log('completePageInitializationIfReady_ ', chrome.runtime.lastError);
+        console.debug('completePageInitializationIfReady_ ', chrome.runtime.lastError);
       }
     });
   }
