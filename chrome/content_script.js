@@ -202,19 +202,6 @@ passwordalert.allowlist_top_domains_ =
  */
 passwordalert.report_only_domains_ = [];
 
-/**
- * The URL for the current page.
- * @private {string}
- */
-passwordalert.url_ = '';
-
-
-/**
- * The referrer for the current page.
- * @private {string}
- */
-passwordalert.referrer_ = '';
-
 
 /**
  * If Password Alert is running on the current page.
@@ -285,6 +272,15 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
             passwordalert.allowlist_top_domains_,
             // filter empty values
             managedPolicy['allowlist_top_domains'].filter(String));
+      }
+      // Included for backwards compatibility.
+      // The intention is to give a warning period then to remove this value.
+      if (managedPolicy['whitelist_top_domains']) {
+        console.log("The managed policy value 'whitelist_top_domains' is deprecated.  Please move to 'allowlist_top_domains' immediately.");
+        Array.prototype.push.apply(
+            passwordalert.allowlist_top_domains_,
+            // filter empty values
+            managedPolicy['whitelist_top_domains'].filter(String));
       }
       if (managedPolicy['corp_html']) {
         Array.prototype.push.apply(
@@ -412,11 +408,11 @@ passwordalert.completePageInitializationIfReady_ = function() {
   // Ignore YouTube login CheckConnection because the login page makes requests
   // to it, but that does not mean the user has successfully authenticated.
   if (googString.startsWith(
-          passwordalert.url_, passwordalert.YOUTUBE_CHECK_URL_)) {
+          passwordalert.url_(), passwordalert.YOUTUBE_CHECK_URL_)) {
     return;
   }
   if (passwordalert.sso_url_ &&
-      googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
+      googString.startsWith(passwordalert.url_(), passwordalert.sso_url_)) {
     const loginForm = document.querySelector(passwordalert.sso_form_selector_);
     if (loginForm){ // null if the user gets a Password Change Warning.
       loginForm.addEventListener(
@@ -424,9 +420,10 @@ passwordalert.completePageInitializationIfReady_ = function() {
     } else {
       // This handles the case where user is redirected to a page that starts
       // with sso url upon a successful sso login.
-      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'sso_url_ without login form', url: passwordalert.url_});}
+      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'sso_url_ without login form', url: passwordalert.url_()});
+    }
   } else if (googString.startsWith(
-                 passwordalert.url_,
+                 passwordalert.url_(),
                  passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
     // This change password page does not have any email information.
     // So we fallback to the email already set in service_worker.js because users
@@ -439,13 +436,13 @@ passwordalert.completePageInitializationIfReady_ = function() {
         action: 'setPossiblePasswordWithoutEmail',
         password: changePasswordForm.Passwd.value,
         context: 'change password',
-        url: passwordalert.url_
+        url: passwordalert.url_()
       });
     }, true);
   } else if (googString.startsWith(
-                 passwordalert.url_, passwordalert.GAIA_URL_)) {
-    if (passwordalert.is_gaia_correct_(passwordalert.url_)) {
-      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'gaia correct', url: passwordalert.url_});
+                 passwordalert.url_(), passwordalert.GAIA_URL_)) {
+    if (passwordalert.is_gaia_correct_(passwordalert.url_())) {
+      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'gaia correct', url: passwordalert.url_()});
     } else {
       const loginForm = document.querySelector('#view_container > form');
       // The chooser is no longer a gaia_loginform, so verify we're on a
@@ -478,7 +475,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
       }
     }
   } else if (googString.startsWith(
-                 passwordalert.url_, passwordalert.CHANGE_PASSWORD_URL_)) {
+                 passwordalert.url_(), passwordalert.CHANGE_PASSWORD_URL_)) {
     // Need to wait until the change password page has finished loading
     // before listener can be added.
     window.onload = function() {
@@ -504,20 +501,20 @@ passwordalert.completePageInitializationIfReady_ = function() {
         passwordalert.looksLikeGooglePageTight_()) {
       chrome.runtime.sendMessage({
         action: 'looksLikeGoogle',
-        url: passwordalert.url_,
-        referer: passwordalert.referrer_,
+        url: passwordalert.url_(),
+        referer: passwordalert.referrer_(),
         securityEmailAddress: passwordalert.security_email_address_,
         context: 'possible phish'
       });
     }
-    chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'default', url: passwordalert.url_}, _ => {
+    chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'default', url: passwordalert.url_()}, _ => {
       if(chrome.runtime.lastError){
-        console.log('completePageInitializationIfReady_ ', chrome.runtime.lastError);
+        console.debug('completePageInitializationIfReady_ ', chrome.runtime.lastError);
       }
     });
   }
 
-  chrome.runtime.sendMessage({action: 'statusRequest', context: 'default', url: passwordalert.url_}, function(response) {
+  chrome.runtime.sendMessage({action: 'statusRequest', context: 'default', url: passwordalert.url_()}, function(response) {
     passwordalert.stop_();
     passwordalert.start_(response);
   });
@@ -563,8 +560,8 @@ passwordalert.start_ = function(msg) {
   }  // Silently swallow any parser errors.
 
   if ((passwordalert.sso_url_ &&
-       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) ||
-      googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_) ||
+       googString.startsWith(passwordalert.url_(), passwordalert.sso_url_)) ||
+      googString.startsWith(passwordalert.url_(), passwordalert.GAIA_URL_) ||
       passwordalert.allowlistUrl_()) {
     passwordalert.stop_();  // safe URL, so no need to watch it
     return;
@@ -611,8 +608,8 @@ passwordalert.handleKeypress = function(evt) {
     action: 'handleKeypress',
     keyCode: evt.charCode,
     typedTimeStamp: evt.timeStamp,
-    url: passwordalert.url_,
-    referer: passwordalert.referrer_,
+    url: passwordalert.url_(),
+    referer: passwordalert.referrer_(),
     looksLikeGoogle: passwordalert.looksLikeGooglePage_(),
     context: 'key press handler'
   });
@@ -634,8 +631,8 @@ passwordalert.handleKeydown = function(evt) {
     keyCode: evt.keyCode,
     shiftKey: evt.shiftKey,
     typedTimeStamp: evt.timeStamp,
-    url: passwordalert.url_,
-    referer: passwordalert.referrer_,
+    url: passwordalert.url_(),
+    referer: passwordalert.referrer_(),
     looksLikeGoogle: passwordalert.looksLikeGooglePage_(),
     context: 'key down handler'
   });
@@ -655,8 +652,8 @@ passwordalert.handlePaste = function(evt) {
   chrome.runtime.sendMessage({
     action: 'checkString',
     password: evt.clipboardData.getData('text/plain').trim(),
-    url: passwordalert.url_,
-    referer: passwordalert.referrer_,
+    url: passwordalert.url_(),
+    referer: passwordalert.referrer_(),
     looksLikeGoogle: passwordalert.looksLikeGooglePage_(),
     context: 'paste handler'
   });
@@ -676,13 +673,13 @@ passwordalert.saveSsoPassword_ = function(evt) {
     const usernameValue = document.querySelector(passwordalert.sso_username_selector_)?.value;
     const presetUsernameValue = document.getElementById('u')?.value;
     if (!usernameValue && !presetUsernameValue) {
-        chrome.runtime.sendMessage({action: 'setPossiblePasswordWithoutEmail', password: password, context: 'set password without email', url: passwordalert.url_});
+        chrome.runtime.sendMessage({action: 'setPossiblePasswordWithoutEmail', password: password, context: 'set password without email', url:  passwordalert.url_()});
     } else {
         username = usernameValue || presetUsernameValue;
         if (username && username.indexOf('@') == -1) {
           username += '@' + passwordalert.corp_email_domain_.split(',')[0].trim();
         }
-        chrome.runtime.sendMessage({action: 'setPossiblePassword', email: username, password: password, context: 'set password from sso', url: passwordalert.url_});
+        chrome.runtime.sendMessage({action: 'setPossiblePassword', email: username, password: password, context: 'set password from sso', url:  passwordalert.url_()});
       }
   }
 };
@@ -707,7 +704,7 @@ passwordalert.saveGaiaPassword_ = function(evt) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage(
-      {action: 'setPossiblePassword', email: email, password: password, context: 'set password from gaia', url: passwordalert.url_});
+      {action: 'setPossiblePassword', email: email, password: password, context: 'set password from gaia', url: passwordalert.url_()});
 };
 
 
@@ -735,7 +732,7 @@ passwordalert.saveGaia2Password_ = function(evt) {
     return;  // Ignore generic @gmail.com logins or for other domains.
   }
   chrome.runtime.sendMessage(
-      {action: 'setPossiblePassword', email: email, password: password, context: 'set password from gaia 2', url: passwordalert.url_});
+      {action: 'setPossiblePassword', email: email, password: password, context: 'set password from gaia 2', url: passwordalert.url_()});
 };
 
 
@@ -766,7 +763,7 @@ passwordalert.saveChangedPassword_ = function() {
         password:
             document.querySelector('input[aria-label="New password"]').value,
         context: 'set changed gaia password',
-        url: passwordalert.url_
+        url: passwordalert.url_()
       });
       return;
     }
@@ -864,7 +861,7 @@ passwordalert.looksLikeGooglePageTight_ = function() {
  * @private
  */
 passwordalert.isTabInDomains_ = function(domains) {
-  const tab_domain = googUriUtils.getDomain(passwordalert.url_) || '';
+  const tab_domain = googUriUtils.getDomain(passwordalert.url_()) || '';
   for (let i = 0; i < domains.length; i++) {
     const domain = domains[i];
     if (domain == tab_domain) {
@@ -915,9 +912,9 @@ passwordalert.reportOnlyUrl_ = function() {
 passwordalert.domReadyCheck_ = function() {
   passwordalert.domContentLoaded_ = true;
 
-  if ((googString.startsWith(passwordalert.url_, passwordalert.GAIA_URL_)) ||
+  if ((googString.startsWith(passwordalert.url_(), passwordalert.GAIA_URL_)) ||
       (passwordalert.sso_url_ &&
-       googString.startsWith(passwordalert.url_, passwordalert.sso_url_))) {
+       googString.startsWith(passwordalert.url_(), passwordalert.sso_url_))) {
     const config =
         {attributes: true, subtree: true, childList: true, characterData: true};
     const observer =
@@ -928,17 +925,36 @@ passwordalert.domReadyCheck_ = function() {
   passwordalert.completePageInitializationIfReady_();
 };
 
+/**
+ * Called to get the url of the current page
+ *
+ * If we're in an iframe get the parent's href.
+ * @private
+ */
+passwordalert.url_ = function() {
+  const url = location.href.toString();
+  if (url == 'about:blank') {
+    return window.parent.location.href;
+  } else {
+    return url;
+  }
+};
 
-// If we're in an iframe get the parent's href.
-/** @const {string} */
-const url = location.href.toString();
-if (url == 'about:blank') {
-  passwordalert.url_ = window.parent.location.href;
-  passwordalert.referrer_ = '';
-} else {
-  passwordalert.url_ = url;
-  passwordalert.referrer_ = document.referrer.toString();
-}
+
+/**
+ * Called to get the referrer of the current page
+ *
+ * If we're in an iframe return nothing.
+ * @private
+ */
+passwordalert.referrer_ = function() {
+  const url = location.href.toString();
+  if (url == 'about:blank') {
+    return '';
+  } else {
+    return document.referrer.toString();
+  }
+};
 
 // Listen for policy changes and then set initial managed policy:
 chrome.storage.onChanged.addListener(passwordalert.handleManagedPolicyChanges_);

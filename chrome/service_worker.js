@@ -148,7 +148,8 @@ background.stateKeydown_ = {
     'otpMode': false,
     'otpTime': null,
     'typed': new keydown.Typed(),
-    'typedTime': null
+    'typedTime': null,
+    'url': ''
 };
 
 
@@ -162,7 +163,8 @@ background.stateKeypress_ = {
     'otpMode': false,
     'otpTime': null,
     'typed': '',
-    'typedTime': null
+    'typedTime': null,
+    'url': ''
 };
 
 
@@ -219,7 +221,7 @@ background.Request_;
  * State of keypress or keydown events.
  * @typedef {{hash: string, otpCount: number, otpMode: boolean,
  *            otpTime: ?Date, typed: (!keydown.Typed|string),
- *            typedTime: ?Date}}
+ *            typedTime: ?Date, url: string}}
  * @private
  */
 background.State_;
@@ -623,7 +625,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
     if (sender.tab === undefined) {
         return;
     }
-    console.log("Request from tab:", sender.tab.id, "action:", request.action, "context:", request.context, "url:", request.url);
+    console.debug("Request from tab:", sender.tab.id, "action:", request.action, "context:", request.context, "url:", request.url);
     switch (request.action) {
         case 'handleKeypress':
             background.handleKeypress_(sender.tab.id, request);
@@ -750,6 +752,11 @@ background.handleKeydown_ = function (tabId, request) {
         return;
     }
 
+    if (request.url != state['url']) {
+      state['typed'].clear();
+      state['url'] = request.url;
+    }
+
     const typedTime = new Date(request.typedTimeStamp);
     if (typedTime - state['typedTime'] > background.SECONDS_TO_CLEAR_ * 1000) {
         state['typed'].clear();
@@ -778,6 +785,12 @@ background.handleKeypress_ = function (tabId, request) {
     if (request.keyCode == background.ENTER_ASCII_CODE_) {
         state['typed'] = '';
         return;
+    }
+
+    // If we transition URLs we want to empty the buffer
+    if (request.url != state['url']) {
+      state['typed'] = '';
+      state['url'] = request.url;
     }
 
     const typedTime = new Date(request.typedTimeStamp);
@@ -1078,7 +1091,7 @@ background.displayPhishingWarningIfNeeded_ = function (tabId, request) {
                 '?' + tabId + '&' + encodeURIComponent(request.url || '') + '&' +
                 encodeURIComponent(currentHost) + '&' +
                 encodeURIComponent(request.securityEmailAddress);
-            chrome.tabs.update({ 'url': warning_url });
+            chrome.tabs.update({'url': warning_url});
         });
 };
 
@@ -1293,7 +1306,7 @@ background.pushToAllTabs_ = function () {
  * @private
  */
 background.pushToTab_ = function (tabId) {
-    const state = {'passwordStored': ( background.passwordLengths_.length > 0)};
+    const state = {'passwordStored': (background.passwordLengths_.length > 0)};
     chrome.tabs.sendMessage(tabId, JSON.stringify(state), response => {
         if(response) {
           console.log('pushToTab_', tabId, response);

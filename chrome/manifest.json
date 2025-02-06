@@ -1,7 +1,7 @@
 {
   "name": "__MSG_extension_name__",
   "description": "__MSG_extension_description__",
-  "version": "1.29",
+  "version": "1.37.6",
   "default_locale": "en",
   "minimum_chrome_version": "88",
   "icons": { "128": "icon128.png" },
