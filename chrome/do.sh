@@ -81,10 +81,32 @@ pc_build_extension() {
   # copy extension files
   cp -f *.png "$BUILD_EXT_DIR"
   cp -f *.json "$BUILD_EXT_DIR"
+  cp -f manifest.json.template "$BUILD_EXT_DIR/manifest.json"
   cp -f *.css "$BUILD_EXT_DIR"
   cp -f password_warning.* "$BUILD_EXT_DIR"
   cp -f phishing_warning.* "$BUILD_EXT_DIR"
   cp -fR _locales "$BUILD_EXT_DIR"
+
+  echo "Performing manifest template substitution as needed..."
+  # If env vars are set perform manifest template substitutions
+  if [[ ! -z "$DEVELOPMENT_KEY" ]]; then
+    sed -i ''  's/{\$__START__/{\n  \"key\"\: \"'"$DEVELOPMENT_KEY"'\",\  /' "$BUILD_EXT_DIR/manifest.json"
+  else
+    sed -i ''  's/{\$__START__/{/' "$BUILD_EXT_DIR/manifest.json"
+  fi
+  if [[ -z "$OAUTH_CLIENT_ID" ]]; then
+    echo "\n*******************************************"
+    echo "You need to add an OAUTH Client ID to the manifest manually..."
+    echo "None was found while building"
+    echo "You can set env var $OAUTH_CLIENT_ID in the future to auto include the value while building."
+    echo "*******************************************"
+  else
+    sed -i '' 's/\$__OAUTH_CLIENT_ID__/'"$OAUTH_CLIENT_ID"'/' "$BUILD_EXT_DIR/manifest.json"
+  fi
+
+  # One automatic substitution into the manifest to add consistency across build envs
+  sed -i '' 's/$__NAME__/__MSG_extension_name__/' $BUILD_EXT_DIR/manifest.json
+
   echo "Done."
 }
 

@@ -1,7 +1,7 @@
-{
-  "name": "__MSG_extension_name__",
+{$__START__
+  "name": "$__NAME__",
   "description": "__MSG_extension_description__",
-  "version": "1.37.6",
+  "version": "1.38.0",
   "default_locale": "en",
   "minimum_chrome_version": "88",
   "icons": { "128": "icon128.png" },
@@ -44,7 +44,7 @@
   "manifest_version": 3,
 
   "oauth2": {
-    "client_id": "897749729682-2j2fjtnfde4kgi40fvjrp7ude48ooh4n.apps.googleusercontent.com",
+    "client_id": "$__OAUTH_CLIENT_ID__",
     "scopes": ["email"]
   }
 }
