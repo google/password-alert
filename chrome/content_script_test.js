@@ -45,7 +45,7 @@ testSuite({
 
   testOnKeydown() {
     passwordalert.isRunning_ = true;
-    passwordalert.url_ = 'https://example.com';
+    passwordalert.url_ = function() {return 'https://example.com';};
     passwordalert.looksLikeGooglePage_ = function() {
       return true;
     };
@@ -96,20 +96,22 @@ testSuite({
     const msg = '{"passwordStored": true}';
 
     // passwordalert.sso_url_ is undefined by default.
-    passwordalert.url_ = 'https://login.example.com/request?' +
-        'd=https%3A%2F%2Fcookieserver';
+    passwordalert.url_ = function() {
+      return 'https://login.example.com/request?d=https%3A%2F%2Fcookieserver';};
+
     passwordalert.start_(msg);
     assertTrue(passwordalert.isRunning_);
 
     // chrome.storage.managed.get is stubbed for testing in chrome_api_stubs.js.
     passwordalert.sso_url_ = chrome.storage.managed.get()['sso_url'];
-
-    passwordalert.url_ = 'https://login.example.com/request?' +
-        'd=https%3A%2F%2Fcookieserver';
+    passwordalert.url_ = function() {
+      return 'https://login.example.com/request?d=https%3A%2F%2Fcookieserver';
+    };
     passwordalert.start_(msg);
     assertFalse(passwordalert.isRunning_);
-
-    passwordalert.url_ = 'http://127.0.0.1/';
+    passwordalert.url_ = function() {
+      return 'http://127.0.0.1/';
+    };
     passwordalert.start_(msg);
     assertTrue(passwordalert.isRunning_);
   },
@@ -119,12 +121,15 @@ testSuite({
    * will not pass the allowlist.
    */
   testAllowlist() {
-    passwordalert.url_ = 'https://foo.corp.google.com/';
+    passwordalert.url_ = function() {
+      return 'https://foo.corp.google.com/';
+    };
     passwordalert.allowlist_top_domains_ =
         ['.borg.google.com', '.corp.google.com'];
     assertTrue(passwordalert.allowlistUrl_());
-    passwordalert.url_ =
-        'https://foo.corp.google.com.evil.com/login.corp.google.com/';
+    passwordalert.url_ = function() {
+      return 'https://foo.corp.google.com.evil.com/login.corp.google.com/';
+    };
     assertFalse(passwordalert.allowlistUrl_());
   },
 
@@ -133,11 +138,15 @@ testSuite({
    * will not pass the allowlist.
    */
   testAllowlistSuffix() {
-    passwordalert.url_ = 'https://company.com/';
+    passwordalert.url_ = function() {
+      return 'https://company.com/';
+    };
     passwordalert.allowlist_top_domains_ = ['company.com'];
     assertTrue(passwordalert.allowlistUrl_());
 
-    passwordalert.url_ = 'https://evilcompany.com/';
+    passwordalert.url_ = function() {
+      return 'https://evilcompany.com/';
+    };
     passwordalert.allowlist_top_domains_ = ['company.com'];
     assertFalse(passwordalert.allowlistUrl_());
     passwordalert.allowlist_top_domains_ = ['.company.com'];
@@ -149,12 +158,15 @@ testSuite({
    * will not pass the report only check.
    */
   testReportOnlyDomains() {
-    passwordalert.url_ = 'https://foo.corp.google.com/';
+    passwordalert.url_ = function() {
+      return 'https://foo.corp.google.com/';
+    };
     passwordalert.report_only_domains_ =
         ['.borg.google.com', '.corp.google.com'];
     assertTrue(passwordalert.reportOnlyUrl_());
-    passwordalert.url_ =
-        'https://foo.corp.google.com.evil.com/login.corp.google.com/';
+    passwordalert.url_ = function() {
+      return 'https://foo.corp.google.com.evil.com/login.corp.google.com/';
+    };
     assertFalse(passwordalert.reportOnlyUrl_());
   },
 
@@ -163,11 +175,15 @@ testSuite({
    * will not pass the report only check.
    */
   testReportOnlyDomainsSuffix() {
-    passwordalert.url_ = 'https://company.com/';
+    passwordalert.url_ = function() {
+      return 'https://company.com/';
+    };
     passwordalert.report_only_domains_ = ['company.com'];
     assertTrue(passwordalert.reportOnlyUrl_());
 
-    passwordalert.url_ = 'https://evilcompany.com/';
+    passwordalert.url_ = function() {
+      return 'https://evilcompany.com/';
+    };
     passwordalert.report_only_domains_ = ['company.com'];
     assertFalse(passwordalert.reportOnlyUrl_());
     passwordalert.report_only_domains_ = ['.company.com'];
