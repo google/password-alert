@@ -452,7 +452,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
           document.getElementById('hiddenEmail') &&
           document.getElementsByName('Passwd')) {
         forms = document.getElementsByTagName('form');
-        for(var i = 0; i < forms.length; i++) {
+        for(let i = 0; i < forms.length; i++) {
           forms[i].addEventListener('submit', function(evt) {
             passwordalert.saveGaia2Password_(evt);
           });
