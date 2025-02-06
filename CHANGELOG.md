@@ -2,6 +2,11 @@
 
 Starting from Version 1.37.4, documenting important changes to the codebase.
 
+## 1.37.6
+
+- Update compilation flags in an attempt to defend against a known issue.
+- Moved some console messages to debug to reduce verbose output.
+
 ## 1.37.5
 
 - Replaced the content_script referrer and url variables with method calls to defend against race conditions.
