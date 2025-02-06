@@ -62,7 +62,7 @@ passwordalert.sso_username_selector_;
  * Selector for preset username element on the SSO login page.
  * @private {string}
  */
-passwordalert.sso_preset_selector_;
+passwordalert.sso_preset_selector_ = "#loginForm #u";
 
 /**
  * The corp email domain, e.g. "company.com".
@@ -417,24 +417,14 @@ passwordalert.completePageInitializationIfReady_ = function() {
   }
   if (passwordalert.sso_url_ &&
       googString.startsWith(passwordalert.url_, passwordalert.sso_url_)) {
-    let loginForm;
-    loginForm = document.querySelector(passwordalert.sso_form_selector_);
-    
-    if(!loginForm){
-      loginForm = document.getElementById('loginForm');
-    }
-    if(loginForm){
-      submit = document.getElementById('signInButton');
-      if(submit){
-        submit.addEventListener('click', passwordalert.saveSsoPassword_, true);
-      } // null if the user gets a Password Change Warning.
+    const loginForm = document.querySelector(passwordalert.sso_form_selector_);
+    if (loginForm){ // null if the user gets a Password Change Warning.
       loginForm.addEventListener(
           'submit', passwordalert.saveSsoPassword_, true);
     } else {
       // This handles the case where user is redirected to a page that starts
       // with sso url upon a successful sso login.
-      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'sso_url_ without login form', url: passwordalert.url_});
-    }
+      chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'sso_url_ without login form', url: passwordalert.url_});}
   } else if (googString.startsWith(
                  passwordalert.url_,
                  passwordalert.ENFORCED_CHANGE_PASSWORD_URL_)) {
@@ -683,12 +673,12 @@ passwordalert.saveSsoPassword_ = function(evt) {
   if (passwordalert.validateSso_()) {
     let username;
     const password = document.querySelector(passwordalert.sso_password_selector_)?.value;
-    const usernameElement = document.querySelector(passwordalert.sso_username_selector_)?.value;
-    const presetElement = document.getElementById('u')?.value;
-    if ((usernameElement == null) && (presetElement == null)) {
+    const usernameValue = document.querySelector(passwordalert.sso_username_selector_)?.value;
+    const presetUsernameValue = document.getElementById('u')?.value;
+    if (!usernameValue && !presetUsernameValue) {
         chrome.runtime.sendMessage({action: 'setPossiblePasswordWithoutEmail', password: password, context: 'set password without email', url: passwordalert.url_});
     } else {
-        username = (usernameElement != null) ? usernameElement : (presetElement != null) ? presetElement : null;
+        username = usernameValue || presetUsernameValue;
         if (username && username.indexOf('@') == -1) {
           username += '@' + passwordalert.corp_email_domain_.split(',')[0].trim();
         }
