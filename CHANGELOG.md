@@ -2,6 +2,12 @@
 
 Starting from Version 1.37.4, documenting important changes to the codebase.
 
+## 1.38.2
+
+- Move additional messages in the content script from console.log to console.debug
+- Mark messages as coming from password alert
+- Fix broken Gaia password identification on login page
+
 ## 1.38.1
 
 - Unit testing changes for new functions
