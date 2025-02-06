@@ -262,8 +262,10 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
       passwordalert.sso_url_ = managedPolicy['sso_url'];
       passwordalert.sso_username_selector_ =
           managedPolicy['sso_username_selector'];
-      passwordalert.sso_preset_selector_ =
+      if (managedPolicy['sso_preset_selector']) {
+        passwordalert.sso_preset_selector_ =
           managedPolicy['sso_preset_selector'];
+       }
       
       // For the policies below, we want to append the user-provided policies
       // to the extension-provided defaults.
@@ -671,7 +673,7 @@ passwordalert.saveSsoPassword_ = function(evt) {
     let username;
     const password = document.querySelector(passwordalert.sso_password_selector_)?.value;
     const usernameValue = document.querySelector(passwordalert.sso_username_selector_)?.value;
-    const presetUsernameValue = document.getElementById('u')?.value;
+    const presetUsernameValue = document.querySelector(passwordalert.sso_preset_selector_)?.value;
     if (!usernameValue && !presetUsernameValue) {
         chrome.runtime.sendMessage({action: 'setPossiblePasswordWithoutEmail', password: password, context: 'set password without email', url:  passwordalert.url_()});
     } else {
