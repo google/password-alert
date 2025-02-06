@@ -269,7 +269,7 @@ passwordalert.setManagedPolicyValuesIntoConfigurableVariables_ = function(
       // Included for backwards compatibility.
       // The intention is to give a warning period then to remove this value.
       if (managedPolicy['whitelist_top_domains']) {
-        console.log("The managed policy value 'whitelist_top_domains' is deprecated.  Please move to 'allowlist_top_domains' immediately.");
+        console.debug("[Password Alert] The managed policy value 'whitelist_top_domains' is deprecated.  Please move to 'allowlist_top_domains' immediately.");
         Array.prototype.push.apply(
             passwordalert.allowlist_top_domains_,
             // filter empty values
@@ -370,6 +370,14 @@ passwordalert.handleManagedPolicyChanges_ = function(
               passwordalert.allowlist_top_domains_,
               newPolicyValue.filter(String));  // filter empty values
           break;
+        case 'whitelist_top_domains':
+          passwordalert.allowlist_top_domains_ = subtractArray(
+              passwordalert.allowlist_top_domains_,
+              oldPolicyValue.filter(String));  // filter empty values
+          Array.prototype.push.apply(
+              passwordalert.allowlist_top_domains_,
+              newPolicyValue.filter(String));  // filter empty values
+          break;
         case 'report_only_domains':
           passwordalert.report_only_domains_ = subtractArray(passwordalert.report_only_domains_, oldPolicyValue.filter(String));
           Array.prototype.push.apply(
@@ -442,7 +450,13 @@ passwordalert.completePageInitializationIfReady_ = function() {
             'submit', passwordalert.saveGaiaPassword_, true);
       } else if (
           document.getElementById('hiddenEmail') &&
-          document.getElementsByName('password')) {
+          document.getElementsByName('Passwd')) {
+        forms = document.getElementsByTagName('form');
+        for(var i = 0; i < forms.length; i++) {
+          forms[i].addEventListener('submit', function(evt) {
+            passwordalert.saveGaia2Password_(evt);
+          });
+        }
         // TODO(adhintz) Avoid adding event listeners if they already exist.
         document.getElementById('passwordNext')
             .addEventListener('click', function() {
@@ -499,7 +513,7 @@ passwordalert.completePageInitializationIfReady_ = function() {
     }
     chrome.runtime.sendMessage({action: 'savePossiblePassword', context: 'default', url: passwordalert.url_()}, _ => {
       if(chrome.runtime.lastError){
-        console.debug('completePageInitializationIfReady_ ', chrome.runtime.lastError);
+        console.debug('[Password Alert] completePageInitializationIfReady_ ', chrome.runtime.lastError);
       }
     });
   }
@@ -704,7 +718,7 @@ passwordalert.saveGaia2Password_ = function(evt) {
   const emailInput = document.getElementById('hiddenEmail');
   const email =
       emailInput ? googString.trim(emailInput.value.toLowerCase()) : '';
-  const passwordInputs = document.getElementsByName('password');
+  const passwordInputs = document.getElementsByName('Passwd');
   if (!passwordInputs || passwordInputs.length != 1) {
     return;
   }
@@ -753,7 +767,7 @@ passwordalert.saveChangedPassword_ = function() {
       });
       return;
     }
-    console.log('Parsed email on change password page is not valid: %s', email);
+    console.debug('[Password Alert] Parsed email on change password page is not valid: %s', email);
   };
 };
 
@@ -784,7 +798,7 @@ passwordalert.validateSso_ = function() {
   const username = document.querySelector(passwordalert.sso_username_selector_);
   const password = document.querySelector(passwordalert.sso_password_selector_);
   if ((username && !username.value) || (password && !password.value)) {
-    console.log('SSO data is not filled in.');
+    console.debug('[Password Alert] SSO data is not filled in.');
     return false;
   }
   return true;

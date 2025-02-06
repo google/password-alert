@@ -95,10 +95,10 @@ pc_build_extension() {
     sed -i ''  's/{\$__START__/{/' "$BUILD_EXT_DIR/manifest.json"
   fi
   if [[ -z "$OAUTH_CLIENT_ID" ]]; then
-    echo "\n*******************************************"
+    echo "*******************************************"
     echo "You need to add an OAUTH Client ID to the manifest manually..."
     echo "None was found while building"
-    echo "You can set env var $OAUTH_CLIENT_ID in the future to auto include the value while building."
+    echo "You can set env var \$OAUTH_CLIENT_ID in the future to auto include the value while building."
     echo "*******************************************"
   else
     sed -i '' 's/\$__OAUTH_CLIENT_ID__/'"$OAUTH_CLIENT_ID"'/' "$BUILD_EXT_DIR/manifest.json"
