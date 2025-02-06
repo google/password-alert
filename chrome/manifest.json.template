@@ -1,7 +1,7 @@
 {$__START__
   "name": "$__NAME__",
   "description": "__MSG_extension_description__",
-  "version": "1.38.0",
+  "version": "1.38.1",
   "default_locale": "en",
   "minimum_chrome_version": "88",
   "icons": { "128": "icon128.png" },

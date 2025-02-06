@@ -912,6 +912,7 @@ passwordalert.domReadyCheck_ = function() {
  * Called to get the url of the current page
  *
  * If we're in an iframe get the parent's href.
+ * @return {string} The url of the current page.
  * @private
  */
 passwordalert.url_ = function() {
@@ -928,6 +929,7 @@ passwordalert.url_ = function() {
  * Called to get the referrer of the current page
  *
  * If we're in an iframe return nothing.
+ * @return {string} The referrer if any.
  * @private
  */
 passwordalert.referrer_ = function() {

@@ -231,7 +231,8 @@ testSuite({
       otpMode: false,
       otpTime: null,
       typed: new keydown.Typed(),
-      typedTime: now
+      typedTime: now,
+      url: 'https://example.com'
     };
 
     // Test that the buffer is trimmed if it gets too big.
@@ -248,7 +249,8 @@ testSuite({
       otpMode: false,
       otpTime: null,
       typed: new keydown.Typed('abcd'),
-      typedTime: now
+      typedTime: now,
+      url: 'https://example.com'
     };
 
     const checkedPasswords = [];
@@ -344,3 +346,4 @@ testSuite({
     assertEquals('adhintz@guessuser.google.com', background.guessUser_());
   }
 });
+
