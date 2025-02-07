@@ -451,33 +451,9 @@ passwordalert.completePageInitializationIfReady_ = function() {
       } else if (
           document.getElementById('hiddenEmail') &&
           document.getElementsByName('Passwd')) {
-        forms = document.getElementsByTagName('form');
-        for(let i = 0; i < forms.length; i++) {
-          forms[i].addEventListener('submit', function(evt) {
-            passwordalert.saveGaia2Password_(evt);
-          });
-        }
-        // TODO(adhintz) Avoid adding event listeners if they already exist.
-        document.getElementById('passwordNext')
-            .addEventListener('click', function() {
-              passwordalert.saveGaia2Password_(null);
-            });
-        // Pressing spacebar on the Next button will trigger save.
-        document.getElementById('passwordNext')
-            .addEventListener('keydown', function(evt) {
-              if (evt.key == 'Space') {
-                passwordalert.saveGaia2Password_(evt);
-              }
-            }, true);
-        // Pressing enter anywhere on the page will trigger save.
-        document.addEventListener('keydown', function(evt) {
-          if (evt.key == 'Enter') {
-            passwordalert.saveGaia2Password_(evt);
-          }
-        }, true);
         window.onbeforeunload = passwordalert.saveGaia2Password_;
+        }
       }
-    }
   } else if (googString.startsWith(
                  passwordalert.url_(), passwordalert.CHANGE_PASSWORD_URL_)) {
     // Need to wait until the change password page has finished loading
