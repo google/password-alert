@@ -28,51 +28,6 @@ var iconUrl;
 var localStorage;
 var JSON;
 
-// var chrome;  // TODO(adhintz) seems to be needed for open source build, but breaks internal build.
-
-var chrome;
-
-chrome.i18n;
-chrome.i18n.getMessage;
-
-chrome.identity;
-chrome.identity.getAuthToken;
-chrome.identity.getProfileUserInfo;
-
-
-chrome.notifications;
-chrome.notifications.create;
-chrome.notifications.getAll;
-chrome.notifications.onButtonClicked;
-chrome.notifications.onButtonClicked.addListener;
-chrome.notifications.onClicked;
-chrome.notifications.onClicked.addListener;
-
-chrome.storage;
-chrome.storage.local;
-chrome.storage.managed;
-chrome.storage.onChanged;
-chrome.storage.onChanged.addListener;
-
-chrome.scripting
-chrome.scripting.executeScript;
-
-// When updating values here, also update extension_stubs.js for tests.
-chrome.runtime;
-chrome.runtime.getManifest;
-chrome.runtime.getURL;
-chrome.runtime.onInstalled;
-chrome.runtime.onMessage;
-chrome.runtime.onMessage.addListener;
-chrome.runtime.sendMessage;
-
-chrome.tabs;
-chrome.tabs.create;
-chrome.tabs.get;
-chrome.tabs.highlight;
-chrome.tabs.query;
-chrome.tabs.sendMessage;
-
 var loginForm;
 loginForm.Email;
 loginForm.Passwd;
