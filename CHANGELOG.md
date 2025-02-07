@@ -2,6 +2,10 @@
 
 Starting from Version 1.37.4, documenting important changes to the codebase.
 
+## 1.38.3
+
+- Changing the externs list for consistency across build environments
+
 ## 1.38.2
 
 - Move additional messages in the content script from console.log to console.debug
