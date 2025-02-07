@@ -28,6 +28,9 @@
   "sso_username_selector": {
     "Value": "#loginForm #username"
   },
+  "sso_preset_selector": {
+    "Value": "#loginForm #u"
+  },
   "allowlist_top_domains": {
     "Value": ["legit-site.example.com",
               "localhost"]
