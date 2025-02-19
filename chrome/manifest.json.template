@@ -6,7 +6,6 @@
   "minimum_chrome_version": "88",
   "icons": { "128": "icon128.png" },
   "permissions": [
-    "alarms",
     "identity",
     "identity.email",
     "notifications",
