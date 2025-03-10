@@ -829,7 +829,7 @@ background.handleKeypress_ = function (tabId, request) {
  * @private
  */
 background.setPossiblePassword_ = function (tabId, request, hasEmail) {
-    if ((hasEmail && !request.email) || !request.password) {
+    if ((hasEmail && !request.email) || !request.password){
         return;
     }
     if (request.password.length < background.MINIMUM_PASSWORD_) {
