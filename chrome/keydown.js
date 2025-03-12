@@ -53,7 +53,6 @@ function isNumber(key){
 }
 exports.Typed.prototype.event = function(key, shiftKey) {
   if (isLetter(key)) {  // Letters.
-    //    state['typed'].getModifierState('CapsLock');
     let c = key;
     if ((!shiftKey && !this.getModifierState('CapsLock')) ||
         (shiftKey && this.getModifierState('CapsLock'))) {
