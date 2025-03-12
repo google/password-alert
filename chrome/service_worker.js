@@ -770,13 +770,6 @@ background.handleKeydown_ = function (tabId, request) {
 };
 
 
-/**
- * Called on each key press. Checks the most recent possible characters.
- * @param {number} tabId Id of the browser tab.
- * @param {!background.Request_} request Request object from
- *     content_script. Contains url and referer.
- * @private
- */
 
 /**
  * When password entered into a login page, temporarily save it here.
