@@ -770,7 +770,6 @@ background.handleKeydown_ = function (tabId, request) {
 };
 
 
-
 /**
  * When password entered into a login page, temporarily save it here.
  * We do not yet know if the password is correct.
