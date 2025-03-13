@@ -42,39 +42,12 @@ exports.Typed = function(opt_chars) {
 
 /**
  * Handles a keydown event and updates the list of typed characters.
- * @param {boolean} shiftKey True if shift key was pressed. From keyboardEvent.
  */
-function isLetter(key){
-  return /^[a-zA-Z]$/.test(key);
-}
-
-function isNumber(key){
-  return /^[0-9]$/.test(key);
-}
-exports.Typed.prototype.event = function(key, shiftKey) {
-  if (isLetter(key)) {  // Letters.
-    let c = key;
-    if ((!shiftKey && !this.getModifierState('CapsLock')) ||
-        (shiftKey && this.getModifierState('CapsLock'))) {
-      c = key.toLowerCase();
-    }
-    this.chars_ += c;
-  } else if (isNumber(key)) {  // Numbers.
-    this.chars_ += key;
-  } else if (key.getModifierState('CapsLock')) {
-    this.caps_lock_ = !this.caps_lock_;
-  } else if (key == "Backspace") {  // Backspace.
+exports.Typed.prototype.event = function(key) {
+  this.chars_ += key;
+  this.caps_lock_ = key.getModifierState('CapsLock');
+  if (key == "Backspace") {  // Backspace.
     this.chars_ = this.chars_.slice(0, -1);
-  } else {
-    if (shiftKey) {
-      if (key in MAP_SHIFT_) {
-        this.chars_ += MAP_SHIFT_[key];
-      }
-    } else {
-      if (key in MAP_) {
-        this.chars_ += MAP_[key];
-      }
-    }
   }
 };
 

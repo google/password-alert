@@ -691,7 +691,7 @@ background.checkOtp_ = function (tabId, request, state) {
         const now = new Date();
         if (now - state['otpTime'] > background.SECONDS_TO_CLEAR_OTP_ * 1000) {
             background.clearOtpMode_(state);
-        } else if (Number(request.key)) {
+        } else if (Number.isInteger(request.key)) {
             // is a digit
             state['otpCount']++;
         } else if (
@@ -764,7 +764,6 @@ background.handleKeydown_ = function (tabId, request) {
     state['typedTime'] = typedTime;
 
     state['typed'].trim(background.passwordLengths_.length);
-    state['typed'].getModifierState('CapsLock');
 
     background.checkAllPasswords_(tabId, request, state);
 };
