@@ -43,12 +43,15 @@ exports.Typed = function(opt_chars) {
 /**
  * Handles a keydown event and updates the list of typed characters.
  */
-exports.Typed.prototype.event = function(key) {
-  this.chars_ += key;
+exports.Typed.prototype.event = function(key) { 
   this.caps_lock_ = key.getModifierState('CapsLock');
-  if (key == "Backspace") {  // Backspace.
+  if (key.length === 1){  
+    this.chars_ += key;
+  } else {
+    if (key == "Backspace") {  // Backspace.
     this.chars_ = this.chars_.slice(0, -1);
   }
+}
 };
 
 /**

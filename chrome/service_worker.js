@@ -674,7 +674,7 @@ background.checkOtp_ = function (tabId, request, state) {
             // is a digit
             state['otpCount']++;
         } else if (
-            (request.key == "Space") ||
+            (request.key.length === 1) ||
             // non-digit printable characters reset it
             // Non-printable only allowed at start:
             state['otpCount'] > 0) {
