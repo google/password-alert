@@ -40,34 +40,34 @@ background.storageCache = {};
 // we must now manually persist that data at a periodic interval. We accomplish this here
 // by proxying the cache object and asynchronously writing it to storage on change.
 background.storageCache = new Proxy(background.storageCache, {
-  set: function (target, key, value) {
-    let r = Reflect.set(target, key, value);
-    chrome.storage.local.set(
-      {'cacheData': background.storageCache}, function (result) {
-        console.log('persisted storageCache to chrome.local.storage on update');
-        background.refreshPasswordLengths_();
-    });
-    return r;
-  },
-  deleteProperty: function(target, prop) {
-    if (prop in target) {
-        let r = Reflect.deleteProperty(target, prop);
-        chrome.storage.local.set(
-          {'cacheData': background.storageCache}, function (result) {
-            console.log(
-              'persisted storageCache to chrome.local.storage on delete');
-            background.refreshPasswordLengths_();
-        });
-        return r;
+    set: function (target, key, value) {
+      let r = Reflect.set(target, key, value);
+      chrome.storage.local.set(
+        {'cacheData': background.storageCache}, function (result) {
+          console.log('persisted storageCache to chrome.local.storage on update');
+          background.refreshPasswordLengths_();
+      });
+      return r;
+    },
+    deleteProperty: function(target, prop) {
+      if (prop in target) {
+          let r = Reflect.deleteProperty(target, prop);
+          chrome.storage.local.set(
+            {'cacheData': background.storageCache}, function (result) {
+              console.log(
+                'persisted storageCache to chrome.local.storage on delete');
+              background.refreshPasswordLengths_();
+          });
+          return r;
+      }
+    },
+    get: function (target, prop, receiver) {
+      return Reflect.get(...arguments);
+    },
+    getOwnPropertyDescriptor: function (target, prop) {
+      return Reflect.getOwnPropertyDescriptor(...arguments);
     }
-  },
-  get: function (target, prop, receiver) {
-    return Reflect.get(...arguments);
-  },
-  getOwnPropertyDescriptor: function (target, prop) {
-    return Reflect.getOwnPropertyDescriptor(...arguments);
-  }
-});
+  });  
 
 
 /**
@@ -153,20 +153,6 @@ background.stateKeydown_ = {
 };
 
 
-/**
- * Associative array of state for Keypress events.
- * @private {!background.State_}
- */
-background.stateKeypress_ = {
-    'hash': '',
-    'otpCount': 0,
-    'otpMode': false,
-    'otpTime': null,
-    'typed': '',
-    'typedTime': null,
-    'url': ''
-};
-
 
 /**
  * Password lengths for passwords that are being watched.
@@ -199,12 +185,6 @@ background.SECONDS_TO_CLEAR_OTP_ = 60;
 background.OTP_LENGTH_ = 6;
 
 
-/**
- * ASCII code for enter character.
- * @private {number}
- * @const
- */
-background.ENTER_ASCII_CODE_ = 13;
 
 
 /**
@@ -218,7 +198,7 @@ background.Request_;
 
 
 /**
- * State of keypress or keydown events.
+ * State of keydown events.
  * @typedef {{hash: string, otpCount: number, otpMode: boolean,
  *            otpTime: ?Date, typed: (!keydown.Typed|string),
  *            typedTime: ?Date, url: string}}
@@ -627,9 +607,6 @@ background.handleRequest_ = function (request, sender, sendResponse) {
     }
     console.debug("Request from tab:", sender.tab.id, "action:", request.action, "context:", request.context, "url:", request.url);
     switch (request.action) {
-        case 'handleKeypress':
-            background.handleKeypress_(sender.tab.id, request);
-            break;
         case 'handleKeydown':
             background.handleKeydown_(sender.tab.id, request);
             break;
@@ -664,7 +641,7 @@ background.handleRequest_ = function (request, sender, sendResponse) {
 
 /**
  * Clears OTP mode.
- * @param {!background.State_} state State of keydown or keypress.
+ * @param {!background.State_} state State of keydown.
  * @private
  */
 background.clearOtpMode_ = function (state) {
@@ -685,7 +662,7 @@ background.clearOtpMode_ = function (state) {
  * @param {number} tabId Id of the browser tab.
  * @param {!background.Request_} request Request object from
  *     content_script. Contains url and referer.
- * @param {!background.State_} state State of keypress or keydown.
+ * @param {!background.State_} state State of keydown.
  * @private
  */
 background.checkOtp_ = function (tabId, request, state) {
@@ -693,11 +670,11 @@ background.checkOtp_ = function (tabId, request, state) {
         const now = new Date();
         if (now - state['otpTime'] > background.SECONDS_TO_CLEAR_OTP_ * 1000) {
             background.clearOtpMode_(state);
-        } else if (request.keyCode >= 0x30 && request.keyCode <= 0x39) {
+        } else if (Number.isInteger(request.key)) {
             // is a digit
             state['otpCount']++;
         } else if (
-            request.keyCode > 0x20 ||
+            (request.key.length === 1) ||
             // non-digit printable characters reset it
             // Non-printable only allowed at start:
             state['otpCount'] > 0) {
@@ -719,7 +696,7 @@ background.checkOtp_ = function (tabId, request, state) {
  * @param {number} tabId Id of the browser tab.
  * @param {!background.Request_} request Request object from
  *     content_script. Contains url and referer.
- * @param {!background.State_} state State of keydown or keypress.
+ * @param {!background.State_} state State of keydown.
  * @private
  */
 background.checkAllPasswords_ = function (tabId, request, state) {
@@ -747,7 +724,7 @@ background.handleKeydown_ = function (tabId, request) {
     const state = background.stateKeydown_;
     background.checkOtp_(tabId, request, state);
 
-    if (request.keyCode == background.ENTER_ASCII_CODE_) {
+    if (request.key == 'Enter') {
         state['typed'].clear();
         return;
     }
@@ -762,60 +739,12 @@ background.handleKeydown_ = function (tabId, request) {
         state['typed'].clear();
     }
 
-    state['typed'].event(request.keyCode, request.shiftKey);
+    state['typed'].event(request.key, request.shiftKey);
     state['typedTime'] = typedTime;
 
     state['typed'].trim(background.passwordLengths_.length);
 
     background.checkAllPasswords_(tabId, request, state);
-};
-
-
-/**
- * Called on each key press. Checks the most recent possible characters.
- * @param {number} tabId Id of the browser tab.
- * @param {!background.Request_} request Request object from
- *     content_script. Contains url and referer.
- * @private
- */
-background.handleKeypress_ = function (tabId, request) {
-    const state = background.stateKeypress_;
-    background.checkOtp_(tabId, request, state);
-
-    if (request.keyCode == background.ENTER_ASCII_CODE_) {
-        state['typed'] = '';
-        return;
-    }
-
-    // If we transition URLs we want to empty the buffer
-    if (request.url != state['url']) {
-      state['typed'] = '';
-      state['url'] = request.url;
-    }
-
-    const typedTime = new Date(request.typedTimeStamp);
-    if (typedTime - state['typedTime'] > background.SECONDS_TO_CLEAR_ * 1000) {
-        state['typed'] = '';
-    }
-
-    // We're treating keyCode and charCode the same here intentionally.
-    state['typed'] += String.fromCharCode(request.keyCode);
-    state['typedTime'] = typedTime;
-
-    // trim the buffer when it's too big
-    if (state['typed'].length > background.passwordLengths_.length) {
-        state['typed'] =
-            state['typed'].slice(-1 * background.passwordLengths_.length);
-    }
-
-    // Send keypress event to keydown state so the keydown library can attempt
-    // to guess the state of capslock.
-    background.stateKeydown_['typed'].keypress(request.keyCode);
-
-    // Do not check passwords if keydown is in OTP mode to avoid double-warning.
-    if (!background.stateKeydown_['otpMode']) {
-        background.checkAllPasswords_(tabId, request, state);
-    }
 };
 
 
@@ -996,7 +925,7 @@ background.checkRateLimit_ = function () {
  * @param {number} tabId The tab that sent this message.
  * @param {!background.Request_} request Request object from
  *     content_script.
- * @param {!background.State_} state State of keypress or keydown.
+ * @param {!background.State_} state State of keydown.
  * @private
  */
 background.checkPassword_ = function (tabId, request, state) {
