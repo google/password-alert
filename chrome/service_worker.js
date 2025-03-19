@@ -40,34 +40,70 @@ background.storageCache = {};
 // we must now manually persist that data at a periodic interval. We accomplish this here
 // by proxying the cache object and asynchronously writing it to storage on change.
 background.storageCache = new Proxy(background.storageCache, {
-    set: function (target, key, value) {
-      let r = Reflect.set(target, key, value);
-      chrome.storage.local.set(
-        {'cacheData': background.storageCache}, function (result) {
-          console.log('persisted storageCache to chrome.local.storage on update');
-          background.refreshPasswordLengths_();
-      });
-      return r;
-    },
-    deleteProperty: function(target, prop) {
-      if (prop in target) {
-          let r = Reflect.deleteProperty(target, prop);
-          chrome.storage.local.set(
-            {'cacheData': background.storageCache}, function (result) {
-              console.log(
-                'persisted storageCache to chrome.local.storage on delete');
-              background.refreshPasswordLengths_();
-          });
-          return r;
+  set: function (target, key, value) {
+    let r = Reflect.set(target, key, value);
+    chrome.storage.local.getBytesInUse(null, (bytesInUse) => {
+      if (bytesInUse > 0.9 * chrome.storage.local.QUOTA_BYTES) {
+        console.log("storage is almost full");
       }
-    },
-    get: function (target, prop, receiver) {
-      return Reflect.get(...arguments);
-    },
-    getOwnPropertyDescriptor: function (target, prop) {
-      return Reflect.getOwnPropertyDescriptor(...arguments);
+    });
+    try {
+      chrome.storage.local.set(
+        { cacheData: background.storageCache },
+        function (result) {
+          if (chrome.runtime.lastError) {
+            console.log(
+              "error persisting storageCache to chrome.local.storage on update"
+            );
+          } else {
+            console.log(
+              "persisted storageCache to chrome.local.storage on update"
+            );
+            background.refreshPasswordLengths_();
+          }
+        }
+      );
+    } catch (e) {
+      console.log(
+        "error persisting storageCache to chrome.local.storage on update"
+      );
     }
-  });  
+    return r;
+  },
+  deleteProperty: function (target, prop) {
+    if (prop in target) {
+      let r = Reflect.deleteProperty(target, prop);
+      try {
+        chrome.storage.local.set(
+          { cacheData: background.storageCache },
+          function (result) {
+            if (chrome.runtime.lastError) {
+              console.log(
+                "error persisting storageCache to chrome.local.storage on delete"
+              );
+            } else {
+              console.log(
+                "persisted storageCache to chrome.local.storage on delete"
+              );
+              background.refreshPasswordLengths_();
+            }
+          }
+        );
+      } catch (e) {
+        console.log(
+          "error persisting storageCache to chrome.local.storage on delete"
+        );
+      }
+      return r;
+    }
+  },
+  get: function (target, prop, receiver) {
+    return Reflect.get(...arguments);
+  },
+  getOwnPropertyDescriptor: function (target, prop) {
+    return Reflect.getOwnPropertyDescriptor(...arguments);
+  },
+});
 
 
 /**
